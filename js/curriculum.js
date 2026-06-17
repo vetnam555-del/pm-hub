@@ -395,6 +395,7 @@ const dayData = {
     mission: "기존 효율이 저조한 소재 1개를 골라 3가지 A/B 테스트 가설 작성"
 },
   day22: {
+    example: "Meta 실험 도구에서 총 예산 10만원을 소재 A·B에 각 5만원씩 균등 분배하고 기간을 5일로 설정해, 'CPA가 더 낮은 소재'를 Win 기준으로 잡고 돌린다. 3일차에 A안 CTR 1.6%·CPA 1.2만원, B안 CTR 0.9%·CPA 2.1만원이 나와도 학습이 끝나는 5일까지는 끄지 않고 유지한다.",
     week: "5주차",
     title: "Meta 광고 A/B 테스트 세팅 실무",
     diff: "normal",
@@ -414,6 +415,7 @@ const dayData = {
     mission: "Meta 실험 도구에서 10만원 예산으로 소재 2종(가상) 테스트 세팅 후 사수 리뷰"
 },
   day23: {
+    example: "GFA 피드에 단일 이미지와 썸네일형 소재를 동시에 올려 1일차 노출 2만회 기준으로 CTR을 비교한다. GFA 정상 CTR이 0.3~0.8%인 점을 감안해, 1일차 CTR이 0.3% 미만으로 하단에 머무는 소재는 후킹 카피를 좌상단으로 옮긴 베리에이션으로 빠르게 교체한다.",
     week: "5주차",
     title: "네이버 GFA 소재 테스트 및 분석",
     diff: "normal",
@@ -452,6 +454,7 @@ const dayData = {
     mission: "동일 제품으로 3가지 다른 소구점 카피라이팅 작성"
 },
   day25: {
+    example: "소재 A(전환 32건/클릭 800)와 소재 B(전환 21건/클릭 790)를 비교하니 CVR이 4.0% vs 2.7%로 갈렸다. 표본이 작아 통계적 유의성이 약하면 '승자 확정' 대신 A안의 공통 요소(혜택 강조 카피+인물 컷)를 유지한 베리에이션 2종을 다음 테스트로 넘기는 식으로 결론 낸다.",
     week: "5주차",
     title: "A/B 테스트 결과 해석 및 넥스트 스텝",
     diff: "hard",
@@ -514,6 +517,7 @@ const dayData = {
     mission: "어트리뷰션 윈도우의 차이(클릭 1일 vs 7일)에 따른 성과 시나리오 작성"
 },
   day28: {
+    example: "GA4 자유 형식 탐색에서 '디바이스=모바일' 세그먼트를 걸고 view_item→add_to_cart→purchase 퍼널을 그리니, 장바구니(8%)에서 구매(2.5%)로 넘어가는 구간 이탈이 가장 컸다. 이 구간을 본 모바일 유저만 묶어 리타겟팅 세그먼트로 내보낸다.",
     week: "6주차",
     title: "GA4 탐색 보고서 (유입경로 및 코호트)",
     diff: "hard",
@@ -534,6 +538,7 @@ const dayData = {
     mission: "GA4 데모 계정에서 '모바일 유입 유저의 장바구니 전환 퍼널' 보고서 제출"
 },
   day29: {
+    example: "같은 캠페인인데 Meta 어드민 전환 120건, GA4 purchase 95건으로 약 26% 차이가 났다. Meta가 노출 기여(View-through)와 7일 클릭 기여를 포함하고 GA4는 마지막 클릭 기준이라 생긴 정상 오차임을 설명하고, 보고서에는 두 수치를 병기하되 정산 기준은 GA4로 통일한다.",
     week: "6주차",
     title: "매체별 전환 데이터 정합성 검증",
     diff: "normal",
@@ -573,6 +578,7 @@ const dayData = {
     mission: "제공된 샌드박스 DB에서 전일자 매체별 CPA 산출 쿼리 작성"
 },
   day31: {
+    example: "전일 CPA 1.2만원이던 캠페인이 당일 1.9만원으로 약 1.6배 급등했을 때, CPC(450원대)는 거의 그대로인데 CVR이 3.6%→2.4%로 떨어진 것을 확인한다(CPA=CPC÷CVR이라 CPC가 그대로면 CVR 하락이 CPA를 끌어올림). 원인을 'CVR 하락=랜딩/유입 질' 쪽으로 특정해, 신규 확장 타겟을 일시 축소하고 사수에게 타임라인 보고한다.",
     week: "7주차",
     title: "트러블슈팅: CPA 급등 시 논리적 대처",
     diff: "hard",
@@ -593,6 +599,7 @@ const dayData = {
     mission: "CPA가 급등한 당일 팀/클라이언트 타임라인 보고 방안 시뮬레이션"
 },
   day32: {
+    example: "Meta 릴스 소재의 빈도가 3.4까지 오르며 CTR이 첫 주 1.8%에서 0.9%로 절반 가까이 꺾였다. Meta 정상 CTR(0.8~2.5%) 하단에 닿은 신호로 보고, 같은 소구점의 신규 베리에이션 2종을 투입하면서 피로한 기존 소재는 예산을 30% 감액한다.",
     week: "7주차",
     title: "트러블슈팅: CTR 하락 및 소재 피로도",
     diff: "normal",
@@ -689,6 +696,7 @@ const dayData = {
     mission: "자사 주력 KPI 대시보드 템플릿(Page 1) 생성"
 },
   day37: {
+    example: "WoW로 ROAS가 420%→360%로 하락했을 때 'ROAS가 떨어졌습니다'로 끝내지 않는다. '신규 확장 타겟 비중이 늘며 CPA가 1.3만원→1.7만원으로 올라 ROAS가 하락했으므로, 다음 주는 효율 좋은 리타겟팅 예산 비중을 10%p 올리겠습니다'처럼 원인+넥스트 액션 3줄로 정리한다.",
     week: "8주차",
     title: "주간 보고서(Weekly Report) 인사이트 도출법",
     diff: "hard",
@@ -786,6 +794,7 @@ const dayData = {
     mission: "자사 주력 상품 대상 200만 원 규모 믹스 플랜 초안 수립"
 },
   day42: {
+    example: "네이버 SA에 일 10만원을 배정하고 예상 CPC 600원·예상 CVR 3%를 넣으면, 클릭 약 167회(예산÷CPC)→전환 약 5건, 추정 CPA 약 2만원이 역산된다. 예상치는 벤치마크 범위(SA 정상 CVR 2~6%) 안에서 보수적으로 하단값에 가깝게 잡아 결재 방어선을 확보한다.",
     week: "9주차",
     title: "미디어 믹스(네이버, Meta 등) 템플릿 작성",
     diff: "normal",
@@ -901,6 +910,7 @@ const dayData = {
     mission: "독립 캠페인 학습 속도(일일 전환 수) 체크 및 학습 완료 예상일 계산"
 },
   day48: {
+    example: "목표 ROAS 400%를 3일 연속 480%로 넘긴 캠페인의 일 예산을 30만원→36만원으로 20%만 올린다. 한 번에 2배(60만원)로 올리면 Meta 학습이 리셋되어 단가가 깨지므로, 위닝 소재의 컬러·레이아웃만 바꾼 베리에이션을 함께 추가해 모수를 넓힌다.",
     week: "10주차",
     title: "타겟 및 소재 확장(Scale-up) 시점 판단",
     diff: "hard",
@@ -920,6 +930,7 @@ const dayData = {
     mission: "이긴 소재(Winning Creative)의 CVR을 유지하며 예산 20% 증액 플랜 진행"
 },
   day49: {
+    example: "비용 한도(Cost Cap)를 목표 CPA 1.5만원으로 걸어둔 CBO 캠페인이 수·목요일 경매 경쟁으로 소진이 절반밖에 안 될 때, 한도를 1.5만→1.7만원으로 잠깐 풀어 알고리즘이 트래픽을 먹게 한 뒤 주말에 원복한다.",
     week: "10주차",
     title: "일간/주간 입찰가 및 CBO 조정 노하우",
     diff: "normal",
@@ -1035,6 +1046,7 @@ const dayData = {
     mission: "최종 전환 단계 CVR 하락에 대비한 2주간의 상단 퍼널 예산 증액 시뮬레이션"
 },
   day55: {
+    example: "객단가 5만원·원가율 60%면 1회 결제의 공헌이익은 2만원이라 손익분기 CPA는 2만원이다. ROAS 200%(매출 10만원=2건/광고비 5만원, 즉 CPA 2.5만원)면 건당 공헌이익 2만원보다 단가가 커 적자이므로, 생애 재구매 2회(누적 3회 결제)를 가정해 LTV 기준 손익분기 CPA를 약 6만원으로 다시 잡아 입찰 한계선을 설정한다.",
     week: "11주차",
     title: "LTV(고객생애가치) 및 CAC(획득비용) 마진 분석 실무",
     diff: "hard",
@@ -1256,24 +1268,40 @@ function renderWeekPage(weekId) {
 
 // ─── Media Guide ───
 const mediaData = [
-  { icon:'🟡', name:'카카오모먼트', type:'국내 디스플레이', bg:'rgba(254,203,0,0.12)', tags:['비즈보드','채널추가','알림톡','전환'], desc:'카카오톡 생태계 기반. 4,700만 카카오 유저 대상. 비즈보드, 채널 추가, 비즈니스폼 등 다양한 상품 운영. <a href="https://kakaobusiness.gitbook.io/main/ad/moment" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>'},
-  { icon:'🟢', name:'네이버 SA', type:'검색광고', bg:'rgba(3,199,90,0.1)', tags:['파워링크','품질지수','키워드','전환'], desc:'구매 의도 높은 유저가 직접 검색하는 채널. 품질지수가 광고 순위와 CPC에 직접 영향. 파워링크·쇼핑검색·브랜드검색. <a href="https://saedu.naver.com" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>'},
-  { icon:'🟢', name:'네이버 GFA', type:'성과형 DA', bg:'rgba(3,199,90,0.1)', tags:['학습상태','NDA','MAT','다이내믹'], desc:'국내 최대 DA 인벤토리. 학습 상태 기간(7~14일) 관리 중요. NDA 다이내믹광고, 동영상, 쇼핑프로모션 특화. <a href="https://saedu.naver.com/edu/gfa/" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>'},
-  { icon:'🔵', name:'구글 Ads', type:'글로벌 전 채널', bg:'rgba(66,133,244,0.1)', tags:['PMAX','검색','앱캠페인','AI자동화'], desc:'AI 기반 전 채널 자동화. PMAX로 검색·디스플레이·유튜브·쇼핑을 통합 운영. 글로벌 최대 광고 네트워크. <a href="https://support.google.com/google-ads/" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>'},
-  { icon:'🔵', name:'Meta', type:'Facebook/Instagram', bg:'rgba(24,119,242,0.1)', tags:['Advantage+','CAPI','DPA','관심사타겟'], desc:'정밀한 관심사·행동 타겟팅. Advantage+ AI 자동화. 픽셀+CAPI 병행 필수. 카탈로그 DPA로 커머스에 강점. <a href="https://www.facebook.com/business/help" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>'},
-  { icon:'🟠', name:'크리테오', type:'쇼핑 리타겟팅 DSP', bg:'rgba(255,87,34,0.1)', tags:['LF캠페인','LAL','카탈로그피드','리타겟팅'], desc:'프리미엄 커머스 인벤토리 기반 리타겟팅 DSP. LF(하단퍼널)·Acquisition·CV LAL 캠페인 유형 운영. <a href="https://help.criteo.com/" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>'},
-  { icon:'⚫', name:'틱톡', type:'숏폼 영상', bg:'rgba(255,255,255,0.05)', tags:['9:16','세이프존','MZ세대','앱설치'], desc:'MZ세대 집중. 9:16 세로형 영상 9~15초 권장. 몰입도 높은 네이티브 광고. 세이프존 준수 필수. <a href="https://ads.tiktok.com/help/" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>'},
-  { icon:'🟠', name:'당근마켓', type:'지역 기반 DA', bg:'rgba(255,111,0,0.1)', tags:['지역타겟','동네주민','로컬','오프라인'], desc:'지역 기반 초정밀 타겟. 동네 주민 대상. 오프라인 매장 연결에 최적. 제목 40자, 설명 80자 제한. <a href="https://business.daangn.com/" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>'},
-  { icon:'🔵', name:'토스애즈', type:'금융 앱 광고', bg:'rgba(82,87,255,0.1)', tags:['금융유저','고의도','다양한포맷','검수'], desc:'금융 고의도 유저 대상. 네온 컬러 등 자극적 소재 금지. 문구 강조형·이미지·영상 등 다양한 포맷. 검수 2~3 영업일. <a href="https://tossads.gitbook.io/" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>'}
+  { icon:'🟡', name:'카카오모먼트', type:'국내 디스플레이', bg:'rgba(254,203,0,0.12)', tags:['비즈보드','채널추가','알림톡','전환'], desc:'카카오톡 생태계 기반. 4,700만 카카오 유저 대상. 비즈보드, 채널 추가, 비즈니스폼 등 다양한 상품 운영. <a href="https://kakaobusiness.gitbook.io/main/ad/moment" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>',
+    products:'비즈보드(기본/익스팬더블), 톡채널 추가, 메시지(알림톡/친구톡), 비즈니스폼', billing:'CPC·CPM·CPA(자동입찰), 메시지는 발송 건당', targeting:'인구통계·관심사, 내 데이터(전화/이메일) 매칭, 픽셀&amp;SDK 리타겟팅, 톡채널 친구', fit:'저단가·즉각 반응이 필요한 커머스·앱(앱설치·전환·트래픽)' },
+  { icon:'🟢', name:'네이버 SA', type:'검색광고', bg:'rgba(3,199,90,0.1)', tags:['파워링크','품질지수','키워드','전환'], desc:'구매 의도 높은 유저가 직접 검색하는 채널. 품질지수가 광고 순위와 CPC에 직접 영향. 파워링크·쇼핑검색·브랜드검색. <a href="https://saedu.naver.com" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>',
+    products:'파워링크, 쇼핑검색광고, 브랜드검색, 플레이스', billing:'CPC, 브랜드검색은 정액/기간형', targeting:'키워드(탐색·비교·구매·롱테일), 디바이스·지역·시간대 입찰조정', fit:'구매 의도 높은 검색 유저 — 전환이 핵심인 모든 업종(특히 쇼핑몰)' },
+  { icon:'🟢', name:'네이버 GFA', type:'성과형 DA', bg:'rgba(3,199,90,0.1)', tags:['학습상태','NDA','MAT','다이내믹'], desc:'국내 최대 DA 인벤토리. 학습 상태 기간(7~14일) 관리 중요. NDA 다이내믹광고, 동영상, 쇼핑프로모션 특화. <a href="https://saedu.naver.com/edu/gfa/" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>',
+    products:'NDA 다이내믹, 동영상(인스트림·아웃스트림), 스마트채널, 쇼핑 프로모션', billing:'CPM·CPC·CPA(자동입찰)', targeting:'관심사·구매의도, 유사타겟(LAL), MAT, 픽셀&amp;SDK 리타겟팅', fit:'브랜드 인지 확장·리타겟팅 — 도달과 재유입이 목표인 업종' },
+  { icon:'🔵', name:'구글 Ads', type:'글로벌 전 채널', bg:'rgba(66,133,244,0.1)', tags:['PMAX','검색','앱캠페인','AI자동화'], desc:'AI 기반 전 채널 자동화. PMAX로 검색·디스플레이·유튜브·쇼핑을 통합 운영. 글로벌 최대 광고 네트워크. <a href="https://support.google.com/google-ads/" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>',
+    products:'검색(SA), PMAX, 앱 캠페인(AC), 디맨드젠, 쇼핑(GMC)', billing:'CPC·CPM·CPV, tCPA·tROAS 자동입찰', targeting:'키워드·검색의도, 잠재고객 세그먼트, 리마케팅, PMAX AI 신호', fit:'검색·앱설치·영상·전 채널 전환을 AI로 통합 운영하려는 업종' },
+  { icon:'🔵', name:'Meta', type:'Facebook/Instagram', bg:'rgba(24,119,242,0.1)', tags:['Advantage+','CAPI','DPA','관심사타겟'], desc:'정밀한 관심사·행동 타겟팅. Advantage+ AI 자동화. 픽셀+CAPI 병행 필수. 카탈로그 DPA로 커머스에 강점. <a href="https://www.facebook.com/business/help" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>',
+    products:'피드/릴스/스토리, Advantage+ 쇼핑, 카탈로그 DPA, 컬렉션/캐러셀', billing:'CPM·CPC, 전환 자동입찰(최저비용/ROAS 목표)', targeting:'관심사·행동 상세, 맞춤타겟(픽셀·CAPI·고객리스트), 유사타겟(LAL)', fit:'비주얼 소재가 강한 커머스·D2C의 신규 유입·리타겟팅' },
+  { icon:'🟠', name:'크리테오', type:'쇼핑 리타겟팅 DSP', bg:'rgba(255,87,34,0.1)', tags:['LF캠페인','LAL','카탈로그피드','리타겟팅'], desc:'프리미엄 커머스 인벤토리 기반 리타겟팅 DSP. LF(하단퍼널)·Acquisition·CV LAL 캠페인 유형 운영. <a href="https://help.criteo.com/" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>',
+    products:'LF 리타겟팅, Acquisition(신규), CV LAL, 동적 배너', billing:'CPC 중심, 목표별 ROAS·전환 최적화', targeting:'방문자·장바구니 이탈 리타겟팅, 구매자 유사타겟, 카탈로그 상품 매칭', fit:'카탈로그·월 방문 10만+ 이커머스의 상시 리타겟팅' },
+  { icon:'⚫', name:'틱톡', type:'숏폼 영상', bg:'rgba(255,255,255,0.05)', tags:['9:16','세이프존','MZ세대','앱설치'], desc:'MZ세대 집중. 9:16 세로형 영상 9~15초 권장. 몰입도 높은 네이티브 광고. 세이프존 준수 필수. <a href="https://ads.tiktok.com/help/" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>',
+    products:'인피드(9:16), 스파크애즈, 탑뷰, 앱설치 캠페인', billing:'CPM·CPC·CPV, oCPM(전환 최적화)', targeting:'인구통계·관심사·행동, 콘텐츠 카테고리, 맞춤·유사타겟', fit:'세로 영상 후킹이 되는 트렌디 브랜드의 앱설치·브랜딩' },
+  { icon:'🟠', name:'당근마켓', type:'지역 기반 DA', bg:'rgba(255,111,0,0.1)', tags:['지역타겟','동네주민','로컬','오프라인'], desc:'지역 기반 초정밀 타겟. 동네 주민 대상. 오프라인 매장 연결에 최적. 제목 40자, 설명 80자 제한. <a href="https://business.daangn.com/" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>',
+    products:'지역 기반 DA(피드 배너), 동네 광고, 비즈프로필 연계', billing:'CPM·CPC', targeting:'읍·면·동(반경) 지역 타겟, 동네 주민, 연령·성별', fit:'동네 단위 방문·연락 유도가 목표인 자영업·로컬 서비스' },
+  { icon:'🔵', name:'토스애즈', type:'금융 앱 광고', bg:'rgba(82,87,255,0.1)', tags:['금융유저','고의도','다양한포맷','검수'], desc:'금융 고의도 유저 대상. 네온 컬러 등 자극적 소재 금지. 문구 강조형·이미지·영상 등 다양한 포맷. 검수 2~3 영업일. <a href="https://tossads.gitbook.io/" target="_blank" style="color:var(--primary);font-weight:bold;text-decoration:underline;">[공식 가이드📘]</a>',
+    products:'문구강조형, 이미지강조형, 보드배너, 영상배너', billing:'CPM·CPC', targeting:'인구통계·금융 관심 세그먼트, 금융 고관여(고의도) 유저', fit:'신뢰감 있는 소재가 필요한 금융·핀테크·커머스 전환' }
 ];
 
 function renderMedia() {
+  const row = (label, val) => val ? `<div class="md-row"><span class="md-k">${label}</span><span class="md-v">${val}</span></div>` : '';
   document.getElementById('mediaGrid').innerHTML = mediaData.map(m => `
     <div class="media-card">
       <div class="media-logo" style="background:${m.bg}">${m.icon}</div>
       <div class="media-name">${m.name}</div>
       <div class="media-type">${m.type}</div>
       <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin:10px 0">${m.desc}</p>
+      ${(m.products || m.billing || m.targeting || m.fit) ? `<div class="media-detail">
+        ${row('대표 상품', m.products)}
+        ${row('과금', m.billing)}
+        ${row('핵심 타겟팅', m.targeting)}
+        ${row('적합', m.fit)}
+      </div>` : ''}
       <div class="media-tags">${m.tags.map(t=>`<span class="media-tag">${t}</span>`).join('')}</div>
     </div>`).join('');
 }
@@ -1299,7 +1327,30 @@ const glossaryData = [
   { term:'CTA', en:'Call To Action', cat:'개념', catColor:'yellow', desc:'지금 구매, 더 알아보기 등 유저 행동을 유도하는 버튼 또는 문구.', formula:null },
   { term:'CAPI', en:'Conversions API', cat:'추적', catColor:'orange', desc:'서버 투 서버 전환 데이터 전송. iOS 14 이후 픽셀 손실 보완을 위해 Meta 필수 세팅.', formula:null },
   { term:'DPA', en:'Dynamic Product Ads', cat:'개념', catColor:'yellow', desc:'카탈로그 피드와 연동, 유저가 본 상품을 자동으로 광고 소재에 삽입하는 동적 광고.', formula:null },
-  { term:'PMAX', en:'Performance Max', cat:'개념', catColor:'yellow', desc:'구글의 AI 기반 전 채널 자동 최적화 캠페인. 검색·디스플레이·유튜브·쇼핑을 하나로 통합.', formula:null }
+  { term:'PMAX', en:'Performance Max', cat:'개념', catColor:'yellow', desc:'구글의 AI 기반 전 채널 자동 최적화 캠페인. 검색·디스플레이·유튜브·쇼핑을 하나로 통합.', formula:null },
+  { term:'객단가(AOV)', en:'Average Order Value', cat:'지표', catColor:'blue', desc:'주문 1건당 평균 결제 금액. ROAS가 높아도 객단가가 낮으면 실제 수익성이 낮을 수 있어 함께 봐야 합니다.', formula:'매출 ÷ 구매(주문) 건수' },
+  { term:'LTV', en:'Lifetime Value', cat:'지표', catColor:'blue', desc:'한 고객이 거래 기간 전체에 걸쳐 발생시키는 총 가치(이익). 신규 획득 비용(CAC)의 적정선을 판단하는 기준.', formula:'평균 객단가 × 구매 빈도 × 고객 유지 기간' },
+  { term:'CAC', en:'Customer Acquisition Cost', cat:'지표', catColor:'blue', desc:'신규 고객 1명을 획득하는 데 든 총비용. 광고비뿐 아니라 마케팅 인건비·툴 비용까지 포함해 CPA보다 넓은 개념.', formula:'고객 획득 총비용 ÷ 신규 고객 수' },
+  { term:'도달', en:'Reach', cat:'지표', catColor:'blue', desc:'광고를 1회 이상 본 순(unique) 사용자 수. 같은 사람이 여러 번 봐도 1로 계산되며, 노출수를 도달로 나누면 빈도가 됩니다.', formula:null },
+  { term:'노출', en:'Impression', cat:'지표', catColor:'blue', desc:'광고가 화면에 표시된 총횟수. 같은 사용자에게 여러 번 보여도 매번 합산되며, 클릭·전환의 분모가 되는 기본 단위.', formula:null },
+  { term:'뷰어블 임프레션', en:'Viewable Impression', cat:'지표', catColor:'blue', desc:'실제로 화면에 보였다고 인정되는 유효 노출. MRC 기준 디스플레이는 픽셀 50%↑가 1초↑, 동영상은 50%↑가 2초↑ 노출돼야 인정.', formula:null },
+  { term:'eCPM', en:'effective Cost Per Mille', cat:'과금', catColor:'purple', desc:'과금 방식과 무관하게 실제 지출을 1,000회 노출당 비용으로 환산한 값. 과금 모델이 다른 매체의 노출 효율을 같은 잣대로 비교.', formula:'총 광고비 ÷ 노출수 × 1,000' },
+  { term:'CPI', en:'Cost Per Install', cat:'과금', catColor:'purple', desc:'앱 설치 1건당 지불하는 비용. 앱 마케팅의 기본 과금·효율 지표로 설치는 MMP를 통해 집계.', formula:'광고비 ÷ 앱 설치수' },
+  { term:'CPL', en:'Cost Per Lead', cat:'과금', catColor:'purple', desc:'상담 신청·회원가입 등 잠재고객(리드) 1건을 확보하는 데 든 비용. 보험·금융·교육 등 리드 기반 업종의 핵심 지표.', formula:'광고비 ÷ 리드 수' },
+  { term:'ROI', en:'Return On Investment', cat:'지표', catColor:'blue', desc:'투자 대비 순이익률. 매출 기준인 ROAS와 달리 원가·마진을 반영한 실제 수익성. ROI 100%는 투자비용만큼의 순이익이 났다는 뜻.', formula:'(순이익 ÷ 투자비용) × 100(%)' },
+  { term:'MMP', en:'Mobile Measurement Partner', cat:'추적', catColor:'orange', desc:'앱 설치·인앱 행동의 출처를 매체별로 집계·정산하는 모바일 어트리뷰션 솔루션. 앱스플라이어·애드저스트가 대표적.', formula:null },
+  { term:'전환 윈도우', en:'Conversion Window', cat:'추적', catColor:'orange', desc:'광고 클릭(또는 조회) 후 일어난 전환을 그 광고 성과로 인정하는 기간(예: 클릭 후 7일). 매체마다 기본값이 달라 비교 시 반드시 확인.', formula:null },
+  { term:'ATT', en:'App Tracking Transparency', cat:'추적', catColor:'orange', desc:'애플이 iOS 14.5부터 의무화한 추적 동의 정책. 사용자가 앱 간 추적을 거부하면 IDFA 수집이 막혀 정밀 타겟팅·전환 추적이 제한.', formula:null },
+  { term:'핵심 이벤트', en:'Key Event', cat:'추적', catColor:'orange', desc:'GA4에서 비즈니스상 중요해 따로 표시한 이벤트(구매·가입·장바구니 등). 2024년 3월부터 기존 GA4의 전환(Conversion) 명칭이 핵심 이벤트로 변경.', formula:null },
+  { term:'딥링크', en:'Deep Link', cat:'개념', catColor:'yellow', desc:'앱이 설치된 사용자를 광고 클릭 시 앱의 특정 화면(상품·이벤트 페이지)으로 바로 보내는 링크. 첫 화면을 거치지 않아 전환율이 높음.', formula:null },
+  { term:'디퍼드 딥링크', en:'Deferred Deep Link', cat:'개념', catColor:'yellow', desc:'앱 미설치 사용자를 스토어로 보내 설치시킨 뒤, 첫 실행 시 원래 의도한 화면으로 연결해 주는 딥링크. 신규 설치 유저 경험을 끊김 없이 연결.', formula:null },
+  { term:'프리퀀시 캡', en:'Frequency Cap', cat:'타겟팅', catColor:'green', desc:'한 사용자에게 일정 기간 노출되는 광고 횟수의 상한을 설정하는 기능. 빈도가 과도하게 올라 광고 피로도가 쌓이는 것을 방지.', formula:null },
+  { term:'입찰 전략', en:'Bidding Strategy (tCPA/tROAS)', cat:'개념', catColor:'yellow', desc:'머신러닝이 목표에 맞게 입찰가를 자동 조정하는 방식. tCPA는 목표 전환당 비용, tROAS는 목표 광고비 대비 매출 기준으로 최적화.', formula:null },
+  { term:'CBO', en:'Campaign Budget Optimization', cat:'개념', catColor:'yellow', desc:'광고세트가 아닌 캠페인 단위에 예산을 두고 알고리즘이 성과 좋은 광고세트로 예산을 자동 배분하는 방식. Meta에서는 Advantage 캠페인 예산.', formula:null },
+  { term:'인크리멘탈리티', en:'Incrementality', cat:'개념', catColor:'yellow', desc:'광고가 없었어도 일어났을 전환을 제외하고, 광고 때문에 순수하게 추가로 발생한 전환만 따지는 개념. 대조군과 비교하는 리프트 테스트로 측정.', formula:null },
+  { term:'통계적 유의성', en:'Statistical Significance', cat:'개념', catColor:'yellow', desc:'A/B 테스트 결과의 차이가 우연이 아니라고 볼 수 있는 신뢰 수준. 표본이 적으면 차이가 커 보여도 우연일 수 있어 충분한 데이터 확보 후 판단.', formula:null },
+  { term:'코호트', en:'Cohort', cat:'개념', catColor:'yellow', desc:'가입일·첫 구매일 등 같은 시점·조건을 공유하는 사용자 집단. 시간 경과에 따른 재방문·잔존·구매 추이를 집단별로 비교 분석할 때 사용.', formula:null },
+  { term:'논오가닉', en:'Non-Organic', cat:'추적', catColor:'orange', desc:'광고를 통해 유입·설치된 트래픽. 자연 유입된 오가닉(Organic)과 구분되며, MMP로 매체별 기여를 집계해 성과를 평가.', formula:null }
 ];
 
 let activeFilter = 'ALL';
@@ -1399,7 +1450,27 @@ const faqData = [
   { q:'수치는 완벽한데, 광고주가 본인 취향이 아니라고 라이브 중지를 요청할 때요.',
     a:'철저히 데이터를 증거로 보여주며 설득해야 합니다. "광고주님 취향엔 다소 자극적일 수 있으나, 실제 주 타겟인 20대 여성의 최신 트렌드를 반영하여 전환율이 기존 대비 40% 높습니다"라며 데이터 기반으로 협상하세요.' },
   { q:'인턴 기간 동안 매체 세팅 말고 반드시 키워야 할 차별화 역량은 뭔가요?',
-    a:'버튼 누르는 세팅 기술은 한 달이면 누구나 합니다. 진짜 실력은 1) 떨어진 데이터에서 원인을 찾아내는 날카로운 논리력, 2) 위기를 유연하게 넘기는 타 부서/클라이언트와의 부드러운 커뮤니케이션 능력입니다.' }
+    a:'버튼 누르는 세팅 기술은 한 달이면 누구나 합니다. 진짜 실력은 1) 떨어진 데이터에서 원인을 찾아내는 날카로운 논리력, 2) 위기를 유연하게 넘기는 타 부서/클라이언트와의 부드러운 커뮤니케이션 능력입니다.' },
+  { q:'GA4랑 매체 광고관리자(어드민) 전환수가 서로 달라요. 뭐가 맞는 건가요?',
+    a:'둘 다 "틀린" 게 아니라 집계 기준이 다른 겁니다. 매체 어드민은 노출만 보고 산 것까지 자기 성과로 잡는 "조회 기여(View-through)"를 포함하고 어트리뷰션 기간도 길어 보통 GA4보다 전환이 크게 잡힙니다. GA4는 보통 마지막 클릭 기준이라 더 보수적입니다. 보고 시 "어떤 기준의 숫자인지"를 명시하고, 정산용 KPI는 처음부터 "GA4 기준"으로 통일해두면 분쟁이 없습니다.' },
+  { q:'선배들이 UTM을 안 달면 큰일 난다던데, 왜 그렇게 중요한가요?',
+    a:'UTM이 없으면 그 클릭으로 들어온 매출이 GA4에서 출처 불명(direct/none)으로 잡혀, 내가 집행한 광고가 만든 성과를 증명할 수 없습니다. source/medium/campaign 3개는 빠짐없이, 팀 네이밍 규칙대로 통일해서 다세요. 한 글자라도 띄어쓰기·대소문자가 틀리면 GA4에서 다른 채널로 쪼개져 집계됩니다. ([UTM 빌더]·[네이밍 규칙] 참고)' },
+  { q:'프리퀀시(빈도)는 몇 이하로 관리하는 게 적정한가요?',
+    a:'업종·목적마다 다르지만 일반적으로 빈도 3.0을 넘기며 CTR이 꺾이기 시작하면 소재 피로도를 의심합니다. 리타겟팅은 좀 더 높아도 되지만, 신규 인지 캠페인에서 빈도만 높고 도달이 안 늘면 모수가 좁다는 신호입니다. 빈도는 절대 숫자보다 "CTR 하락과 함께 오르는지"를 같이 보는 게 핵심입니다.' },
+  { q:'예산이 설정한 만큼 다 소진되지 않아요. 왜 그런가요?',
+    a:'대부분 타겟 모수가 너무 좁거나 입찰가가 경쟁 대비 낮아 경매에서 지고 있는 경우입니다. 타겟을 점진적으로 넓히거나(LAL 1%→3%) 입찰가를 소폭 올려보세요. 소재 심사 보류, 노출 조건 미충족, 일 예산이 너무 낮아 머신이 보수적으로 트는 경우도 흔하니 함께 점검하세요. ([트러블슈팅 진단기] 참고)' },
+  { q:'전환이 며칠째 0건이에요. 뭐부터 확인해야 하나요?',
+    a:'먼저 "추적이 안 되는 것"과 "진짜 전환이 없는 것"을 구분하세요. 픽셀/전환 태그가 정상 발화하는지(Meta Pixel Helper, 구글 Tag Assistant), 전환 이벤트가 캠페인 목표에 연결됐는지를 먼저 봅니다. 추적이 정상인데 0이면 → 클릭이 있는데 전환 0이면 랜딩/가격/재고, 클릭 자체가 없으면 소재·타겟 문제로 좁혀가세요.' },
+  { q:'앱 광고랑 웹 광고는 성과 추적 방식이 어떻게 다른가요?',
+    a:'웹은 브라우저에 심는 "픽셀"로 추적하지만, 앱은 픽셀이 동작하지 않아 AppsFlyer·Adjust 같은 MMP의 SDK로 설치·인앱 행동을 추적합니다. 그래서 앱 캠페인은 "어트리뷰션 윈도우"(클릭 후 7일 등) 개념이 특히 중요합니다. 인턴 단계에선 "GA4=웹, MMP=앱"이라는 큰 그림과 어디서 설치가 잡히는지 흐름만 이해해도 충분합니다.' },
+  { q:'대행 수수료는 보통 어떻게 책정되나요? 클라이언트가 물어보면요?',
+    a:'국내 디지털 대행은 집행 광고비의 일정 비율을 받는 "미디어 커미션" 구조가 가장 흔하고, 고정 월 운영비(리테이너)나 성과 연동형도 있습니다. 정확한 요율·계약 조건은 회사마다 다르고 영업·계약 담당의 영역이니, 인턴이 임의로 숫자를 단정하지 마세요. 문의가 오면 "확인 후 담당자를 통해 정확히 안내드리겠다"고 받는 것이 안전합니다.' },
+  { q:'한 캠페인에 소재는 몇 개나 만들어야 하나요?',
+    a:'매체 성격에 따라 다릅니다. 머신러닝 자동 최적화형(구글 PMAX, Meta Advantage+)은 AI가 조합을 찾도록 이미지·카피를 넉넉히 넣는 게 유리합니다(PMAX는 이미지 10개↑ 권장). 반대로 A/B 테스트로 승자를 가릴 땐 변수를 통제해야 하므로 2~3개로 좁혀 시작하세요. "최적화에 먹일 소재"와 "비교 실험용 소재"는 목적이 다릅니다.' },
+  { q:'블프·명절 같은 시즌·경쟁 심화기에는 운영을 어떻게 대비하나요?',
+    a:'성수기엔 모두가 입찰을 올려 CPC·CPM이 뛰고 머신러닝 환경도 출렁입니다. 행사 직전 예산·타겟을 크게 건드리면 당일 학습이 초기화될 수 있으니, 최소 1주 전부터 하루 20% 내외로 점진 증액해 미리 학습을 안정화하세요. 단가가 오를 것을 가정해 [손익분기·예산]으로 손익분기 ROAS를 미리 계산해두면 "얼마까지 질러도 되는지" 판단이 섭니다.' },
+  { q:'신규 클라이언트 첫 캠페인 예산은 어떻게 잡고 시작하는 게 안전한가요?',
+    a:'처음부터 전체 예산을 한 매체에 몰지 말고, 목표에 가장 맞는 1~2개 매체에서 학습 기간(7~14일)을 버틸 수준으로 시작하는 게 정석입니다. 일 예산이 목표 CPA보다 너무 낮으면 전환 데이터가 안 쌓여 학습을 못 합니다. 집행 전 [손익분기·예산 시뮬레이터]로 허용 CPA 한계선을 잡아두면 초기 데이터로 증액·감액을 판단하기 쉬워집니다.' }
 ];function renderFAQ() {
   const el = document.getElementById('faqGrid');
   if (!el) return;

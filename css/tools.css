@@ -230,6 +230,12 @@
   .tool-wrap { padding-left:4px; padding-right:4px; }
 }
 
+/* 매체 가이드 상세(대표상품·과금·타겟팅·적합) */
+.media-detail { margin:10px 0; padding:10px 12px; background:rgba(0,0,0,.2); border:1px solid var(--border); border-radius:var(--radius-sm); display:flex; flex-direction:column; gap:6px; }
+.media-detail .md-row { display:flex; gap:8px; font-size:11.5px; line-height:1.5; }
+.media-detail .md-k { flex-shrink:0; width:64px; color:var(--primary); font-weight:700; }
+.media-detail .md-v { color:var(--text-secondary); }
+
 /* ============================================================
    도구 표준화 보강 (8개 도구 일관성)
    ============================================================ */
