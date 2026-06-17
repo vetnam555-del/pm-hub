@@ -136,31 +136,53 @@ function a11yEnhance(root) {
 (function () {
   let active = null; // 현재 열린(호버/포커스) 트리거 — 스크롤·리사이즈 재배치용
   let raf = 0;
+  // 트리거의 '실제 용어 텍스트' 사각형을 구한다.
+  // .tip-trigger가 flex 컨테이너(예: 팁 목록 li) 안에 있으면 flex 아이템으로
+  // 블록화·세로 stretch 되어 박스가 글자보다 훨씬 커진다(예: 20px 글자가 100px 박스).
+  // 그 박스(top) 기준으로 올리면 툴팁이 글자보다 한참 위에 뜬다 → Range로 글자 첫 줄만 측정.
+  function triggerRect(trigger) {
+    try {
+      const range = document.createRange();
+      range.setStart(trigger, 0);
+      range.setEnd(trigger, 1); // 첫 자식(용어 텍스트 노드)만 — .gloss-pop 자식 제외
+      const rects = range.getClientRects();
+      if (rects && rects.length) return rects[0]; // 여러 줄이면 첫 줄 기준
+      const rb = range.getBoundingClientRect();
+      if (rb && (rb.width || rb.height)) return rb;
+    } catch (e) { /* 폴백 */ }
+    return trigger.getBoundingClientRect();
+  }
   function positionGlossPop(trigger) {
     const pop = trigger.querySelector(':scope > .gloss-pop'); // 직계 말풍선만(중첩 방지)
     if (!pop) return;
     pop.classList.remove('below');
+    // 컨테이닝 블록 보정: 모달 오버레이의 backdrop-filter(또는 조상의 transform/filter)는
+    // position:fixed의 기준을 뷰포트가 아니라 그 조상으로 바꾼다. 그래서 left/top=0이
+    // 실제로 어느 뷰포트 좌표에 놓이는지(origin) 측정해, 뷰포트 목표좌표에서 빼서 적용한다.
     pop.style.left = '0px';
-    pop.style.top = '-9999px'; // 화면 밖에서 안전하게 치수 측정
-    const tr = trigger.getBoundingClientRect();
-    const pr = pop.getBoundingClientRect();
+    pop.style.top = '0px';
+    const origin = pop.getBoundingClientRect(); // (0,0)이 매핑되는 뷰포트 좌표 + 말풍선 크기
+    const popW = origin.width;
+    const popH = origin.height;
+    const tr = triggerRect(trigger);   // 실제 용어 글자 사각형(뷰포트 기준)
     const M = 10; // 뷰포트 여백
     const vw = document.documentElement.clientWidth;
     const vh = document.documentElement.clientHeight;
-    // 가로: 트리거 중앙 정렬 후 좌우 경계로 클램프
-    let left = tr.left + tr.width / 2 - pr.width / 2;
-    left = Math.max(M, Math.min(left, vw - pr.width - M));
-    // 세로: 기본은 트리거 위, 공간 부족하면 아래로 flip
-    let top = tr.top - pr.height - 8;
+    // 가로: 글자 중앙 정렬 후 좌우 경계로 클램프 (뷰포트 좌표)
+    let vx = tr.left + tr.width / 2 - popW / 2;
+    vx = Math.max(M, Math.min(vx, vw - popW - M));
+    // 세로: 기본은 글자 위, 공간 부족하면 아래로 flip (뷰포트 좌표)
+    let vy = tr.top - popH - 8;
     let below = false;
-    if (top < M) { top = tr.bottom + 8; below = true; }
-    if (below && top + pr.height > vh - M) top = Math.max(M, vh - pr.height - M);
-    pop.style.left = Math.round(left) + 'px';
-    pop.style.top = Math.round(top) + 'px';
+    if (vy < M) { vy = tr.bottom + 8; below = true; }
+    if (below && vy + popH > vh - M) vy = Math.max(M, vh - popH - M);
+    // 뷰포트 목표좌표 → 컨테이닝 블록 로컬좌표로 변환해 적용
+    pop.style.left = Math.round(vx - origin.left) + 'px';
+    pop.style.top = Math.round(vy - origin.top) + 'px';
     if (below) pop.classList.add('below');
-    // 화살표: 트리거 중앙을 가리키되 말풍선 안으로 클램프
-    let arrow = tr.left + tr.width / 2 - left;
-    arrow = Math.max(12, Math.min(arrow, pr.width - 12));
+    // 화살표: 글자 중앙을 가리키되 말풍선 안으로 클램프
+    let arrow = (tr.left + tr.width / 2) - vx;
+    arrow = Math.max(12, Math.min(arrow, popW - 12));
     pop.style.setProperty('--arrow-left', Math.round(arrow) + 'px');
   }
   function onEnter(e) {
