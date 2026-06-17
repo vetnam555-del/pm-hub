@@ -49,13 +49,13 @@ function restoreProgress() {
 // ─── Day Modal Data ───
 const dayData = {
   day1: {
-    week:'1주차', title:'HLL중앙 회사소개 및 오리엔테이션',
+    week:'1주차', title:'회사 소개 및 오리엔테이션',
     diff:'easy', time:'5시간',
-    why:'우리가 왜 압도적 매거진 기반의 360도 미디어 컴퍼니인지를 깊이 이해해야, 클라이언트에게 차별화된 퍼포먼스 제안을 할 수 있습니다.',
-    tags:['HLL중앙','스튜디오닷','기업비전'],
-    items:['[2026 전사 소개] 컨슈머 트렌드를 선도하는 크리에이티브 콘텐츠 하우스, HLL중앙 그룹 파악','핵심 4대 비즈니스: 매거진(ELLE 등), 스튜디오닷, 비주얼 엔터(써브라임), 커머스(오드삭스)','HLLer 3대 지향점(즐기는, 대화하는, 투명한) 내재화 및 팀 구조 이해','업무 툴 세팅: 팀즈, 구글 워크스페이스, 각 플랫폼별 광고관리자 초대 완료','<a href="https://publy.co/content/7249?s=bgs93u" target="_blank" style="color:var(--primary);text-decoration:underline;font-weight:bold">추천 아티클: 일이 없는 신입사원을 위한 할 일 50가지 (Publy)</a>'],
-    tips:["HLL중앙은 단순 퍼포먼스 대행사가 아니라 매거진 기반의 독보적 콘텐츠 리소스를 보유한 거인입니다. 이 무기를 어떻게 실무에서 활용할지 상상해보세요."],
-    mission:'HLL의 4대 핵심 사업(매거진/스튜디오/커머스/엔터) 중 자신이 마케터로서 가장 시너지를 낼 수 있는 분야 1p 메모 제출'
+    why:'회사의 사업 구조와 보유 미디어를 이해하면, 콘텐츠 자산을 활용한 퍼포먼스 제안의 폭이 넓어집니다.',
+    tags:['회사소개','조직이해','업무세팅'],
+    items:['[2026 전사 소개] 그룹의 사업 영역과 조직 구조 파악','4대 비즈니스: 매거진(ELLE 등), 스튜디오닷, 비주얼 엔터(써브라임), 커머스(오드삭스)','HLLer 3대 지향점(즐기는, 대화하는, 투명한) 및 팀 구조 이해','업무 툴 세팅: 팀즈, 구글 워크스페이스, 각 플랫폼별 광고관리자 초대 완료','<a href="https://publy.co/content/7249?s=bgs93u" target="_blank" style="color:var(--primary);text-decoration:underline;font-weight:bold">추천 아티클: 일이 없는 신입사원을 위한 할 일 50가지 (Publy)</a>'],
+    tips:["우리 회사는 매거진·스튜디오 등 자체 콘텐츠 제작 조직이 있습니다. 소재가 성과를 좌우하는 퍼포먼스 광고에서 이 자원을 어떻게 활용할 수 있을지 생각해보세요."],
+    mission:'회사의 4대 사업(매거진/스튜디오/커머스/엔터) 중 마케터로서 가장 시너지를 낼 수 있는 분야 1p 메모 제출'
   },
   day2: {
     week:'1주차', title:'퍼포먼스 마케팅 개념 이해', diff:'easy', time:'4시간',
@@ -1674,21 +1674,29 @@ function initProfile() {
 
 // ─── Glossary Tooltip System ───
 function applyTooltips(textStr) {
-  if(!textStr) return "";
-  let res = textStr;
-  const sortedGlossary = [...glossaryData].sort((a,b)=>b.term.length - a.term.length);
-  sortedGlossary.forEach(item => {
-    const termRegexStr = item.term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-    const regex = new RegExp('(' + termRegexStr + ')(?![^<]*>|[^<>]*</)', 'gi');
-    res = res.replace(regex, (match) => {
-      let descEscaped = item.desc;
-      let formulaEscaped = item.formula ? item.formula : '';
-      return `<span class="tip-trigger">${match}<span class="gloss-pop"><strong>${item.term}</strong>${descEscaped}${item.formula ? '<br><br>💡 공식: ' + formulaEscaped : ''}</span></span>`;
+  if (!textStr) return "";
+  const sorted = [...glossaryData].sort((a, b) => b.term.length - a.term.length);
+  // 용어 → 항목 매핑(긴 용어 우선). 대소문자 무시 매칭을 위해 소문자 키 사용
+  const map = {};
+  sorted.forEach(it => { const k = it.term.toLowerCase(); if (!(k in map)) map[k] = it; });
+  const alt = sorted.map(it => it.term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')).join('|');
+  if (!alt) return String(textStr);
+  const re = new RegExp(alt, 'gi');
+  // 핵심: 원본 텍스트를 '한 번만' 스캔한다.
+  // (이전 구현은 용어마다 누적 문자열을 재스캔해, 이미 삽입된 말풍선 설명 안의
+  //  용어까지 다시 감싸 중첩 툴팁을 만들었음 — fixed 전환 후 말풍선이 겹쳐 떴다.)
+  // 실제 HTML 태그(<a>, <br> 등)만 분리해 보존하고, 텍스트 조각만 처리한다.
+  // 부등호("노출 < 클릭")는 태그가 아니므로 그대로 둔다.
+  const parts = String(textStr).split(/(<\/?[a-zA-Z][^>]*>)/);
+  for (let i = 0; i < parts.length; i++) {
+    if (i % 2 === 1) continue; // 홀수 인덱스 = 태그, 건드리지 않음
+    parts[i] = parts[i].replace(re, (match) => {
+      const it = map[match.toLowerCase()];
+      if (!it) return match;
+      return `<span class="tip-trigger">${match}<span class="gloss-pop"><strong>${it.term}</strong>${it.desc}${it.formula ? '<br><br>💡 공식: ' + it.formula : ''}</span></span>`;
     });
-  });
-  // Clean up nested tooltips
-  res = res.replace(/<span class="tip-trigger">(<span class="tip-trigger">.*?<\/span>)<span class="gloss-pop">.*?<\/span><\/span>/g, '$1');
-  return res;
+  }
+  return parts.join('');
 }
 
 initProfile();

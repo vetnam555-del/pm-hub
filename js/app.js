@@ -130,6 +130,75 @@ function a11yEnhance(root) {
   });
 }
 
+// ─── 용어 툴팁 위치 보정 ───
+// .gloss-pop은 position:fixed라 모달/카드의 overflow를 탈출함. 트리거 기준으로
+// 좌표를 계산해 뷰포트 안으로 클램프하고, 위 공간이 없으면 아래로 뒤집는다.
+(function () {
+  let active = null; // 현재 열린(호버/포커스) 트리거 — 스크롤·리사이즈 재배치용
+  let raf = 0;
+  function positionGlossPop(trigger) {
+    const pop = trigger.querySelector(':scope > .gloss-pop'); // 직계 말풍선만(중첩 방지)
+    if (!pop) return;
+    pop.classList.remove('below');
+    pop.style.left = '0px';
+    pop.style.top = '-9999px'; // 화면 밖에서 안전하게 치수 측정
+    const tr = trigger.getBoundingClientRect();
+    const pr = pop.getBoundingClientRect();
+    const M = 10; // 뷰포트 여백
+    const vw = document.documentElement.clientWidth;
+    const vh = document.documentElement.clientHeight;
+    // 가로: 트리거 중앙 정렬 후 좌우 경계로 클램프
+    let left = tr.left + tr.width / 2 - pr.width / 2;
+    left = Math.max(M, Math.min(left, vw - pr.width - M));
+    // 세로: 기본은 트리거 위, 공간 부족하면 아래로 flip
+    let top = tr.top - pr.height - 8;
+    let below = false;
+    if (top < M) { top = tr.bottom + 8; below = true; }
+    if (below && top + pr.height > vh - M) top = Math.max(M, vh - pr.height - M);
+    pop.style.left = Math.round(left) + 'px';
+    pop.style.top = Math.round(top) + 'px';
+    if (below) pop.classList.add('below');
+    // 화살표: 트리거 중앙을 가리키되 말풍선 안으로 클램프
+    let arrow = tr.left + tr.width / 2 - left;
+    arrow = Math.max(12, Math.min(arrow, pr.width - 12));
+    pop.style.setProperty('--arrow-left', Math.round(arrow) + 'px');
+  }
+  function onEnter(e) {
+    const t = e.target && e.target.closest && e.target.closest('.tip-trigger');
+    if (!t || t === active) return; // 같은 트리거 반복 mouseover는 스킵(리플로우 방지)
+    active = t;
+    positionGlossPop(t);
+  }
+  function onLeave(e) {
+    const t = e.target && e.target.closest && e.target.closest('.tip-trigger');
+    if (t && t === active) active = null;
+  }
+  document.addEventListener('mouseover', onEnter, true);
+  document.addEventListener('focusin', onEnter, true);
+  document.addEventListener('mouseout', onLeave, true);
+  document.addEventListener('focusout', onLeave, true);
+  // 터치 기기 지원: hover가 없으므로 탭하면 툴팁을 핀(.tip-open). 다른 곳 탭하면 닫힘
+  document.addEventListener('click', function (e) {
+    const t = e.target && e.target.closest && e.target.closest('.tip-trigger');
+    document.querySelectorAll('.tip-trigger.tip-open').forEach(el => { if (el !== t) el.classList.remove('tip-open'); });
+    if (!t) return;
+    if (t.classList.toggle('tip-open')) { active = t; positionGlossPop(t); }
+    else if (active === t) active = null;
+  });
+  // 모달 본문 스크롤·창 크기 변경 시, 열린 툴팁만 rAF로 1회 재배치
+  function reposition() {
+    raf = 0;
+    if (active && document.contains(active)) positionGlossPop(active);
+    else active = null;
+  }
+  function schedule() {
+    if (!active) return; // 열린 툴팁 없으면 즉시 종료(전역 질의 안 함)
+    if (!raf) raf = requestAnimationFrame(reposition);
+  }
+  window.addEventListener('resize', schedule);
+  document.addEventListener('scroll', schedule, { passive: true, capture: true });
+})();
+
 // ─── 사이드바 학습 아코디언 ───
 function toggleAccordion(headerEl) {
   const acc = headerEl.closest('.nav-accordion');

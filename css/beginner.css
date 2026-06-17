@@ -62,31 +62,32 @@
 .tip-trigger:hover {
   background: rgba(205, 255, 100, 0.1);
 }
-.tip-trigger:hover .gloss-pop {
+.tip-trigger:hover .gloss-pop,
+.tip-trigger:focus-visible .gloss-pop,
+.tip-trigger.tip-open .gloss-pop {
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%) translateY(-5px);
 }
+/* position:fixed → 모달/카드의 overflow:hidden을 탈출, JS(app.js)가 뷰포트 안으로 좌표 클램프 */
 .gloss-pop {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%) translateY(5px);
+  position: fixed;
+  left: 0;
+  top: -9999px;
   background: #2a2c31;
   border: 1px solid rgba(255,255,255,0.1);
   box-shadow: 0 8px 24px rgba(0,0,0,0.5);
   padding: 12px;
   border-radius: 8px;
   width: max-content;
-  max-width: 250px;
-  z-index: 9999;
+  max-width: min(280px, calc(100vw - 24px));
+  z-index: 10000;
   color: #f1f3f5;
   font-size: 13px;
   font-weight: 400;
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: opacity 0.18s ease, visibility 0.18s ease;
   text-align: left;
   line-height: 1.5;
 }
@@ -94,11 +95,17 @@
   content: '';
   position: absolute;
   top: 100%;
-  left: 50%;
+  left: var(--arrow-left, 50%);
   margin-left: -6px;
   border-width: 6px;
   border-style: solid;
   border-color: #2a2c31 transparent transparent transparent;
+}
+/* 위 공간이 부족해 아래로 뒤집힌 경우: 화살표를 위쪽으로 */
+.gloss-pop.below::after {
+  top: auto;
+  bottom: 100%;
+  border-color: transparent transparent #2a2c31 transparent;
 }
 .gloss-pop strong {
   color: var(--primary);

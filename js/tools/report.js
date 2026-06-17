@@ -146,7 +146,7 @@
         '<div class="field-row">' +
           '<div class="field">' +
             '<label>클라이언트명 <span class="opt">선택</span></label>' +
-            '<input type="text" id="reportClient" class="input" placeholder="예) HLL중앙 골프웨어">' +
+            '<input type="text" id="reportClient" class="input" placeholder="예) ○○브랜드 골프웨어">' +
           '</div>' +
           '<div class="field">' +
             '<label>리포트 기간 <span class="opt">선택</span></label>' +
@@ -234,7 +234,7 @@
       reportRenderRows(root, reportSampleRows());
       var c = root.querySelector('#reportClient');
       var p = root.querySelector('#reportPeriod');
-      if (c && !c.value) c.value = 'HLL중앙 골프웨어';
+      if (c && !c.value) c.value = '○○브랜드 골프웨어';
       if (p && !p.value) p.value = '6월 2주차 (6/8~6/14)';
       reportGenerate(root);
     });
