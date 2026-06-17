@@ -15,6 +15,8 @@ const _renderers = {
   'tool-report':   () => window.renderReportTool && renderReportTool(),
   'tool-diagnose': () => window.renderDiagnoseTool && renderDiagnoseTool(),
   'tool-abtest':   () => window.renderAbTestTool && renderAbTestTool(),
+  'tool-bid':      () => window.renderBidTool && renderBidTool(),
+  'tool-pacing':   () => window.renderPacingTool && renderPacingTool(),
   'utm-learn':     () => window.renderUtmLearn && renderUtmLearn(),
   'benchmark':     () => window.renderBenchmark && renderBenchmark(),
   'naming':        () => window.renderNaming && renderNaming(),
@@ -25,6 +27,7 @@ const PAGE_TITLES = {
   'home': '🏠 홈 대시보드',
   'tool-kpi': '📊 KPI 계산기', 'tool-utm': '🔗 UTM 빌더', 'tool-budget': '💰 손익분기·예산',
   'tool-report': '📝 주간 리포트', 'tool-diagnose': '🩺 트러블슈팅 진단', 'tool-abtest': '🧪 A/B 유의성',
+  'tool-bid': '📈 적정 입찰가', 'tool-pacing': '⏱️ 예산 페이싱',
   'utm-learn': '🎯 UTM 완전정복', 'media': '📡 매체 가이드', 'glossary': '📖 광고 용어 사전',
   'specs': '📐 소재 규격표', 'faq': '❓ 자주 묻는 질문', 'benchmark': '📊 매체 벤치마크', 'naming': '🏷️ 네이밍 규칙',
 };
@@ -71,7 +74,8 @@ function applyPage(id) {
   window.scrollTo(0, 0);
   root.style.scrollBehavior = prev;
 
-  // 접근성: 본문으로 포커스 이동(키보드 사용자 전환 인지)
+  // 접근성: 카드 키보드 조작 활성화 + 본문 포커스 이동
+  if (page) a11yEnhance(page);
   const main = document.querySelector('main');
   if (main) { main.setAttribute('tabindex', '-1'); main.focus({ preventScroll: true }); }
 
@@ -109,6 +113,16 @@ function closeSidebar() {
   const scrim = document.getElementById('sidebarScrim');
   if (sb) sb.classList.remove('open');
   if (scrim) scrim.classList.remove('open');
+}
+
+// ─── 접근성: 클릭형 카드(div)를 키보드로 조작 가능하게 ───
+function a11yEnhance(root) {
+  root = root || document;
+  root.querySelectorAll('.week-card[onclick], .day-item[onclick]').forEach(el => {
+    if (el.tagName === 'BUTTON') return;
+    if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+    if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+  });
 }
 
 // ─── 사이드바 학습 아코디언 ───
@@ -266,6 +280,8 @@ const SEARCH_INTENTS = [
   { kw:['리포트','보고','주간','보고서','대시보드'], go:'tool-report', label:'📝 주간 리포트 빌더' },
   { kw:['벤치마크','정상','평균','범위','기준','좋은','나쁜'], go:'benchmark', label:'📊 매체 벤치마크 — CTR·CVR 정상 범위' },
   { kw:['ab','a/b','유의','테스트','표본','통계'], go:'tool-abtest', label:'🧪 A/B 유의성 검정' },
+  { kw:['입찰','입찰가','bid','cpc 얼마','클릭당'], go:'tool-bid', label:'📈 적정 입찰가 계산기' },
+  { kw:['페이싱','소진','pacing','과속','월말','남은 예산'], go:'tool-pacing', label:'⏱️ 예산 페이싱 계산기' },
   { kw:['네이밍','이름','규칙','컨벤션','표준'], go:'naming', label:'🏷️ 네이밍 규칙' },
   { kw:['용어','뜻','무슨','뭐','뭔','약자','의미','이란','란?'], go:'glossary', label:'📖 광고 용어 사전 — 모르는 용어 검색' },
 ];
@@ -370,11 +386,21 @@ function renderOnboarding() {
 
 // ─── 전역 키보드 ───
 document.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); openSearch(); }
-  else if (e.key === 'Escape') { closeSearch(); closeSidebar(); }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); openSearch(); return; }
+  if (e.key === 'Escape') { closeSearch(); closeSidebar(); return; }
+  // 포커스된 클릭형 카드를 Enter/Space로 활성화
+  if (e.key === 'Enter' || e.key === ' ') {
+    const el = document.activeElement;
+    if (el && el.getAttribute && el.getAttribute('onclick') &&
+        (el.classList.contains('week-card') || el.classList.contains('day-item'))) {
+      e.preventDefault();
+      el.click();
+    }
+  }
 });
 
 // ─── 초기화 ───
 renderHomeSearch();
 renderOnboarding();
+a11yEnhance(document);
 initRouting();

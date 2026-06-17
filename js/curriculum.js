@@ -1512,11 +1512,37 @@ restoreProgress();
 // ─── Profile System ───
 function editProfileName() {
   const current = localStorage.getItem('internName') || '';
-  const name = prompt("당신의 이름을 설정해주세요\n(예: 홍길동, 제이콥 등)", current);
-  if (name !== null && name.trim() !== '') {
-    localStorage.setItem('internName', name.trim());
-    initProfile();
+  let ov = document.getElementById('nameModal');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'nameModal'; ov.className = 'name-modal-overlay';
+    ov.innerHTML =
+      '<div class="name-modal" role="dialog" aria-modal="true" aria-label="이름 설정">' +
+      '<div class="nm-title">이름 설정</div>' +
+      '<div class="nm-sub">사이드바와 인사말에 표시됩니다</div>' +
+      '<input id="nmInput" class="input" type="text" maxlength="20" placeholder="예: 홍길동, 제이콥">' +
+      '<div class="nm-btns"><button type="button" class="btn btn-ghost btn-sm" onclick="closeNameModal()">취소</button>' +
+      '<button type="button" class="btn btn-primary btn-sm" onclick="saveProfileName()">저장</button></div></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click', e => { if (e.target === ov) closeNameModal(); });
+    ov.querySelector('#nmInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); saveProfileName(); }
+      else if (e.key === 'Escape') { e.preventDefault(); closeNameModal(); }
+    });
   }
+  const inp = ov.querySelector('#nmInput');
+  inp.value = current;
+  ov.classList.add('open');
+  setTimeout(() => { inp.focus(); inp.select(); }, 30);
+}
+function saveProfileName() {
+  const v = (document.getElementById('nmInput').value || '').trim();
+  if (v) { localStorage.setItem('internName', v); initProfile(); }
+  closeNameModal();
+}
+function closeNameModal() {
+  const ov = document.getElementById('nameModal');
+  if (ov) ov.classList.remove('open');
 }
 function initProfile() {
   const name = localStorage.getItem('internName');

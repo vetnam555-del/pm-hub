@@ -59,6 +59,8 @@
     <button class="nav-item" data-page="tool-report" onclick="showPage('tool-report',this)"><span class="nav-icon">📝</span> 주간 리포트</button>
     <button class="nav-item" data-page="tool-diagnose" onclick="showPage('tool-diagnose',this)"><span class="nav-icon">🩺</span> 트러블슈팅 진단</button>
     <button class="nav-item" data-page="tool-abtest" onclick="showPage('tool-abtest',this)"><span class="nav-icon">🧪</span> A/B 유의성 검정</button>
+    <button class="nav-item" data-page="tool-bid" onclick="showPage('tool-bid',this)"><span class="nav-icon">📈</span> 적정 입찰가</button>
+    <button class="nav-item" data-page="tool-pacing" onclick="showPage('tool-pacing',this)"><span class="nav-icon">⏱️</span> 예산 페이싱</button>
 
     <div class="nav-section-title">📘 학습</div>
     <button class="nav-item" data-page="utm-learn" onclick="showPage('utm-learn',this)"><span class="nav-icon">🎯</span> UTM 완전정복</button>
@@ -115,7 +117,7 @@
       <h1 class="hero-title">배우고, 계산하고,<br><span class="highlight">바로 실무에 씁니다</span></h1>
       <p class="hero-desc">매일 쓰는 계산기·빌더·시뮬레이터부터 12주 온보딩 커리큘럼, 용어사전·규격·매체 가이드까지.<br>퍼포먼스 마케터의 책상 위 모든 것을 한 곳에 모았습니다.</p>
       <div class="hero-stats">
-        <div class="stat-item"><span class="stat-num">6</span><span class="stat-label">실무 도구</span></div>
+        <div class="stat-item"><span class="stat-num">8</span><span class="stat-label">실무 도구</span></div>
         <div class="stat-divider"></div>
         <div class="stat-item"><span class="stat-num">12</span><span class="stat-label">주 커리큘럼</span></div>
         <div class="stat-divider"></div>
@@ -170,6 +172,16 @@
         <button class="toolcard" onclick="showPage('tool-abtest',this)">
           <span class="tc-ico">🧪</span><span class="tc-title">A/B 유의성 검정</span>
           <span class="tc-desc">두 소재의 전환율 차이가 통계적으로 유의한지, 표본은 충분한지 z-검정으로 판정.</span>
+          <span class="tc-go">열기 →</span>
+        </button>
+        <button class="toolcard" onclick="showPage('tool-bid',this)">
+          <span class="tc-ico">📈</span><span class="tc-title">적정 입찰가 계산기</span>
+          <span class="tc-desc">목표 CPA·ROAS와 예상 전환율로 클릭당 최대 입찰가(CPC)를 역산. 수동 입찰 세팅에.</span>
+          <span class="tc-go">열기 →</span>
+        </button>
+        <button class="toolcard" onclick="showPage('tool-pacing',this)">
+          <span class="tc-ico">⏱️</span><span class="tc-title">예산 페이싱 계산기</span>
+          <span class="tc-desc">예산이 너무 빨리/느리게 소진되는지 점검. 권장 일 소진액·예상 월말 소진까지.</span>
           <span class="tc-go">열기 →</span>
         </button>
       </div>
@@ -300,6 +312,8 @@
   <div class="page" id="page-tool-report"></div>
   <div class="page" id="page-tool-diagnose"></div>
   <div class="page" id="page-tool-abtest"></div>
+  <div class="page" id="page-tool-bid"></div>
+  <div class="page" id="page-tool-pacing"></div>
   <div class="page" id="page-utm-learn"></div>
 
   <!-- ══ WEEK PAGES (JS 렌더) ══ -->
@@ -416,6 +430,8 @@
 <script src="js/tools/report.js"></script>
 <script src="js/tools/diagnose.js"></script>
 <script src="js/tools/abtest.js"></script>
+<script src="js/tools/bid.js"></script>
+<script src="js/tools/pacing.js"></script>
 <script src="js/tools/utm-learn.js"></script>
 <script src="js/app.js"></script>
 </body>

@@ -230,6 +230,15 @@
   .tool-wrap { padding-left:4px; padding-right:4px; }
 }
 
+/* 프로필 이름 설정 모달 (prompt 대체) */
+.name-modal-overlay { display:none; position:fixed; inset:0; z-index:350; background:rgba(0,0,0,.6); backdrop-filter:blur(3px); align-items:center; justify-content:center; padding:20px; }
+.name-modal-overlay.open { display:flex; }
+.name-modal { width:100%; max-width:380px; background:linear-gradient(145deg,#141929,#0F1422); border:1px solid var(--border); border-radius:16px; padding:24px; box-shadow: var(--shadow-lg); }
+.name-modal .nm-title { font-size:17px; font-weight:800; margin-bottom:4px; }
+.name-modal .nm-sub { font-size:12.5px; color: var(--text-muted); margin-bottom:14px; }
+.name-modal .input { margin-bottom:16px; }
+.name-modal .nm-btns { display:flex; justify-content:flex-end; gap:8px; }
+
 /* 환영 모달 보조 (액션 스텝) */
 .action-steps-box { text-align:left; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px 20px; margin-bottom:20px; }
 .action-step { display:flex; align-items:flex-start; gap:12px; margin-bottom:10px; }
