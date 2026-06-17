@@ -41,11 +41,13 @@
   function kpiQ(sel) { var r = kpiRoot(); return r ? r.querySelector(sel) : null; }
   function kpiQA(sel) { var r = kpiRoot(); return r ? r.querySelectorAll(sel) : []; }
 
-  // 입력 필드 1개 마크업
-  function kpiField(id, label, unit, hint) {
+  // 입력 필드 1개 마크업 (im: inputmode — 'numeric'(금액·정수) | 'decimal'(비율%·소수))
+  function kpiField(id, label, unit, hint, im) {
+    var mode = (im === 'decimal') ? 'decimal' : 'numeric';
+    var attrs = 'type="text" inputmode="' + mode + '" class="input" id="' + id + '" placeholder="0"';
     var affix = unit
-      ? '<div class="input-affix"><input type="number" inputmode="decimal" min="0" step="any" class="input" id="' + id + '" placeholder="0"><span class="affix">' + unit + '</span></div>'
-      : '<input type="number" inputmode="decimal" min="0" step="any" class="input" id="' + id + '" placeholder="0">';
+      ? '<div class="input-affix"><input ' + attrs + '><span class="affix">' + unit + '</span></div>'
+      : '<input ' + attrs + '>';
     return '<div class="field">'
       + '<label>' + label + ' <span class="opt">선택</span></label>'
       + affix
@@ -62,11 +64,11 @@
       + '</div>';
   }
 
-  // ROAS 강조 카드(풀폭 .metric.primary, m-value 32~36px) — 결론을 한눈에
+  // ROAS 강조 카드(풀폭 .metric.primary) — 결론을 한눈에. 폰트크기는 공통 CSS가 처리(primary 30px)
   function kpiRoasMetric() {
     return '<div class="metric primary" id="m-roas" style="margin-bottom:14px">'
       + '<div class="m-label">ROAS <span style="color:var(--text-muted);font-weight:600">광고수익률 · 매출 ÷ 광고비 × 100</span></div>'
-      + '<div class="m-value" style="font-size:34px">–</div>'
+      + '<div class="m-value">–</div>'
       + '<div class="formula"></div>'
       + '</div>';
   }
@@ -99,15 +101,14 @@
       + '<div class="panel-title">캠페인 실적 입력</div>'
       + '<div class="panel-sub">아는 값만 넣으면 됩니다. 입력 즉시 계산돼요.</div>'
       + '</div></div>'
-      + kpiField('kpi-imp', '노출수', '회', '광고가 화면에 노출된 횟수')
-      + kpiField('kpi-clk', '클릭수', '회', null)
-      + kpiField('kpi-cost', '광고비', '원', null)
-      + kpiField('kpi-conv', '전환수', '건', '구매·가입·신청 등 목표 행동')
-      + kpiField('kpi-rev', '매출', '원', '전환으로 발생한 총 매출액')
-      + kpiField('kpi-reach', '도달수', '명', '광고를 본 순(unique) 사용자 수 — 빈도 계산용')
+      + kpiField('kpi-imp', '노출수', '회', '광고가 화면에 노출된 횟수', 'numeric')
+      + kpiField('kpi-clk', '클릭수', '회', null, 'numeric')
+      + kpiField('kpi-cost', '광고비', '원', null, 'numeric')
+      + kpiField('kpi-conv', '전환수', '건', '구매·가입·신청 등 목표 행동', 'numeric')
+      + kpiField('kpi-rev', '매출', '원', '전환으로 발생한 총 매출액', 'numeric')
+      + kpiField('kpi-reach', '도달수', '명', '광고를 본 순(unique) 사용자 수 — 빈도 계산용', 'numeric')
       + '<div class="btn-row">'
       + '<button class="btn btn-ghost btn-sm" id="kpi-sample">✨ 예시 채우기</button>'
-      + '<button class="btn btn-ghost btn-sm" id="kpi-reset">↺ 초기화</button>'
       + '<button class="btn btn-ghost btn-sm" id="kpi-clear">🗑 입력 비우기</button>'
       + '</div>'
       + '</div>';
@@ -119,6 +120,11 @@
       + '<div class="panel-title">핵심 지표</div>'
       + '<div class="panel-sub">계산 가능한 지표만 표시됩니다.</div>'
       + '</div></div>'
+      // 입력 전 빈 상태(헤더 이모지와 동일한 📊)
+      + '<div class="empty-state" id="kpi-calc-empty"><div class="e-ico">📊</div>'
+      + '<div class="e-txt">노출·클릭·광고비·전환·매출을 입력하면<br>핵심 지표가 계산됩니다.</div></div>'
+      // 계산 결과 묶음(값이 하나라도 나오면 노출)
+      + '<div id="kpi-calc-body" style="display:none">'
       // ROAS = 결론. 최상단 풀폭 강조 카드
       + kpiRoasMetric()
       // 나머지 7개 지표
@@ -139,10 +145,16 @@
       + '<div class="callout info"><span class="c-ico">ℹ️</span><div>'
       + 'ROAS 100% = 본전(광고비=매출). 마진을 고려한 진짜 손익분기는 <b>[손익분기·예산]</b> 도구에서 확인하세요.'
       + '</div></div>'
+      // 결과 복사
+      + '<div class="btn-row"><button class="btn btn-ghost btn-sm copy-btn" id="kpi-copy">📋 결과 복사</button></div>'
       // 도구 연계 버튼(AOV 계산 시 동적 노출)
       + '<div class="btn-row" id="kpi-calc-actions"></div>'
+      + '</div>' // /#kpi-calc-body
       + '</div>';
   }
+
+  // 마지막 계산 스냅샷(결과 복사용 plain text 구성)
+  var kpiLastSnap = null;
 
   function kpiRecalc() {
     var imp = kpiCount(kpiQ('#kpi-imp') && kpiQ('#kpi-imp').value);
@@ -152,31 +164,45 @@
     var rev = kpiCount(kpiQ('#kpi-rev') && kpiQ('#kpi-rev').value);
     var reach = kpiCount(kpiQ('#kpi-reach') && kpiQ('#kpi-reach').value);
 
+    // 복사용 텍스트 누적(계산된 지표만)
+    var snap = { inputs: [], metrics: [], any: false };
+    if (imp != null) snap.inputs.push('노출 ' + fmtInt(imp) + '회');
+    if (clk != null) snap.inputs.push('클릭 ' + fmtInt(clk) + '회');
+    if (cost != null) snap.inputs.push('광고비 ' + fmtWon(cost));
+    if (conv != null) snap.inputs.push('전환 ' + fmtInt(conv) + '건');
+    if (rev != null) snap.inputs.push('매출 ' + fmtWon(rev));
+    if (reach != null) snap.inputs.push('도달 ' + fmtInt(reach) + '명');
+
     // CTR = 클릭/노출×100  (노출>0 필요) — 절대 임계값 색판정 제거(매체별 정상범위 상이)
     if (imp != null && imp > 0 && clk != null) {
       var ctr = clk / imp * 100;
       kpiSet('m-ctr', kpiVU(fmtPct(ctr), null), '클릭 ÷ 노출 × 100');
+      snap.metrics.push('CTR(클릭률): ' + fmtPct(ctr) + ' = 클릭 ÷ 노출 × 100'); snap.any = true;
     } else { kpiSet('m-ctr', null, '클릭 ÷ 노출 × 100'); }
 
     // CPC = 광고비/클릭  (클릭>0 필요)
     if (cost != null && clk != null && clk > 0) {
       kpiSet('m-cpc', kpiVU(fmtInt(cost / clk), '원'), '광고비 ÷ 클릭');
+      snap.metrics.push('CPC(클릭당비용): ' + fmtWon(cost / clk) + ' = 광고비 ÷ 클릭'); snap.any = true;
     } else { kpiSet('m-cpc', null, '광고비 ÷ 클릭'); }
 
     // CPM = 광고비/노출×1000  (노출>0 필요)
     if (cost != null && imp != null && imp > 0) {
       kpiSet('m-cpm', kpiVU(fmtInt(cost / imp * 1000), '원'), '광고비 ÷ 노출 × 1,000');
+      snap.metrics.push('CPM(1천회노출비용): ' + fmtWon(cost / imp * 1000) + ' = 광고비 ÷ 노출 × 1,000'); snap.any = true;
     } else { kpiSet('m-cpm', null, '광고비 ÷ 노출 × 1,000'); }
 
     // CVR = 전환/클릭×100  (클릭>0 필요) — 절대 임계값 색판정 제거(매체별 정상범위 상이)
     if (conv != null && clk != null && clk > 0) {
       var cvr = conv / clk * 100;
       kpiSet('m-cvr', kpiVU(fmtPct(cvr), null), '전환 ÷ 클릭 × 100');
+      snap.metrics.push('CVR(전환율): ' + fmtPct(cvr) + ' = 전환 ÷ 클릭 × 100'); snap.any = true;
     } else { kpiSet('m-cvr', null, '전환 ÷ 클릭 × 100'); }
 
     // CPA = 광고비/전환  (전환>0 필요)
     if (cost != null && conv != null && conv > 0) {
       kpiSet('m-cpa', kpiVU(fmtInt(cost / conv), '원'), '광고비 ÷ 전환');
+      snap.metrics.push('CPA(전환당비용): ' + fmtWon(cost / conv) + ' = 광고비 ÷ 전환'); snap.any = true;
     } else { kpiSet('m-cpa', null, '광고비 ÷ 전환'); }
 
     // ROAS = 매출/광고비×100  (광고비>0 필요) — primary, 100% 기준 색
@@ -190,6 +216,8 @@
         if (!sub) { sub = document.createElement('div'); sub.className = 'm-sub'; roEl.appendChild(sub); }
         sub.textContent = (rev >= cost ? '🟢 ' : '🔴 ') + rl + ' · 순이익 ' + fmtWon(rev - cost);
       }
+      snap.metrics.push('ROAS(광고수익률): ' + fmtPct(roas, roas >= 1000 ? 0 : 2)
+        + ' (' + rl + ' · 순이익 ' + fmtWon(rev - cost) + ') = 매출 ÷ 광고비 × 100'); snap.any = true;
     } else {
       kpiSet('m-roas', null, '매출 ÷ 광고비 × 100');
       var roEl2 = kpiQ('#m-roas');
@@ -201,18 +229,39 @@
     if (rev != null && conv != null && conv > 0) {
       aovVal = rev / conv;
       kpiSet('m-aov', kpiVU(fmtInt(aovVal), '원'), '매출 ÷ 전환');
+      snap.metrics.push('객단가(AOV): ' + fmtWon(aovVal) + ' = 매출 ÷ 전환'); snap.any = true;
     } else { kpiSet('m-aov', null, '매출 ÷ 전환'); }
 
     // 빈도 Frequency = 노출/도달  (도달>0 필요)
     if (imp != null && reach != null && reach > 0) {
       var freq = imp / reach;
       kpiSet('m-freq', kpiVU(freq.toFixed(2), '회'), '노출 ÷ 도달', freq > 3 ? 'bad' : null);
+      snap.metrics.push('빈도(Frequency): ' + freq.toFixed(2) + '회 = 노출 ÷ 도달'); snap.any = true;
     } else { kpiSet('m-freq', null, '노출 ÷ 도달'); }
+
+    // 빈 상태 ↔ 결과 토글(계산된 지표가 하나도 없으면 빈 상태)
+    var emptyEl = kpiQ('#kpi-calc-empty');
+    var bodyEl = kpiQ('#kpi-calc-body');
+    if (emptyEl) emptyEl.style.display = snap.any ? 'none' : '';
+    if (bodyEl) bodyEl.style.display = snap.any ? '' : 'none';
+
+    kpiLastSnap = snap;
 
     // 도구 연계 버튼: AOV 계산 시 손익분기 연결, 항상 용어사전 제공
     kpiRenderActions(aovVal);
     // 입력값 영속화
     kpiSaveCalcState();
+  }
+
+  // 결과 복사용 plain text 구성
+  function kpiBuildCopyText() {
+    var snap = kpiLastSnap;
+    if (!snap || !snap.any) return null;
+    var lines = ['[KPI 계산기 — 핵심 지표]'];
+    if (snap.inputs.length) lines.push('입력: ' + snap.inputs.join(' / '));
+    lines.push('');
+    snap.metrics.forEach(function (m) { lines.push('· ' + m); });
+    return lines.join('\n');
   }
 
   // 결과 하단 도구 연계 버튼 렌더(AOV 유효 시 손익분기 버튼 추가)
@@ -259,12 +308,6 @@
     Object.keys(map).forEach(function (id) { var el = kpiQ('#' + id); if (el) el.value = map[id]; });
     kpiRecalc();
   }
-  function kpiResetCalc() {
-    KPI_CALC_IDS.forEach(function (id) {
-      var el = kpiQ('#' + id); if (el) el.value = '';
-    });
-    kpiRecalc();
-  }
   // 🗑 입력 비우기 — 저장된 상태까지 삭제 후 초기화
   function kpiClearCalc() {
     clearToolState('kpi');
@@ -282,8 +325,12 @@
       if (el) el.addEventListener('input', kpiRecalc);
     });
     var sb = kpiQ('#kpi-sample'); if (sb) sb.addEventListener('click', kpiFillSample);
-    var rb = kpiQ('#kpi-reset'); if (rb) rb.addEventListener('click', kpiResetCalc);
     var cb = kpiQ('#kpi-clear'); if (cb) cb.addEventListener('click', kpiClearCalc);
+    var cpy = kpiQ('#kpi-copy');
+    if (cpy) cpy.addEventListener('click', function () {
+      var txt = kpiBuildCopyText();
+      if (txt) copyToClipboard(txt, cpy);
+    });
     kpiRecalc();
   }
 
@@ -307,20 +354,20 @@
       + '</div></div>'
       // 케이스1 입력
       + '<div id="kpi-rev-cpa">'
-      + kpiField('kpi-r-budget', '광고비 예산', '원', '이번 캠페인에 쓸 총 예산')
-      + kpiField('kpi-r-tcpa', '목표 CPA', '원', '전환 1건당 허용 가능한 비용')
-      + kpiField('kpi-r-cvr1', '예상 전환율(CVR)', '%', '입력 시 필요 클릭수도 계산')
-      + kpiField('kpi-r-cpc1', '예상 클릭당비용(CPC)', '원', '입력 시 필요 광고비 검증')
+      + kpiField('kpi-r-budget', '광고비 예산', '원', '이번 캠페인에 쓸 총 예산', 'numeric')
+      + kpiField('kpi-r-tcpa', '목표 CPA', '원', '전환 1건당 허용 가능한 비용', 'numeric')
+      + kpiField('kpi-r-cvr1', '예상 전환율(CVR)', '%', '입력 시 필요 클릭수도 계산', 'decimal')
+      + kpiField('kpi-r-cpc1', '예상 클릭당비용(CPC)', '원', '입력 시 필요 광고비 검증', 'numeric')
       + '</div>'
       // 케이스2 입력
       + '<div id="kpi-rev-roas" style="display:none">'
-      + kpiField('kpi-r-aov', '객단가(AOV)', '원', '전환 1건당 평균 매출')
-      + kpiField('kpi-r-troas', '목표 ROAS', '%', '예: 400% = 광고비 1원당 매출 4원')
-      + kpiField('kpi-r-cvr2', '예상 전환율(CVR)', '%', '입력 시 허용 CPC도 계산')
+      + kpiField('kpi-r-aov', '객단가(AOV)', '원', '전환 1건당 평균 매출', 'numeric')
+      + kpiField('kpi-r-troas', '목표 ROAS', '%', '예: 400% = 광고비 1원당 매출 4원', 'decimal')
+      + kpiField('kpi-r-cvr2', '예상 전환율(CVR)', '%', '입력 시 허용 CPC도 계산', 'decimal')
       + '</div>'
       + '<div class="btn-row">'
       + '<button class="btn btn-ghost btn-sm" id="kpi-rev-sample">✨ 예시 채우기</button>'
-      + '<button class="btn btn-ghost btn-sm" id="kpi-rev-reset">↺ 초기화</button>'
+      + '<button class="btn btn-ghost btn-sm" id="kpi-rev-clear">🗑 입력 비우기</button>'
       + '</div>'
       + '</div>';
   }
@@ -335,11 +382,13 @@
       + '<div class="callout info"><span class="c-ico">ℹ️</span><div>'
       + '여기서는 마진을 반영하지 않은 단순 역산입니다. 마진 기반 손익분기 CPA/ROAS는 <b>[손익분기·예산]</b> 도구에서 계산하세요.'
       + '</div></div>'
+      // 공통 도구 연계: 용어 사전
+      + '<div class="btn-row"><button class="btn btn-ghost btn-sm" onclick="showPage(\'glossary\')">📖 용어 사전</button></div>'
       + '</div>';
   }
 
   function kpiEmptyState(msg) {
-    return '<div class="empty-state"><div class="e-ico">🧭</div><div class="e-txt">' + msg + '</div></div>';
+    return '<div class="empty-state"><div class="e-ico">📊</div><div class="e-txt">' + msg + '</div></div>';
   }
 
   function kpiRevRecalc() {
@@ -436,7 +485,8 @@
     }
     kpiRevRecalc();
   }
-  function kpiRevReset() {
+  // 🗑 입력 비우기 — 역산 입력 모두 비움(역산 모드는 영속화 상태 없음)
+  function kpiRevClear() {
     ['kpi-r-budget', 'kpi-r-tcpa', 'kpi-r-cvr1', 'kpi-r-cpc1', 'kpi-r-aov', 'kpi-r-troas', 'kpi-r-cvr2'].forEach(function (id) {
       var el = kpiQ('#' + id); if (el) el.value = '';
     });
@@ -452,7 +502,7 @@
       if (el) el.addEventListener('input', kpiRevRecalc);
     });
     var sb = kpiQ('#kpi-rev-sample'); if (sb) sb.addEventListener('click', kpiRevSample);
-    var rb = kpiQ('#kpi-rev-reset'); if (rb) rb.addEventListener('click', kpiRevReset);
+    var cb = kpiQ('#kpi-rev-clear'); if (cb) cb.addEventListener('click', kpiRevClear);
     kpiRevSetCase(kpiRevCase);
   }
 

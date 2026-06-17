@@ -19,7 +19,7 @@ function getDoneSet() {
   catch (_) { return new Set(); }
 }
 function saveDoneSet(set) {
-  localStorage.setItem('pm_done', JSON.stringify([...set]));
+  try { localStorage.setItem('pm_done', JSON.stringify([...set])); } catch (_) {}
 }
 function toggleDone(el, e) {
   e.stopPropagation();
@@ -27,6 +27,7 @@ function toggleDone(el, e) {
   const day = item.getAttribute('data-day');
   const isDone = item.classList.toggle('done');
   el.textContent = isDone ? '✓' : '';
+  el.setAttribute('aria-pressed', isDone ? 'true' : 'false');
   const set = getDoneSet();
   if (isDone) set.add(day); else set.delete(day);
   saveDoneSet(set);
@@ -38,8 +39,9 @@ function restoreProgress() {
   document.querySelectorAll('.day-item').forEach(item => {
     const day = item.getAttribute('data-day');
     const chk = item.querySelector('.day-check');
-    if (set.has(day)) { item.classList.add('done'); if (chk) chk.textContent = '✓'; }
-    else { item.classList.remove('done'); if (chk) chk.textContent = ''; }
+    const done = set.has(day);
+    item.classList.toggle('done', done);
+    if (chk) { chk.textContent = done ? '✓' : ''; chk.setAttribute('aria-pressed', done ? 'true' : 'false'); }
   });
   updateProgress();
 }
@@ -249,7 +251,7 @@ const dayData = {
       ['Meta 스토리·릴스','JPG/PNG/MP4 (30MB)','9:16=1080×1920','상하단 250px 핵심요소 배치 금지'],
       ['카카오 비즈보드','PNG-24 (300KB)','공통 1029×258px / 오브젝트형 1029×222px','오브젝트형은 투명배경, 텍스트 직접삽입 지양'],
       ['네이버 GFA 메인','JPG/PNG (230KB)','1250×370px','투명배경 불가. 텍스트 포함 가능'],
-      ['네이버 스마트채널','PNG (150KB)','750×160px','투명배경 가능. 오브젝트 형태 권장'],
+      ['네이버 스마트채널','PNG (200KB)','260×160px','투명배경 권장, 실사용 면적 70% 이하'],
       ['구글 PMAX','JPG/PNG/GIF (5120KB)','1200×1200(1:1) / 1200×628(1.91:1)','헤드라인 최대 15개, 이미지 최대 20개'],
       ['틱톡','MP4','9:16=1080×1920','9~15초 권장, 세이프존 준수 필수'],
       ['당근마켓','JPG/PNG','1:1=1080×1080 / 1.91:1=1200×628','제목 40자, 설명 80자 이하']
@@ -1186,10 +1188,19 @@ function openModal(dayId, e) {
   if (d.mission) html += `<div class="mission-box" style="margin-top:20px"><div class="mission-label">🎯 오늘의 미션</div><div class="mission-text">${d.mission}</div></div>`;
 
   document.getElementById('modalBody').innerHTML = html;
+  _modalLastFocus = document.activeElement;
   document.getElementById('detailOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden'; // 배경 스크롤 잠금
+  const closeBtn = document.querySelector('#detailModal .modal-close');
+  if (closeBtn) setTimeout(() => closeBtn.focus(), 30); // 모달로 포커스 이동
 }
 
-function closeModal() { document.getElementById('detailOverlay').classList.remove('open'); }
+let _modalLastFocus = null;
+function closeModal() {
+  document.getElementById('detailOverlay').classList.remove('open');
+  document.body.style.overflow = ''; // 스크롤 잠금 해제
+  if (_modalLastFocus && _modalLastFocus.focus) { try { _modalLastFocus.focus(); } catch (_) {} _modalLastFocus = null; }
+}
 function closeModalOutside(e) { if (e.target === document.getElementById('detailOverlay')) closeModal(); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
@@ -1320,7 +1331,7 @@ function filterGlossary() {
 function filterGlossaryWith(q) {
   let data = glossaryData;
   if (activeFilter !== 'ALL') data = data.filter(g => g.cat === activeFilter);
-  if (q) data = data.filter(g => g.term.toLowerCase().includes(q) || g.en.toLowerCase().includes(q) || g.desc.includes(q));
+  if (q) data = data.filter(g => g.term.toLowerCase().includes(q) || g.en.toLowerCase().includes(q) || g.desc.toLowerCase().includes(q));
   renderGlossary(data);
 }
 
@@ -1537,7 +1548,7 @@ function editProfileName() {
 }
 function saveProfileName() {
   const v = (document.getElementById('nmInput').value || '').trim();
-  if (v) { localStorage.setItem('internName', v); initProfile(); }
+  if (v) { try { localStorage.setItem('internName', v); } catch (_) {} initProfile(); }
   closeNameModal();
 }
 function closeNameModal() {

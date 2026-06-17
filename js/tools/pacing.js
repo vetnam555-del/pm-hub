@@ -2,7 +2,7 @@
 // pacing.js — 주간/월간 예산 페이싱 계산기
 // 진입점: window.renderPacingTool()  (컨테이너 id="page-tool-pacing")
 // 통합 계약: ES모듈 금지 / IIFE 캡슐화 / 외부 의존·CDN·네트워크·현재시각 API 금지
-// app.js 헬퍼 사용: fmtInt, fmtWon, fmtWonShort, fmtPct, saveToolState, loadToolState, showPage
+// app.js 헬퍼 사용: fmtInt, fmtWon, fmtWonShort, fmtPct, saveToolState, loadToolState, clearToolState, copyToClipboard, showPage
 // 전역 식별자는 모두 pacing* 접두사. 진입점만 window 노출.
 // ============================================================
 (function () {
@@ -92,7 +92,7 @@
               '<div class="field-hint">이번 기간(주간·월간)에 집행할 전체 예산</div>' +
             '</div>' +
 
-            '<div class="field-row c3">' +
+            '<div class="field-row">' +
               '<div class="field">' +
                 '<label>전체 기간<span class="req">필수</span></label>' +
                 '<div class="input-affix"><input type="text" inputmode="numeric" id="pacingTotalDays" placeholder="예: 30"><span class="affix">일</span></div>' +
@@ -112,7 +112,6 @@
 
             '<div class="btn-row">' +
               '<button class="btn btn-ghost btn-sm" id="pacingSample">✨ 예시 채우기</button>' +
-              '<button class="btn btn-ghost btn-sm" id="pacingReset">↺ 초기화</button>' +
               '<button class="btn btn-ghost btn-sm" id="pacingClear">🗑 입력 비우기</button>' +
             '</div>' +
           '</div>' +
@@ -129,8 +128,10 @@
 
         // 하단 연계 버튼
         '<div class="btn-row" style="margin-top:18px;">' +
+          '<button class="btn btn-ghost" id="pacingGoKpi">📊 KPI 계산기</button>' +
           '<button class="btn btn-ghost" id="pacingGoBudget">💰 손익분기·예산</button>' +
           '<button class="btn btn-ghost" id="pacingGoReport">📝 주간 리포트</button>' +
+          '<button class="btn btn-ghost" id="pacingGoGlossary">📖 용어 사전</button>' +
         '</div>' +
       '</div>';
 
@@ -162,13 +163,15 @@
       pacingPersist(root);
     });
 
-    // 초기화 / 입력 비우기 — 둘 다 입력 비우고 저장 제거
-    var resetBtn = root.querySelector('#pacingReset');
-    if (resetBtn) resetBtn.addEventListener('click', function () { pacingClearInputs(root); });
+    // 입력 비우기 — 모든 입력 비우고 저장 제거
     var clearBtn = root.querySelector('#pacingClear');
     if (clearBtn) clearBtn.addEventListener('click', function () { pacingClearInputs(root); });
 
     // 도구 연계 버튼
+    var goKpi = root.querySelector('#pacingGoKpi');
+    if (goKpi) goKpi.addEventListener('click', function () {
+      if (typeof showPage === 'function') showPage('tool-kpi');
+    });
     var goBudget = root.querySelector('#pacingGoBudget');
     if (goBudget) goBudget.addEventListener('click', function () {
       if (typeof showPage === 'function') showPage('tool-budget');
@@ -176,6 +179,10 @@
     var goReport = root.querySelector('#pacingGoReport');
     if (goReport) goReport.addEventListener('click', function () {
       if (typeof showPage === 'function') showPage('tool-report');
+    });
+    var goGlossary = root.querySelector('#pacingGoGlossary');
+    if (goGlossary) goGlossary.addEventListener('click', function () {
+      if (typeof showPage === 'function') showPage('glossary');
     });
 
     pacingCalc(root);
@@ -288,7 +295,7 @@
     html +=
       '<div class="metric">' +
         '<div class="m-label">📅 일 균등예산</div>' +
-        '<div class="m-value" style="font-size:21px;">' + fmtWon(dailyEven) + '</div>' +
+        '<div class="m-value">' + fmtWon(dailyEven) + '</div>' +
         '<div class="m-sub">총 예산 ÷ 전체 기간</div>' +
       '</div>';
 
@@ -299,7 +306,7 @@
     html +=
       '<div class="metric">' +
         '<div class="m-label">🎯 권장 일소진</div>' +
-        '<div class="m-value" style="font-size:21px;">' + (recDaily != null ? fmtWon(recDaily) : '–') + '</div>' +
+        '<div class="m-value">' + (recDaily != null ? fmtWon(recDaily) : '–') + '</div>' +
         '<div class="m-sub">' + recSub + '</div>' +
       '</div>';
 
@@ -322,12 +329,12 @@
       '<div class="result-grid" style="margin-top:12px;">' +
         '<div class="metric' + projClass + '">' +
           '<div class="m-label">🔮 예상 기간말 소진</div>' +
-          '<div class="m-value" style="font-size:21px;">' + (projected != null ? fmtWon(projected) : '–') + '</div>' +
+          '<div class="m-value">' + (projected != null ? fmtWon(projected) : '–') + '</div>' +
           '<div class="m-sub">' + projSub + '</div>' +
         '</div>' +
         '<div class="metric">' +
           '<div class="m-label">💰 남은 예산</div>' +
-          '<div class="m-value" style="font-size:21px;">' + fmtWon(remainBudget) + '</div>' +
+          '<div class="m-value">' + fmtWon(remainBudget) + '</div>' +
           '<div class="m-sub">총 예산 − 현재 소진 · 남은 ' + pacingTrim(remainDays) + '일</div>' +
         '</div>' +
       '</div>';
@@ -391,7 +398,32 @@
       '예상 기간말 소진은 <b>현재까지의 평균 일소진을 단순 연장한 추세 추정</b>입니다. ' +
       '실제 소진은 요일·캠페인 운영·입찰 경쟁에 따라 달라질 수 있으니 참고용으로 활용하세요.</div></div>';
 
+    // ── 결과 복사 ──
+    html +=
+      '<div class="btn-row">' +
+        '<button class="btn btn-ghost btn-sm copy-btn" id="pacingCopy">📋 결과 복사</button>' +
+      '</div>';
+
     out.innerHTML = html;
+
+    // 결과 복사(핵심 수치 + 판정 + 공식) — plain text
+    var copyBtn = out.querySelector('#pacingCopy');
+    if (copyBtn) copyBtn.addEventListener('click', function () {
+      var lines = ['[예산 페이싱]'];
+      lines.push('페이스: ' + (pace != null ? fmtInt(pace) + '% (' + paceSub + ')' : '–'));
+      lines.push('총 예산: ' + fmtWon(budget) + ' · 전체 ' + pacingTrim(totalDays) + '일 중 경과 ' + pacingTrim(elapsed) + '일');
+      lines.push('현재 소진: ' + fmtWon(spent) + ' · 이상 소진: ' + fmtWon(idealSpent));
+      lines.push('권장 일소진(남은 ' + pacingTrim(remainDays) + '일): ' + (recDaily != null ? fmtWon(recDaily) : '–'));
+      lines.push('예상 기간말 소진: ' + (projected != null ? fmtWon(projected) : '–') +
+        (projectedDiff != null
+          ? (projectedDiff > 0 ? ' (예산 대비 +' + fmtWonShort(projectedDiff) + '원 초과)'
+            : projectedDiff < 0 ? ' (예산 대비 ' + fmtWonShort(projectedDiff) + '원 미달)'
+            : ' (예산과 일치)')
+          : ''));
+      lines.push('남은 예산: ' + fmtWon(remainBudget));
+      lines.push('공식: 페이스 = 현재 소진 ÷ 이상 소진 × 100 / 예상 기간말 소진 = (현재 소진 ÷ 경과일) × 전체기간');
+      if (typeof copyToClipboard === 'function') copyToClipboard(lines.join('\n'), copyBtn);
+    });
   }
 
 })();

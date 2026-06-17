@@ -36,13 +36,15 @@
   function bidQA(sel) { var r = bidRoot(); return r ? r.querySelectorAll(sel) : []; }
 
   // 입력 필드 1개 마크업 (req: true면 "필수", 아니면 "선택")
-  function bidField(id, label, unit, hint, req) {
+  // mode: 'numeric'(금액·정수) | 'decimal'(비율%·소수). type은 "text"(콤마 붙여넣기 방어)
+  function bidField(id, label, unit, hint, req, mode) {
     var badge = req
       ? '<span class="req">필수</span>'
       : '<span class="opt">선택</span>';
+    var im = (mode === 'numeric') ? 'numeric' : 'decimal';
     var affix = unit
-      ? '<div class="input-affix"><input type="number" inputmode="decimal" min="0" step="any" class="input" id="' + id + '" placeholder="0"><span class="affix">' + unit + '</span></div>'
-      : '<input type="number" inputmode="decimal" min="0" step="any" class="input" id="' + id + '" placeholder="0">';
+      ? '<div class="input-affix"><input type="text" inputmode="' + im + '" class="input" id="' + id + '" placeholder="0"><span class="affix">' + unit + '</span></div>'
+      : '<input type="text" inputmode="' + im + '" class="input" id="' + id + '" placeholder="0">';
     return '<div class="field">'
       + '<label>' + label + ' ' + badge + '</label>'
       + affix
@@ -51,38 +53,39 @@
   }
 
   function bidEmptyState(msg) {
-    return '<div class="empty-state"><div class="e-ico">🧭</div><div class="e-txt">' + msg + '</div></div>';
+    return '<div class="empty-state"><div class="e-ico">📈</div><div class="e-txt">' + msg + '</div></div>';
   }
 
   // ============================================================
   // 입력 패널 (모드별 분기)
   // ============================================================
+  // 모드 전환 세그 (tool-hero 아래에 단독 배치)
+  function bidSegHtml() {
+    return '<div class="seg" id="bid-seg" role="tablist">'
+      + '<button class="seg-btn on" data-mode="cpa">🎯 목표 CPA 기준</button>'
+      + '<button class="seg-btn" data-mode="roas">📈 목표 ROAS 기준</button>'
+      + '</div>';
+  }
+
   function bidInputsHtml() {
     return '<div class="panel panel-sticky">'
       + '<div class="panel-head"><span class="ico">🎯</span><div>'
       + '<div class="panel-title">입찰 조건 입력</div>'
       + '<div class="panel-sub">목표를 정하면 클릭당 입찰 상한을 계산합니다. 입력 즉시 반영돼요.</div>'
       + '</div></div>'
-      // 모드 선택 세그
-      + '<div class="field"><label>기준</label>'
-      + '<div class="seg" id="bid-seg" role="tablist">'
-      + '<button class="seg-btn on" data-mode="cpa">🎯 목표 CPA 기준</button>'
-      + '<button class="seg-btn" data-mode="roas">📈 목표 ROAS 기준</button>'
-      + '</div></div>'
       // 모드1 입력 (목표 CPA 기준)
       + '<div id="bid-in-cpa">'
-      + bidField('bid-tcpa', '목표 CPA', '원', '전환 1건당 허용 가능한 최대 비용', true)
-      + bidField('bid-cvr1', '예상 전환율(CVR)', '%', '클릭 100회 중 몇 건이 전환되는지 (예: 3)', true)
+      + bidField('bid-tcpa', '목표 CPA', '원', '전환 1건당 허용 가능한 최대 비용', true, 'numeric')
+      + bidField('bid-cvr1', '예상 전환율(CVR)', '%', '클릭 100회 중 몇 건이 전환되는지 (예: 3)', true, 'decimal')
       + '</div>'
       // 모드2 입력 (목표 ROAS 기준)
       + '<div id="bid-in-roas" style="display:none">'
-      + bidField('bid-troas', '목표 ROAS', '%', '예: 400% = 광고비 1원당 매출 4원', true)
-      + bidField('bid-aov', '객단가(AOV)', '원', '전환 1건당 평균 매출', true)
-      + bidField('bid-cvr2', '예상 전환율(CVR)', '%', '클릭 100회 중 몇 건이 전환되는지 (예: 3)', true)
+      + bidField('bid-troas', '목표 ROAS', '%', '예: 400% = 광고비 1원당 매출 4원', true, 'decimal')
+      + bidField('bid-aov', '객단가(AOV)', '원', '전환 1건당 평균 매출', true, 'numeric')
+      + bidField('bid-cvr2', '예상 전환율(CVR)', '%', '클릭 100회 중 몇 건이 전환되는지 (예: 3)', true, 'decimal')
       + '</div>'
       + '<div class="btn-row">'
       + '<button class="btn btn-ghost btn-sm" id="bid-sample">✨ 예시 채우기</button>'
-      + '<button class="btn btn-ghost btn-sm" id="bid-reset">↺ 초기화</button>'
       + '<button class="btn btn-ghost btn-sm" id="bid-clear">🗑 입력 비우기</button>'
       + '</div>'
       + '</div>';
@@ -105,6 +108,7 @@
       + '<div class="btn-row" style="margin-top:10px">'
       + '<button class="btn btn-ghost btn-sm" id="bid-go-kpi">📊 KPI 계산기</button>'
       + '<button class="btn btn-ghost btn-sm" id="bid-go-budget">💰 손익분기·예산</button>'
+      + '<button class="btn btn-ghost btn-sm" id="bid-go-glossary">📖 용어 사전</button>'
       + '</div>'
       + '</div></div>'
       + '</div>';
@@ -132,7 +136,7 @@
       var html = '<div class="result-grid">'
         + '<div class="metric primary">'
         + '<div class="m-label">💸 적정 최대 CPC</div>'
-        + '<div class="m-value" style="font-size:34px">' + fmtWon(maxCpc) + '</div>'
+        + '<div class="m-value">' + fmtWon(maxCpc) + '</div>'
         + '<div class="formula">목표CPA × (CVR ÷ 100)  →  '
         + fmtInt(tcpa) + ' × ' + fmtPct(cvr) + ' = ' + fmtWon(maxCpc) + '</div>'
         + '</div>'
@@ -144,7 +148,14 @@
         + '이보다 비싸게 입찰하면 전환당 비용이 목표를 넘습니다.'
         + '</div></div>';
 
+      var copyTxt = '[적정 입찰가 — 목표 CPA 기준]\n'
+        + '적정 최대 CPC: ' + fmtWon(maxCpc) + '\n'
+        + '공식: 목표CPA × (CVR ÷ 100) = ' + fmtInt(tcpa) + '원 × ' + fmtPct(cvr) + ' = ' + fmtWon(maxCpc) + '\n'
+        + '입력: 목표 CPA ' + fmtWon(tcpa) + ', 예상 전환율(CVR) ' + fmtPct(cvr);
+      html += bidCopyRowHtml();
+
       out.innerHTML = html;
+      bidBindCopy(copyTxt);
 
     } else {
       // 모드2: 허용 CPA = AOV ÷ (목표ROAS/100); 적정 최대 CPC = 허용CPA × (CVR/100)
@@ -169,7 +180,7 @@
         + '</div>'
         + '<div class="metric primary">'
         + '<div class="m-label">💸 적정 최대 CPC</div>'
-        + '<div class="m-value" style="font-size:30px">' + fmtWon(maxCpc2) + '</div>'
+        + '<div class="m-value">' + fmtWon(maxCpc2) + '</div>'
         + '<div class="formula">허용CPA × (CVR ÷ 100)  →  '
         + fmtInt(allowCpa) + ' × ' + fmtPct(cvr2) + ' = ' + fmtWon(maxCpc2) + '</div>'
         + '</div>'
@@ -181,11 +192,33 @@
         + '클릭당 최대 <b>' + fmtWon(maxCpc2) + '</b>까지 입찰해도 목표 ROAS를 유지합니다.'
         + '</div></div>';
 
+      var copyTxt2 = '[적정 입찰가 — 목표 ROAS 기준]\n'
+        + '적정 최대 CPC: ' + fmtWon(maxCpc2) + '\n'
+        + '허용 CPA: ' + fmtWon(allowCpa) + '\n'
+        + '공식: 허용CPA = AOV ÷ (목표ROAS ÷ 100) = ' + fmtInt(aov) + '원 ÷ ' + fmtPct(troas, 0) + ' = ' + fmtWon(allowCpa) + '\n'
+        + '       최대 CPC = 허용CPA × (CVR ÷ 100) = ' + fmtInt(allowCpa) + '원 × ' + fmtPct(cvr2) + ' = ' + fmtWon(maxCpc2) + '\n'
+        + '입력: 목표 ROAS ' + fmtPct(troas, 0) + ', 객단가(AOV) ' + fmtWon(aov) + ', 예상 전환율(CVR) ' + fmtPct(cvr2);
+      html2 += bidCopyRowHtml();
+
       out.innerHTML = html2;
+      bidBindCopy(copyTxt2);
     }
 
     // 입력값 영속화
     bidSaveState();
+  }
+
+  // ── 결과 복사 버튼 (결과영역 내) ──
+  function bidCopyRowHtml() {
+    return '<div class="btn-row" style="margin-top:10px">'
+      + '<button class="btn btn-ghost btn-sm copy-btn" id="bid-copy">📋 결과 복사</button>'
+      + '</div>';
+  }
+  function bidBindCopy(text) {
+    var cb = bidQ('#bid-copy');
+    if (cb) cb.addEventListener('click', function () {
+      if (typeof copyToClipboard === 'function') copyToClipboard(text, cb);
+    });
   }
 
   // ============================================================
@@ -228,10 +261,6 @@
     }
     bidRecalc();
   }
-  function bidResetInputs() {
-    BID_IDS.forEach(function (id) { var el = bidQ('#' + id); if (el) el.value = ''; });
-    bidRecalc();
-  }
   // 🗑 입력 비우기 — 저장된 상태까지 삭제 후 초기화
   function bidClearInputs() {
     try { if (typeof clearToolState === 'function') clearToolState('bid'); } catch (e) {}
@@ -246,7 +275,6 @@
       if (el) el.addEventListener('input', bidRecalc);
     });
     var sb = bidQ('#bid-sample'); if (sb) sb.addEventListener('click', bidFillSample);
-    var rb = bidQ('#bid-reset'); if (rb) rb.addEventListener('click', bidResetInputs);
     var cb = bidQ('#bid-clear'); if (cb) cb.addEventListener('click', bidClearInputs);
 
     // 도구 연계 버튼
@@ -256,8 +284,26 @@
     });
     var gb = bidQ('#bid-go-budget');
     if (gb) gb.addEventListener('click', function () {
-      if (typeof showPage === 'function') showPage('tool-budget');
+      // ROAS 모드의 AOV(가능하면 margin)를 손익분기·예산으로 전달
+      var pre = bidBudgetPrefillArgs();
+      if (pre && typeof window.budgetPrefill === 'function') {
+        window.budgetPrefill(pre); // 내부에서 페이지 전환까지 처리
+      } else if (typeof showPage === 'function') {
+        showPage('tool-budget');
+      }
     });
+    var gg = bidQ('#bid-go-glossary');
+    if (gg) gg.addEventListener('click', function () {
+      if (typeof showPage === 'function') showPage('glossary');
+    });
+  }
+
+  // 손익분기·예산으로 넘길 prefill 인자 구성 (ROAS 모드의 AOV만 의미 있음; margin은 입력 없음→생략)
+  function bidBudgetPrefillArgs() {
+    if (bidMode !== 'roas') return null;
+    var aov = bidPos(bidQ('#bid-aov') && bidQ('#bid-aov').value);
+    if (aov == null) return null;
+    return { aov: aov };
   }
 
   // ── 모드 전환 ──
@@ -285,6 +331,7 @@
       + '    <p>목표 CPA나 ROAS를 지키려면 클릭당 얼마까지 입찰해도 되는지 산정합니다. '
       + '    전환율(CVR)을 반영해 "이 금액 이하면 목표 유지" 상한선을 알려드려요.</p>'
       + '  </div>'
+      + bidSegHtml()
       + '  <div id="bid-body">'
       + '    <div class="tool-grid wide-right">'
       + bidInputsHtml() + bidResultsHtml()

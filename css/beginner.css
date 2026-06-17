@@ -29,7 +29,7 @@
 /* ── Welcome Modal ── */
 .welcome-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:300; align-items:center; justify-content:center; padding:20px; }
 .welcome-overlay.open { display:flex; }
-.welcome-modal { background:linear-gradient(145deg,#141929,#0F1422); border:1px solid rgba(99,179,237,0.2); border-radius:20px; width:100%; max-width:520px; padding:40px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.6); animation:slideUp 0.4s cubic-bezier(0.4,0,0.2,1); }
+.welcome-modal { background:linear-gradient(145deg,#141929,#0F1422); border:1px solid rgba(var(--primary-rgb),0.2); border-radius:20px; width:100%; max-width:520px; padding:40px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.6); animation:slideUp 0.4s cubic-bezier(0.4,0,0.2,1); }
 .welcome-emoji { font-size:52px; margin-bottom:16px; display:block; }
 .welcome-title { font-size:24px; font-weight:800; letter-spacing:-0.5px; margin-bottom:10px; color:#F0F4FF; }
 .welcome-desc { font-size:14px; color:#8892A4; line-height:1.7; margin-bottom:24px; }

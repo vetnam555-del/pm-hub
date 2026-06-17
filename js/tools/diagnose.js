@@ -15,6 +15,9 @@
     answers: {}     // { questionId: optionValue }
   };
 
+  // 렌더 전 diagnosePrefill 호출 대비 보류 저장소 (report→진단 핸드오프용)
+  var diagPending = null;
+
   // ─── 증상 데이터 매트릭스 ───
   // q: 보조 질문 목록 (각 답에 따라 원인 순위/문구를 조정)
   // causes: 기본 원인 순위(가능성 높은 순), actions: 권장 액션, days: 관련 학습 Day
@@ -187,6 +190,36 @@
       '</div>';
 
     diagRender();
+
+    // 렌더 전 호출된 diagnosePrefill 보류분 반영 (report→진단 핸드오프)
+    if (diagPending != null) {
+      var pk = diagPending;
+      diagPending = null;
+      diagApplyPrefill(pk);
+    }
+  }
+
+  // ── 도구 연계: 외부에서 증상을 선택하고 STEP2로 진입 ──
+  // symptomKey 예: 'ctr','cvr','budget','cpa','roas','track'. 잘못된 키는 무시.
+  // 렌더 전 호출돼도 안전 — pending 저장 후 페이지 전환(전환이 렌더를 트리거).
+  window.diagnosePrefill = function (symptomKey) {
+    if (!symptomKey || !diagDATA[symptomKey]) return; // 잘못된 키 무시
+    var root = diagRoot();
+    if (!root || !root.querySelector('#diag-body')) {
+      diagPending = symptomKey;
+      if (typeof showPage === 'function') showPage('tool-diagnose');
+      return;
+    }
+    diagApplyPrefill(symptomKey);
+  };
+
+  // 증상 선택 + STEP2 진입 (답변 초기화)
+  function diagApplyPrefill(symptomKey) {
+    if (!diagDATA[symptomKey]) return;
+    diagState.symptom = symptomKey;
+    diagState.answers = {};
+    diagState.step = 2;
+    diagRender();
   }
 
   // ─── 스텝퍼 + 본문 렌더 (상태 기반 부분 갱신) ───
@@ -304,10 +337,14 @@
         causes = diagReorder(causes, '노출 조건 제한');
         lead = { type: 'warn', ico: '🔍', text: '소재 심사·노출 상태가 미확인입니다. <b>심사 반려/게재 제한</b>이면 ' +
           '타겟·입찰을 바꿔도 소진되지 않으니 가장 먼저 확인하세요.' };
-      } else if (a.narrow === 'yes') {
-        causes = diagReorder(causes, '타겟이 너무 좁음');
-      } else if (a.bid === 'yes') {
+      }
+      // narrow(타겟 좁음)·bid(입찰가 낮음)는 독립 원인 — 둘 다 yes면 모두 상위 반영.
+      // diagReorder는 각각 해당 원인을 맨 앞으로 끌어올리므로, 나중에 호출된 쪽이 최종 1순위가 된다.
+      if (a.bid === 'yes') {
         causes = diagReorder(causes, '입찰가 낮음');
+      }
+      if (a.narrow === 'yes') {
+        causes = diagReorder(causes, '타겟이 너무 좁음');
       }
     } else if (diagState.symptom === 'cpa') {
       if (a.new === 'yes') {
@@ -424,6 +461,7 @@
 
     // 컨트롤
     html += '<div class="btn-row">' +
+      '<button type="button" class="btn btn-ghost btn-sm copy-btn" data-act="copy-result">📋 결과 복사</button>' +
       '<button type="button" class="btn btn-primary" data-act="restart">🔄 다시 진단</button>' +
       '<button type="button" class="btn btn-ghost" data-act="back-2">← 보조 질문 수정</button>' +
       '</div>';
@@ -452,11 +490,34 @@
     return out;
   }
 
+  // ─── 결과 복사용 plain text 생성 (핵심 수치 없음 → 증상·원인순위·권장액션) ───
+  function diagPlainText(d, res, orderedActions) {
+    var lines = [];
+    lines.push('[트러블슈팅 진단] ' + d.title + ' — ' + d.desc);
+    lines.push('');
+    lines.push('■ 가능성 높은 원인 (점검 우선순위)');
+    var rankTxt = ['1순위', '2순위', '3순위', '4순위', '5순위'];
+    for (var c = 0; c < res.causes.length; c++) {
+      lines.push((rankTxt[c] || (c + 1) + '순위') + '. ' + res.causes[c].name +
+        ' — ' + res.causes[c].desc);
+    }
+    lines.push('');
+    lines.push('■ 권장 액션');
+    for (var k = 0; k < orderedActions.length; k++) {
+      lines.push((k + 1) + '. ' + orderedActions[k]);
+    }
+    return lines.join('\n');
+  }
+
   // 증상별 관련 도구 페이지 링크 (공통 + 증상별)
   function diagToolLinks(symptom) {
-    var links = [ { page: 'benchmark', label: '📊 매체 벤치마크' } ]; // 공통
+    var links = [
+      { page: 'tool-kpi', label: '📊 KPI 계산기' },   // 공통(표준 #5)
+      { page: 'benchmark', label: '📊 매체 벤치마크' } // 공통
+    ];
     if (symptom === 'roas') links.push({ page: 'tool-budget', label: '💰 손익분기·예산' });
     else if (symptom === 'track') links.push({ page: 'tool-utm', label: '🔗 UTM 빌더' });
+    links.push({ page: 'glossary', label: '📖 용어 사전' }); // 공통(표준 #5)
     return links;
   }
 
@@ -512,6 +573,14 @@
         } else if (act === 'goto') {
           var page = el.getAttribute('data-page');
           if (page && typeof window.showPage === 'function') window.showPage(page);
+        } else if (act === 'copy-result') {
+          var dd2 = diagDATA[diagState.symptom];
+          if (dd2) {
+            var res2 = diagResolve();
+            var acts2 = diagOrderActions(dd2, res2.causes);
+            var txt = diagPlainText(dd2, res2, acts2);
+            if (typeof copyToClipboard === 'function') copyToClipboard(txt, el);
+          }
         }
       });
     });

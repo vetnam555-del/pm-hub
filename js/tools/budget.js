@@ -79,12 +79,15 @@
   var BUDGET_STAGE_COLORS = ['#646CFF', '#63B3ED', '#68D391', '#F6AD55'];
 
   // 예산 시뮬레이터 기본 단계 정의
+  // 매체 벤치마크 정합 예시값(AOV 70,000 기준 단계 ROAS = CVR×AOV÷CPC):
+  //  인지 0.2%·CPC300 → 47% / 고려 0.8%·CPC450 → 124% / 전환 2.5%·CPC650 → 269% / 리텐션 3%·CPC450 → 467%
+  //  → 종합 ROAS 약 220%대로, 마진 30% 본전(약 333%)보다 낮게 잡아 "본전과 비교" 교훈을 주는 보수적 예시값
   function budgetDefaultStages() {
     return [
-      { key: 'awareness', name: '인지',    ratio: 20, cpc: 250, cvr: 0.3 },
-      { key: 'consider',  name: '고려',    ratio: 30, cpc: 500, cvr: 1.0 },
-      { key: 'convert',   name: '전환',    ratio: 40, cpc: 700, cvr: 3.0 },
-      { key: 'retention', name: '리텐션',  ratio: 10, cpc: 400, cvr: 5.0 }
+      { key: 'awareness', name: '인지',    ratio: 20, cpc: 300, cvr: 0.2 },
+      { key: 'consider',  name: '고려',    ratio: 30, cpc: 450, cvr: 0.8 },
+      { key: 'convert',   name: '전환',    ratio: 40, cpc: 650, cvr: 2.5 },
+      { key: 'retention', name: '리텐션',  ratio: 10, cpc: 450, cvr: 3.0 }
     ];
   }
 
@@ -224,9 +227,8 @@
           '</div>' +
 
           '<div class="btn-row">' +
+            '<button class="btn btn-ghost btn-sm" id="beFill">✨ 예시 채우기</button>' +
             '<button class="btn btn-ghost btn-sm" id="beClear">🗑 입력 비우기</button>' +
-            '<button class="btn btn-ghost btn-sm" id="beGoKpi">📊 KPI 계산기</button>' +
-            '<button class="btn btn-ghost btn-sm" id="beGoReport">📝 주간 리포트</button>' +
           '</div>' +
         '</div>' +
 
@@ -264,24 +266,27 @@
       el.addEventListener('input', function () { budgetCalcBE(body); budgetPersist(root); });
     });
 
-    // 입력 비우기 — 손익분기 탭 입력만 초기화(시뮬레이터 입력은 저장 유지)
-    var clearBtn = body.querySelector('#beClear');
-    if (clearBtn) clearBtn.addEventListener('click', function () {
-      ['beAov', 'beMargin', 'beVar', 'beTarget'].forEach(function (id) {
-        var el = body.querySelector('#' + id); if (el) el.value = '';
+    // 예시 채우기 — AOV 50000·마진 30%·기타비 0·목표ROAS 400
+    var fillBtn = body.querySelector('#beFill');
+    if (fillBtn) fillBtn.addEventListener('click', function () {
+      var ex = { beAov: '50,000', beMargin: '30', beVar: '0', beTarget: '400' };
+      Object.keys(ex).forEach(function (id) {
+        var el = body.querySelector('#' + id); if (el) el.value = ex[id];
       });
       budgetCalcBE(body);
       budgetPersist(root);
     });
 
-    // 도구 연계 버튼
-    var goKpi = body.querySelector('#beGoKpi');
-    if (goKpi) goKpi.addEventListener('click', function () {
-      if (typeof showPage === 'function') showPage('tool-kpi');
-    });
-    var goReport = body.querySelector('#beGoReport');
-    if (goReport) goReport.addEventListener('click', function () {
-      if (typeof showPage === 'function') showPage('tool-report');
+    // 입력 비우기 — 손익분기 탭 입력만 초기화 + 저장 키 정리(시뮬레이터 입력은 저장 유지)
+    var clearBtn = body.querySelector('#beClear');
+    if (clearBtn) clearBtn.addEventListener('click', function () {
+      ['beAov', 'beMargin', 'beVar', 'beTarget'].forEach(function (id) {
+        var el = body.querySelector('#' + id); if (el) el.value = '';
+      });
+      var cur = budgetLoad() || {};
+      ['beAov', 'beMargin', 'beVar', 'beTarget'].forEach(function (id) { delete cur[id]; });
+      budgetSave(cur);
+      budgetCalcBE(body);
     });
 
     budgetCalcBE(body);
@@ -304,7 +309,7 @@
     if (aov == null && !marginValid) {
       out.innerHTML =
         '<div class="empty-state">' +
-          '<div class="e-ico">📈</div>' +
+          '<div class="e-ico">💰</div>' +
           '<div class="e-txt">객단가와 마진율을 입력하면<br>본전 ROAS·CPA가 계산됩니다.</div>' +
         '</div>';
       return;
@@ -473,7 +478,49 @@
         '마진율을 입력하면 본전 ROAS가 계산됩니다. (예: 마진 30% → 약 333%, 마진 50% → 200%)</div></div>';
     }
 
+    // 결과 액션: 복사 + 도구 연계
+    html +=
+      '<div class="btn-row">' +
+        '<button class="btn btn-ghost btn-sm copy-btn" id="beCopy">📋 결과 복사</button>' +
+        '<button class="btn btn-ghost btn-sm" id="beGoKpi">📊 KPI 계산기</button>' +
+        '<button class="btn btn-ghost btn-sm" id="beGoReport">📝 주간 리포트</button>' +
+        '<button class="btn btn-ghost btn-sm" id="beGoGlossary">📖 용어 사전</button>' +
+      '</div>';
+
     out.innerHTML = html;
+
+    // 결과 복사(핵심 수치 + 공식) — plain text
+    var copyBtn = out.querySelector('#beCopy');
+    if (copyBtn) copyBtn.addEventListener('click', function () {
+      var lines = ['[손익분기]'];
+      lines.push('객단가(AOV): ' + (aov != null ? fmtInt(aov) + '원' : '–'));
+      lines.push('마진율: ' + (marginValid ? budgetTrim(margin) + '%' : '–'));
+      lines.push('건당 기타 변동비: ' + fmtInt(other) + '원');
+      lines.push('손익분기 ROAS: ' + (beRoas != null ? fmtInt(beRoas) + '%' : (beRoasUnreachable ? '달성 불가(공헌이익 0 이하)' : '–')));
+      lines.push('손익분기 CPA: ' + (beCpa != null ? fmtWon(beCpa) : '–'));
+      lines.push('건당 공헌이익: ' + (contribution != null ? fmtWon(contribution) : '–'));
+      if (target != null && aov != null) {
+        lines.push('목표 ROAS ' + budgetTrim(target) + '% → 목표 CPA ' + (targetCpa != null ? fmtWon(targetCpa) : '–') +
+          ', 건당 예상 이익 ' + (profitPerOrder != null ? fmtWon(profitPerOrder) : '–') +
+          (profitPerOrder != null ? (profitPerOrder >= 0 ? ' (흑자)' : ' (적자)') : ''));
+      }
+      lines.push('공식: 손익분기 CPA = AOV × (마진율÷100) − 기타변동비 / 손익분기 ROAS = AOV ÷ 공헌이익 × 100');
+      if (typeof copyToClipboard === 'function') copyToClipboard(lines.join('\n'), copyBtn);
+    });
+
+    // 도구 연계 버튼
+    var goKpi = out.querySelector('#beGoKpi');
+    if (goKpi) goKpi.addEventListener('click', function () {
+      if (typeof showPage === 'function') showPage('tool-kpi');
+    });
+    var goReport = out.querySelector('#beGoReport');
+    if (goReport) goReport.addEventListener('click', function () {
+      if (typeof showPage === 'function') showPage('tool-report');
+    });
+    var goGlossary = out.querySelector('#beGoGlossary');
+    if (goGlossary) goGlossary.addEventListener('click', function () {
+      if (typeof showPage === 'function') showPage('glossary');
+    });
   }
 
   // 마진율/ROAS 표시용: 정수면 정수, 소수면 최대 2자리(불필요한 0 제거)
@@ -558,9 +605,8 @@
           '</div>' +
 
           '<div class="btn-row">' +
-            '<button class="btn btn-ghost btn-sm" id="simReset">↺ 기본값 복원</button>' +
-            '<button class="btn btn-ghost btn-sm" id="simGoKpi">📊 KPI 계산기</button>' +
-            '<button class="btn btn-ghost btn-sm" id="simGoReport">📝 주간 리포트</button>' +
+            '<button class="btn btn-ghost btn-sm" id="simReset">🎲 예시값으로 복원</button>' +
+            '<button class="btn btn-ghost btn-sm" id="simClear">🗑 입력 비우기</button>' +
           '</div>' +
         '</div>' +
 
@@ -599,7 +645,7 @@
       el.addEventListener('input', function () { budgetCalcSim(body); budgetPersist(root); });
     });
 
-    // 기본값 복원 — 시뮬레이터 저장값 비우고 기본값으로 재렌더(손익분기 입력은 유지)
+    // 예시값으로 복원 — 시뮬레이터 저장값 비우고 기본 예시값으로 재렌더(손익분기 입력은 유지)
     body.querySelector('#simReset').addEventListener('click', function () {
       var cur = budgetLoad() || {};
       delete cur.sim;
@@ -608,14 +654,17 @@
       budgetRenderSim(root);
     });
 
-    // 도구 연계 버튼
-    var simGoKpi = body.querySelector('#simGoKpi');
-    if (simGoKpi) simGoKpi.addEventListener('click', function () {
-      if (typeof showPage === 'function') showPage('tool-kpi');
-    });
-    var simGoReport = body.querySelector('#simGoReport');
-    if (simGoReport) simGoReport.addEventListener('click', function () {
-      if (typeof showPage === 'function') showPage('tool-report');
+    // 입력 비우기 — 시뮬레이터 입력만 모두 비움 + 저장 키 정리(손익분기 입력은 유지)
+    body.querySelector('#simClear').addEventListener('click', function () {
+      ['simTotal', 'simDays', 'simAov'].forEach(function (id) {
+        var el = body.querySelector('#' + id); if (el) el.value = '';
+      });
+      body.querySelectorAll('.simRatio, .simCpc, .simCvr').forEach(function (el) { el.value = ''; });
+      var cur = budgetLoad() || {};
+      ['simTotal', 'simDays', 'simAov'].forEach(function (id) { delete cur[id]; });
+      delete cur.sim;
+      budgetSave(cur);
+      budgetCalcSim(body);
     });
 
     budgetCalcSim(body);
@@ -662,7 +711,7 @@
     if (total == null || aov == null) {
       out.innerHTML =
         '<div class="empty-state">' +
-          '<div class="e-ico">🧮</div>' +
+          '<div class="e-ico">💰</div>' +
           '<div class="e-txt">총 예산과 객단가(AOV)를 입력하면<br>단계별 예상 성과가 계산됩니다.</div>' +
         '</div>';
       return;
@@ -700,18 +749,17 @@
     var totalRoas = (sumBudget > 0) ? (sumRevenue / sumBudget * 100) : null;
     var totalCpa = (sumConv > 0) ? (sumBudget / sumConv) : null;
 
-    // ── 종합 요약 타일 ──
-    var roasClass = (totalRoas != null) ? (totalRoas >= 100 ? ' good' : ' bad') : '';
+    // ── 종합 요약 타일 ── (결론 지표는 종합 ROAS 1개만 primary)
     var html = '<div class="result-grid c3">';
     html +=
-      '<div class="metric' + roasClass + '">' +
+      '<div class="metric primary">' +
         '<div class="m-label">📈 종합 ROAS</div>' +
         '<div class="m-value">' + (totalRoas != null ? fmtInt(totalRoas) : '–') +
           (totalRoas != null ? '<span class="unit">%</span>' : '') + '</div>' +
         '<div class="m-sub">매출 ÷ 예산</div>' +
       '</div>';
     html +=
-      '<div class="metric primary">' +
+      '<div class="metric">' +
         '<div class="m-label">🛒 총 전환</div>' +
         '<div class="m-value">' + (sumConv > 0 ? fmtInt(sumConv) : '–') +
           (sumConv > 0 ? '<span class="unit">건</span>' : '') + '</div>' +
@@ -720,7 +768,7 @@
     html +=
       '<div class="metric">' +
         '<div class="m-label">💵 총 매출</div>' +
-        '<div class="m-value" style="font-size:21px;">' + (sumRevenue > 0 ? fmtWonShort(sumRevenue) : '–') + '</div>' +
+        '<div class="m-value">' + (sumRevenue > 0 ? fmtWonShort(sumRevenue) : '–') + '</div>' +
         '<div class="m-sub">' + (sumRevenue > 0 ? fmtWon(sumRevenue) : '예상 매출 합계') + '</div>' +
       '</div>';
     html += '</div>';
@@ -730,14 +778,14 @@
     html +=
       '<div class="metric">' +
         '<div class="m-label">🎯 종합 CPA</div>' +
-        '<div class="m-value" style="font-size:21px;">' + (totalCpa != null ? fmtWon(totalCpa) : '–') + '</div>' +
+        '<div class="m-value">' + (totalCpa != null ? fmtWon(totalCpa) : '–') + '</div>' +
         '<div class="m-sub">전환 1건당 평균 비용</div>' +
       '</div>';
     var perDay = (days != null) ? (total / days) : null;
     html +=
       '<div class="metric">' +
         '<div class="m-label">📅 일 예산</div>' +
-        '<div class="m-value" style="font-size:21px;">' + (perDay != null ? fmtWon(perDay) : '–') + '</div>' +
+        '<div class="m-value">' + (perDay != null ? fmtWon(perDay) : '–') + '</div>' +
         '<div class="m-sub">' + (perDay != null ? '총 예산 ÷ ' + budgetTrim(days) + '일' : '기간 입력 시 표시') + '</div>' +
       '</div>';
     html += '</div>';
@@ -805,13 +853,73 @@
         '</div></div>';
     }
 
+    // 손익분기 비교 캡션 — 기본 가정값은 예시이며 본전 ROAS와 비교 유도
+    html +=
+      '<div class="callout warn"><span class="c-ico">⚖️</span><div>' +
+      '이 표의 CPC·CVR은 <b>벤치마크 기반 예시 가정값</b>입니다. ' +
+      '종합 ROAS <b>' + (totalRoas != null ? fmtInt(totalRoas) + '%' : '–') + '</b>를 ' +
+      '<b>손익분기 계산기</b>의 본전 ROAS(예: 마진 30% → 약 333%)와 꼭 비교하세요 — ' +
+      '본전선보다 낮으면 가정대로 집행해도 적자입니다.</div></div>';
+
     // 면책 콜아웃
     html +=
       '<div class="callout info"><span class="c-ico">ℹ️</span><div>' +
       '예상치는 입력한 가정(CPC·CVR·AOV)에 따른 <b>추정</b>이며 실제와 다를 수 있습니다. ' +
       '집행 후 실제 데이터로 가정값을 보정해 정확도를 높이세요.</div></div>';
 
+    // 결과 액션: 복사 + 도구 연계
+    html +=
+      '<div class="btn-row">' +
+        '<button class="btn btn-ghost btn-sm copy-btn" id="simCopy">📋 결과 복사</button>' +
+        '<button class="btn btn-ghost btn-sm" id="simGoBe">📊 손익분기 계산기</button>' +
+        '<button class="btn btn-ghost btn-sm" id="simGoKpi">📊 KPI 계산기</button>' +
+        '<button class="btn btn-ghost btn-sm" id="simGoReport">📝 주간 리포트</button>' +
+        '<button class="btn btn-ghost btn-sm" id="simGoGlossary">📖 용어 사전</button>' +
+      '</div>';
+
     out.innerHTML = html;
+
+    // 결과 복사(종합 요약 + 단계별) — plain text
+    var simCopyBtn = out.querySelector('#simCopy');
+    if (simCopyBtn) simCopyBtn.addEventListener('click', function () {
+      var lines = ['[예산 시뮬레이션]'];
+      lines.push('총 예산: ' + fmtInt(total) + '원' + (days != null ? ' / ' + budgetTrim(days) + '일 (일 ' + fmtInt(perDay) + '원)' : ''));
+      lines.push('공통 AOV: ' + fmtInt(aov) + '원');
+      lines.push('종합 ROAS: ' + (totalRoas != null ? fmtInt(totalRoas) + '%' : '–') +
+        ' / 총 전환: ' + (sumConv > 0 ? fmtInt(sumConv) + '건' : '–') +
+        ' / 총 매출: ' + (sumRevenue > 0 ? fmtInt(sumRevenue) + '원' : '–') +
+        ' / 종합 CPA: ' + (totalCpa != null ? fmtWon(totalCpa) : '–'));
+      lines.push('단계별:');
+      rows.forEach(function (r) {
+        lines.push('  - ' + r.name + ' ' + budgetTrim(r.ratio) + '% | 예산 ' + fmtInt(r.budget) + '원 | 전환 ' +
+          (r.conv != null ? fmtInt(r.conv) + '건' : '–') + ' | ROAS ' + (r.roas != null ? fmtInt(r.roas) + '%' : '–'));
+      });
+      lines.push('※ 가정값(CPC·CVR) 기반 추정 — 손익분기 본전 ROAS와 비교 필요');
+      if (typeof copyToClipboard === 'function') copyToClipboard(lines.join('\n'), simCopyBtn);
+    });
+
+    // 도구 연계 버튼
+    var simGoBe = out.querySelector('#simGoBe');
+    if (simGoBe) simGoBe.addEventListener('click', function () {
+      var r = document.getElementById(CID);
+      if (!r) return;
+      budgetState.tab = 'be';
+      budgetSyncSeg(r);
+      budgetRenderBody(r);
+      budgetPersist(r);
+    });
+    var simGoKpi = out.querySelector('#simGoKpi');
+    if (simGoKpi) simGoKpi.addEventListener('click', function () {
+      if (typeof showPage === 'function') showPage('tool-kpi');
+    });
+    var simGoReport = out.querySelector('#simGoReport');
+    if (simGoReport) simGoReport.addEventListener('click', function () {
+      if (typeof showPage === 'function') showPage('tool-report');
+    });
+    var simGoGlossary = out.querySelector('#simGoGlossary');
+    if (simGoGlossary) simGoGlossary.addEventListener('click', function () {
+      if (typeof showPage === 'function') showPage('glossary');
+    });
   }
 
 })();

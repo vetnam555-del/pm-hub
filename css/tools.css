@@ -230,6 +230,20 @@
   .tool-wrap { padding-left:4px; padding-right:4px; }
 }
 
+/* ============================================================
+   도구 표준화 보강 (8개 도구 일관성)
+   ============================================================ */
+/* 결과 수치 타이포 2단 스케일 — 도구는 인라인 font-size 대신 클래스 사용 */
+.metric.primary .m-value { font-size: 30px; }   /* 헤드라인(결론) 지표 */
+.metric .m-value { overflow-wrap: anywhere; }     /* 거대 숫자가 타일을 밀지 않게 */
+.tool-hero p { word-break: keep-all; }            /* 한글 줄바꿈 */
+/* 모바일: 좁은 화면에서 결과 그리드 1열로 */
+@media (max-width: 380px) {
+  .result-grid, .result-grid.c3 { grid-template-columns: 1fr; }
+  .metric .m-value { font-size: 22px; }
+  .metric.primary .m-value { font-size: 26px; }
+}
+
 /* 프로필 이름 설정 모달 (prompt 대체) */
 .name-modal-overlay { display:none; position:fixed; inset:0; z-index:350; background:rgba(0,0,0,.6); backdrop-filter:blur(3px); align-items:center; justify-content:center; padding:20px; }
 .name-modal-overlay.open { display:flex; }

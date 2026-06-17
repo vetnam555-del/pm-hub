@@ -177,8 +177,7 @@
 
         '<div class="btn-row">' +
           '<button class="btn btn-ghost btn-sm" id="reportAddBtn">➕ 행 추가</button>' +
-          '<button class="btn btn-ghost btn-sm" id="reportSampleBtn">🎲 예시 채우기</button>' +
-          '<button class="btn btn-ghost btn-sm" id="reportClearBtn">🧹 비우기</button>' +
+          '<button class="btn btn-ghost btn-sm" id="reportSampleBtn">🎲 예시 행으로</button>' +
           '<button class="btn btn-ghost btn-sm" id="reportWipeBtn">🗑 입력 비우기</button>' +
           '<button class="btn btn-primary" id="reportGenBtn">📝 리포트 생성</button>' +
         '</div>' +
@@ -222,7 +221,6 @@
   function reportBind(root) {
     var addBtn = root.querySelector('#reportAddBtn');
     var sampleBtn = root.querySelector('#reportSampleBtn');
-    var clearBtn = root.querySelector('#reportClearBtn');
     var wipeBtn = root.querySelector('#reportWipeBtn');
     var genBtn = root.querySelector('#reportGenBtn');
     var tbody = root.querySelector('#reportRows');
@@ -231,6 +229,7 @@
       tbody.insertAdjacentHTML('beforeend', reportRowHtml({}));
       reportSaveState(root);
     });
+    // 🎲 예시 행으로 — 현실적인 예시 데이터로 행을 채우고 리포트 미리보기
     if (sampleBtn) sampleBtn.addEventListener('click', function () {
       reportRenderRows(root, reportSampleRows());
       var c = root.querySelector('#reportClient');
@@ -239,20 +238,14 @@
       if (p && !p.value) p.value = '6월 2주차 (6/8~6/14)';
       reportGenerate(root);
     });
-    if (clearBtn) clearBtn.addEventListener('click', function () {
-      reportRenderRows(root, reportSeedRows());
-      var out = root.querySelector('#reportOut');
-      if (out) out.innerHTML = reportEmptyState();
-      reportSaveState(root);
-    });
+    // 🗑 입력 비우기 — 저장된 입력 영구 삭제 + 진짜 빈 1행으로 (시드 자동 복원 금지)
     if (wipeBtn) wipeBtn.addEventListener('click', function () {
-      // 저장된 입력 영구 삭제 + 화면 초기화
       if (typeof clearToolState === 'function') { try { clearToolState(STATE_KEY); } catch (e) {} }
       var c = root.querySelector('#reportClient');
       var p = root.querySelector('#reportPeriod');
       if (c) c.value = '';
       if (p) p.value = '';
-      reportRenderRows(root, reportSeedRows());
+      reportRenderRows(root, [{}]);
       var out2 = root.querySelector('#reportOut');
       if (out2) out2.innerHTML = reportEmptyState();
     });
@@ -439,14 +432,22 @@
       copyToClipboard(reportTsv(rows, t), tsvBtn);
     });
 
-    // 연계 버튼 (트러블슈팅 진단 / 매체 벤치마크)
+    // 연계 버튼 (트러블슈팅 진단 / 매체 벤치마크 / KPI 계산기 / 용어 사전)
     var diagBtn = out.querySelector('#reportGoDiagnose');
     var benchBtn = out.querySelector('#reportGoBenchmark');
+    var kpiBtn = out.querySelector('#reportGoKpi');
+    var glossBtn = out.querySelector('#reportGoGlossary');
     if (diagBtn) diagBtn.addEventListener('click', function () {
       if (typeof showPage === 'function') showPage('tool-diagnose');
     });
     if (benchBtn) benchBtn.addEventListener('click', function () {
       if (typeof showPage === 'function') showPage('benchmark');
+    });
+    if (kpiBtn) kpiBtn.addEventListener('click', function () {
+      if (typeof showPage === 'function') showPage('tool-kpi');
+    });
+    if (glossBtn) glossBtn.addEventListener('click', function () {
+      if (typeof showPage === 'function') showPage('glossary');
     });
 
     // 생성 시점에 입력값 저장
@@ -488,17 +489,16 @@
       { label: '🛒 총 매출',   value: reportDash(reportWon(t.rev)), badge: deltaBadge(t.rev, t.pRev), cls: '' },
       { label: '📈 종합 ROAS', value: reportDash(reportPct(t.roas, 0)), badge: deltaBadgePp(t.roas, t.pRoas), cls: 'primary' },
       { label: '💸 종합 CPA',  value: reportDash(reportWon(t.cpa)), badge: '', cls: '' },
-      { label: '🔁 CTR / CVR', value: reportDash(reportPct(t.ctr, 2)) + ' / ' + reportDash(reportPct(t.cvr, 2)), small: true, badge: '', cls: '' }
+      { label: '🔁 CTR / CVR', value: reportDash(reportPct(t.ctr, 2)) + ' / ' + reportDash(reportPct(t.cvr, 2)), badge: '', cls: '' }
     ];
 
     var html = '<div style="font-size:13px;font-weight:800;color:var(--text-primary);margin:18px 0 10px">📌 이번 주 요약</div>';
     html += '<div class="result-grid c3">';
     for (var i = 0; i < cards.length; i++) {
       var c = cards[i];
-      var valSize = c.small ? 'font-size:17px' : '';
       html += '<div class="metric' + (c.cls ? ' ' + c.cls : '') + '">' +
         '<div class="m-label">' + c.label + '</div>' +
-        '<div class="m-value" style="' + valSize + '">' + c.value +
+        '<div class="m-value">' + c.value +
           (c.unit ? '<span class="unit">' + c.unit + '</span>' : '') + '</div>' +
         (c.badge ? '<div class="m-sub">전주 대비' + c.badge + '</div>' : '') +
         '</div>';
@@ -599,19 +599,20 @@
       items.push({ kind: 'warn', text: 'CPA(전환당 비용)가 전주 대비 크게 상승한 매체: ' + names + '. 전환 효율이 악화되어 소재·타겟 점검이 필요합니다.' });
     }
 
-    // (3) CTR 낮은 매체(<0.5%) / CVR 낮은 매체(<1%)
+    // (3) CTR 낮은 매체(<0.2%) / CVR 낮은 매체(<0.3%)
+    //     임계값을 보수적으로 낮춰 디스플레이/리타겟팅(카카오·GFA·크리테오, 정상 CTR 0.3~0.8%) 오탐 방지.
     var lowCtr = [], lowCvr = [];
     for (var k = 0; k < rows.length; k++) {
       var rr = rows[k];
-      if (rr.ctr != null && rr.ctr < 0.5) lowCtr.push(rr.name + ' (' + reportPct(rr.ctr, 2) + ')');
-      if (rr.cvr != null && rr.cvr < 1)   lowCvr.push(rr.name + ' (' + reportPct(rr.cvr, 2) + ')');
+      if (rr.ctr != null && rr.ctr < 0.2) lowCtr.push(rr.name + ' (' + reportPct(rr.ctr, 2) + ')');
+      if (rr.cvr != null && rr.cvr < 0.3) lowCvr.push(rr.name + ' (' + reportPct(rr.cvr, 2) + ')');
     }
-    var dispCaveat = ' (검색광고 기준이며 디스플레이/소셜은 정상 범위일 수 있음 → <b>[매체 벤치마크]</b> 참고)';
+    var dispCaveat = ' <b>※ 매체 유형 확인 필수</b> — 검색광고 기준이며 디스플레이/리타겟팅(카카오·GFA·크리테오 등)은 정상 범위일 수 있음 → <b>[매체 벤치마크]</b> 참고.';
     if (lowCtr.length) {
-      items.push({ kind: 'warn', text: 'CTR이 낮은 매체(<0.5%): <b>' + reportEsc(lowCtr.join(', ')) + '</b>. 소재 후킹/타겟 적합성을 점검하세요.' + dispCaveat });
+      items.push({ kind: 'warn', text: 'CTR이 낮은 매체(<0.2%): <b>' + reportEsc(lowCtr.join(', ')) + '</b>. 소재 후킹/타겟 적합성을 점검하세요.' + dispCaveat });
     }
     if (lowCvr.length) {
-      items.push({ kind: 'warn', text: 'CVR이 낮은 매체(<1%): <b>' + reportEsc(lowCvr.join(', ')) + '</b>. 랜딩페이지 정합성·타겟 정교화를 검토하세요.' + dispCaveat });
+      items.push({ kind: 'warn', text: 'CVR이 낮은 매체(<0.3%): <b>' + reportEsc(lowCvr.join(', ')) + '</b>. 랜딩페이지 정합성·타겟 정교화를 검토하세요.' + dispCaveat });
     }
 
     if (!items.length) {
@@ -663,15 +664,15 @@
         done = true;
       }
 
-      // CVR 낮음
-      if (!done && r.cvr != null && r.cvr < 1) {
-        acts.push({ ico: '🎯', text: '<b>' + reportEsc(r.name) + '</b> — CVR ' + reportPct(r.cvr, 2) + '로 낮음 → <b>랜딩·타겟</b> 정교화. <b>※ 검색광고 기준이며 디스플레이/소셜은 정상일 수 있음([매체 벤치마크] 참고).</b>' });
+      // CVR 낮음 (보수적 임계값 <0.3%)
+      if (!done && r.cvr != null && r.cvr < 0.3) {
+        acts.push({ ico: '🎯', text: '<b>' + reportEsc(r.name) + '</b> — CVR ' + reportPct(r.cvr, 2) + '로 낮음 → <b>랜딩·타겟</b> 정교화. <b>※ 매체 유형 확인 필수 — 검색광고 기준이며 디스플레이/리타겟팅(카카오·GFA·크리테오 등)은 정상일 수 있음([매체 벤치마크] 참고).</b>' });
         done = true;
       }
 
-      // CTR 낮음
-      if (!done && r.ctr != null && r.ctr < 0.5) {
-        acts.push({ ico: '🖼', text: '<b>' + reportEsc(r.name) + '</b> — CTR ' + reportPct(r.ctr, 2) + '로 낮음 → <b>소재 후킹</b> 개선. <b>※ 검색광고 기준이며 디스플레이/소셜은 정상일 수 있음([매체 벤치마크] 참고).</b>' });
+      // CTR 낮음 (보수적 임계값 <0.2%)
+      if (!done && r.ctr != null && r.ctr < 0.2) {
+        acts.push({ ico: '🖼', text: '<b>' + reportEsc(r.name) + '</b> — CTR ' + reportPct(r.ctr, 2) + '로 낮음 → <b>소재 후킹</b> 개선. <b>※ 매체 유형 확인 필수 — 검색광고 기준이며 디스플레이/리타겟팅(카카오·GFA·크리테오 등)은 정상일 수 있음([매체 벤치마크] 참고).</b>' });
         done = true;
       }
     }
@@ -713,6 +714,8 @@
     return '<div class="btn-row" style="margin-top:8px">' +
       '<button class="btn btn-ghost btn-sm" id="reportGoDiagnose">🩺 트러블슈팅 진단</button>' +
       '<button class="btn btn-ghost btn-sm" id="reportGoBenchmark">📊 매체 벤치마크</button>' +
+      '<button class="btn btn-ghost btn-sm" id="reportGoKpi">📊 KPI 계산기</button>' +
+      '<button class="btn btn-ghost btn-sm" id="reportGoGlossary">📖 용어 사전</button>' +
       '</div>';
   }
 
@@ -727,7 +730,7 @@
         '<div class="e-ico">📝</div>' +
         '<div class="e-txt">아직 생성된 리포트가 없습니다.<br>' +
         '매체별 수치를 입력한 뒤 <b>📝 리포트 생성</b> 버튼을 누르거나,<br>' +
-        '<b>🎲 예시 채우기</b>로 샘플 리포트를 확인해 보세요.</div>' +
+        '<b>🎲 예시 행으로</b>로 샘플 리포트를 확인해 보세요.</div>' +
       '</div>';
   }
 

@@ -37,9 +37,12 @@ const VALID_PAGES = new Set(Object.keys(PAGE_TITLES).concat(
 ));
 
 // ─── 라우팅 ───
-let _navigating = false;
 function applyPage(id) {
-  if (!VALID_PAGES.has(id)) id = 'home';
+  if (!VALID_PAGES.has(id)) {
+    id = 'home';
+    // 잘못된 해시는 #home 으로 정규화(주소창·시각 상태 불일치 방지)
+    if (location.hash && location.hash !== '#home') { try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {} }
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const page = document.getElementById('page-' + id);
   if (page) page.classList.add('active');
@@ -79,20 +82,22 @@ function applyPage(id) {
   const main = document.querySelector('main');
   if (main) { main.setAttribute('tabindex', '-1'); main.focus({ preventScroll: true }); }
 
+  // 홈 복귀 시 질문 검색창 초기화(지난 검색 결과 잔존 방지)
+  if (id === 'home') resetHomeSearch();
+
   closeSidebar();
 }
 
 // onclick 진입점 — 해시를 갱신하면 hashchange가 applyPage를 호출
 function showPage(id, btn) {
   const cur = location.hash.replace(/^#/, '');
-  if (cur === id) { applyPage(id); }            // 같은 해시 재클릭
-  else { _navigating = true; location.hash = id; } // 다르면 해시 변경 → hashchange
+  if (cur === id) { applyPage(id); }   // 같은 해시 재클릭 → 직접 적용
+  else { location.hash = id; }          // 다르면 해시 변경 → hashchange가 applyPage 호출
 }
 
 window.addEventListener('hashchange', () => {
   const id = location.hash.replace(/^#/, '') || 'home';
   applyPage(id);
-  _navigating = false;
 });
 
 // 초기 로드: 해시 있으면 해당 페이지로
@@ -245,7 +250,13 @@ function runSearch() {
   const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
   const box = document.getElementById('searchResults');
   let items = _searchIndex;
-  if (q) items = _searchIndex.filter(it => it.kw.toLowerCase().indexOf(q) >= 0 || it.label.toLowerCase().indexOf(q) >= 0);
+  if (q) {
+    const qNS = q.replace(/\s+/g, ''); // 공백 무시 매칭("학습상태"=="학습 상태")
+    items = _searchIndex.filter(it => {
+      const hay = (it.kw + ' ' + it.label).toLowerCase();
+      return hay.indexOf(q) >= 0 || hay.replace(/\s+/g, '').indexOf(qNS) >= 0;
+    });
+  }
   items = items.slice(0, 24);
   _searchSel = 0;
   if (!items.length) { box.innerHTML = '<div class="search-empty">검색 결과가 없습니다</div>'; box._items = []; return; }
@@ -284,6 +295,7 @@ const SEARCH_INTENTS = [
   { kw:['페이싱','소진','pacing','과속','월말','남은 예산'], go:'tool-pacing', label:'⏱️ 예산 페이싱 계산기' },
   { kw:['네이밍','이름','규칙','컨벤션','표준'], go:'naming', label:'🏷️ 네이밍 규칙' },
   { kw:['용어','뜻','무슨','뭐','뭔','약자','의미','이란','란?'], go:'glossary', label:'📖 광고 용어 사전 — 모르는 용어 검색' },
+  { kw:['학습','학습상태','러닝','learning','learning phase','커리큘럼','온보딩','day','일차'], go:'glossary', label:'📖 광고 용어 사전 (학습 상태 등 용어 검색)' },
 ];
 const HS_CHIPS = [
   ['📊 KPI 계산기','tool-kpi'], ['🔗 UTM 빌더','tool-utm'], ['💰 손익분기','tool-budget'],
@@ -305,9 +317,27 @@ function renderHomeSearch() {
     '</div></div>';
   const inp = document.getElementById('hsInput');
   inp.addEventListener('input', homeSearchRun);
-  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); homeSearchEnter(); } });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); homeSearchEnter(); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); _hsSel = Math.min(_hsSel + 1, _hsHits.length - 1); hsPaint(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); _hsSel = Math.max(_hsSel - 1, 0); hsPaint(); }
+    else if (e.key === 'Escape') { resetHomeSearch(); }
+  });
+}
+// 홈 질문창 초기화(홈 복귀 시 지난 결과 제거)
+function resetHomeSearch() {
+  const inp = document.getElementById('hsInput'); if (inp) inp.value = '';
+  const box = document.getElementById('hsResults'); if (box) { box.innerHTML = ''; box.classList.remove('on'); }
+  const chips = document.getElementById('hsChips'); if (chips) chips.style.display = '';
+  _hsHits = []; _hsSel = 0;
+}
+function hsPaint() {
+  const box = document.getElementById('hsResults'); if (!box) return;
+  [...box.querySelectorAll('.hs-item')].forEach((b, i) => b.classList.toggle('sel', i === _hsSel));
+  const sel = box.querySelector('.hs-item.sel'); if (sel) sel.scrollIntoView({ block: 'nearest' });
 }
 let _hsHits = [];
+let _hsSel = 0;
 function homeSearchRun() {
   const q = (document.getElementById('hsInput').value || '').trim().toLowerCase();
   const box = document.getElementById('hsResults');
@@ -316,11 +346,13 @@ function homeSearchRun() {
   if (chips) chips.style.display = 'none';
   _searchIndex = _searchIndex || buildSearchIndex();
   const tokens = q.split(/\s+/).filter(Boolean);
+  const qNS = q.replace(/\s+/g, ''); // 공백 무시 매칭
   const scored = _searchIndex.map(it => {
     const hay = (it.label + ' ' + it.kw).toLowerCase();
+    const hayNS = hay.replace(/\s+/g, '');
     let s = 0;
-    tokens.forEach(t => { if (hay.indexOf(t) >= 0) s++; });
-    if (hay.indexOf(q) >= 0) s += 2;
+    tokens.forEach(t => { if (hay.indexOf(t) >= 0 || hayNS.indexOf(t.replace(/\s+/g, '')) >= 0) s++; });
+    if (hay.indexOf(q) >= 0 || hayNS.indexOf(qNS) >= 0) s += 2;
     return { it, s };
   }).filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 8).map(x => x.it);
   // 의도 기반 바로가기 제안
@@ -329,19 +361,20 @@ function homeSearchRun() {
     if (intent.kw.some(k => q.indexOf(k) >= 0)) { suggest = intent; break; }
   }
   _hsHits = (suggest ? [{ type: '바로가기', label: suggest.label, go: () => showPage(suggest.go), _suggest: true }] : []).concat(scored);
+  _hsSel = 0;
   if (!_hsHits.length) {
     box.innerHTML = '<div class="hs-empty">딱 맞는 결과가 없어요.<br>아래 [자주 찾는] 버튼이나 좌측 메뉴, 또는 <b>Ctrl+K</b> 전체 검색을 이용해보세요.</div>';
     box.classList.add('on'); return;
   }
   box.innerHTML = _hsHits.map((h, i) =>
-    '<button class="hs-item' + (h._suggest ? ' hs-suggest' : '') + (i === 0 ? ' sel' : '') + '" data-i="' + i + '">' +
+    '<button class="hs-item' + (h._suggest ? ' hs-suggest' : '') + (i === _hsSel ? ' sel' : '') + '" data-i="' + i + '">' +
     '<span class="hs-type">' + escapeHtml(h.type) + '</span><span class="hs-label">' + escapeHtml(h.label) + '</span></button>'
   ).join('');
   [...box.querySelectorAll('.hs-item')].forEach(b => b.addEventListener('click', () => { const h = _hsHits[+b.dataset.i]; if (h) h.go(); }));
   box.classList.add('on');
 }
 function homeSearchEnter() {
-  if (_hsHits && _hsHits.length) { _hsHits[0].go(); return; }
+  if (_hsHits && _hsHits.length) { (_hsHits[_hsSel] || _hsHits[0]).go(); return; }
   // 입력은 있는데 히트가 없으면 전체 검색 팔레트로
   const q = (document.getElementById('hsInput') || {}).value || '';
   if (q.trim()) { openSearch(); const si = document.getElementById('searchInput'); if (si) { si.value = q; runSearch(); } }
@@ -387,7 +420,12 @@ function renderOnboarding() {
 // ─── 전역 키보드 ───
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); openSearch(); return; }
-  if (e.key === 'Escape') { closeSearch(); closeSidebar(); return; }
+  if (e.key === 'Escape') {
+    closeSearch(); closeSidebar();
+    if (typeof closeWelcome === 'function') { const w = document.getElementById('welcomeOverlay'); if (w && w.classList.contains('open')) closeWelcome(); }
+    if (typeof closeNameModal === 'function') closeNameModal();
+    return;
+  }
   // 포커스된 클릭형 카드를 Enter/Space로 활성화
   if (e.key === 'Enter' || e.key === ' ') {
     const el = document.activeElement;

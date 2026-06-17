@@ -17,6 +17,9 @@
   // 신뢰수준 (0.95 | 0.90) — 기본 95%
   var abConf = 0.95;
 
+  // 결과 복사용 plain text 요약 (계산 시 갱신, 무효 입력 시 null)
+  var abLastSummary = null;
+
   // ── 컨테이너 헬퍼 ──
   function abRoot() { return document.getElementById(CONTAINER_ID); }
   function abQ(sel) { var r = abRoot(); return r ? r.querySelector(sel) : null; }
@@ -76,8 +79,8 @@
   // ── 입력 필드 1개 마크업 (정수 입력) ──
   function abField(id, label, unit, hint) {
     var affix = unit
-      ? '<div class="input-affix"><input type="number" inputmode="numeric" min="0" step="1" class="input" id="' + id + '" placeholder="0"><span class="affix">' + unit + '</span></div>'
-      : '<input type="number" inputmode="numeric" min="0" step="1" class="input" id="' + id + '" placeholder="0">';
+      ? '<div class="input-affix"><input type="text" inputmode="numeric" class="input" id="' + id + '" placeholder="0"><span class="affix">' + unit + '</span></div>'
+      : '<input type="text" inputmode="numeric" class="input" id="' + id + '" placeholder="0">';
     return '<div class="field">'
       + '<label>' + label + ' <span class="req">필수</span></label>'
       + affix
@@ -131,13 +134,8 @@
       + '<div class="panel-title">검정 결과</div>'
       + '<div class="panel-sub">입력 즉시 양측 z-검정으로 계산됩니다.</div>'
       + '</div></div>'
-      // 신뢰수준 선택
-      + '<div class="field"><label>유의수준(신뢰수준)</label>'
-      + '<div class="seg" id="ab-conf-seg" role="tablist">'
-      + '<button type="button" class="seg-btn on" data-conf="0.95">95% 신뢰</button>'
-      + '<button type="button" class="seg-btn" data-conf="0.90">90% 신뢰</button>'
-      + '</div>'
-      + '<div class="field-hint">95% = 유의수준 5%(p&lt;0.05) 기준으로 판정합니다.</div></div>'
+      // 결과 본문 (입력 전엔 빈 상태)
+      + '<div id="ab-result">'
       // 판정 영역(콜아웃)
       + '<div id="ab-verdict"></div>'
       // 지표 타일
@@ -149,9 +147,15 @@
       + abMetric('ab-m-p', 'p-value <span style="color:var(--text-muted);font-weight:600">양측</span>')
       + abMetric('ab-m-verdict', '판정', 'primary')
       + '</div>'
+      // 결과 복사
+      + '<div class="btn-row"><button type="button" class="btn btn-ghost btn-sm copy-btn" id="ab-copy">📋 결과 복사</button></div>'
+      + '</div>'
+      // 도구 연계
       + '<div class="callout info"><span class="c-ico">ℹ️</span><div>'
       + '전환율(비율) 비교용 양측 z-검정입니다. A/B 테스트 기획·설계는 커리큘럼 <b>Day 21~25</b>에서 배워요.'
       + '<div class="btn-row" style="margin-top:10px">'
+      + '<button type="button" class="btn btn-ghost btn-sm" data-page="tool-kpi">📊 KPI 계산기</button>'
+      + '<button type="button" class="btn btn-ghost btn-sm" data-page="glossary">📖 용어 사전</button>'
       + '<button type="button" class="btn btn-ghost btn-sm" data-page="week5">🧪 5주차 A/B</button>'
       + '<button type="button" class="btn btn-ghost btn-sm" data-page="tool-report">📝 주간 리포트</button>'
       + '</div></div></div>'
@@ -183,13 +187,16 @@
       abSet('ab-m-z', null, '(p_B − p_A) ÷ 표준오차(SE)');
       abSet('ab-m-p', null, '2 × (1 − Φ(|z|))');
       abSet('ab-m-verdict', null, '');
+      abLastSummary = null;
       if (verdict) {
         if (overflow) {
           verdict.innerHTML = '<div class="callout danger"><span class="c-ico">⛔</span><div>'
             + '전환수가 표본수보다 클 수 없습니다. 분자(전환수) ≤ 분모(표본수)로 입력하세요.</div></div>';
         } else {
-          verdict.innerHTML = '<div class="callout info"><span class="c-ico">✍️</span><div>'
-            + 'A·B 그룹의 <b>표본수</b>와 <b>전환수</b>를 모두 입력하면 유의성을 판정합니다.</div></div>';
+          verdict.innerHTML = '<div class="empty-state">'
+            + '<div class="e-ico">🧪</div>'
+            + '<div class="e-txt">A·B 그룹의 <b>표본수</b>와 <b>전환수</b>를<br>모두 입력하면 유의성을 판정합니다.</div>'
+            + '</div>';
         }
       }
       return;
@@ -201,14 +208,12 @@
     abSet('ab-m-pA', abVU(fmtPct(pA * 100), null), '전환수 A ÷ 표본수 A × 100');
     abSet('ab-m-pB', abVU(fmtPct(pB * 100), null), '전환수 B ÷ 표본수 B × 100');
 
-    // ── 상대 상승률 (uplift) — pA>0 필요 ──
+    // ── 상대 상승률 (uplift) — pA>0 필요. 색상은 유의할 때만 부여(아래에서 처리) ──
     var uplift = null;
+    var upStr = null;
     if (pA > 0) {
       uplift = (pB - pA) / pA * 100;
-      var upStr = (uplift >= 0 ? '+' : '') + fmtPct(uplift);
-      abSet('ab-m-uplift', abVU(upStr, null), '(전환율B − 전환율A) ÷ 전환율A × 100', uplift >= 0 ? 'good' : 'bad');
-    } else {
-      abSet('ab-m-uplift', null, '(전환율B − 전환율A) ÷ 전환율A × 100');
+      upStr = (uplift >= 0 ? '+' : '') + fmtPct(uplift);
     }
 
     // ── 합동 비율 / 표준오차 / z ──
@@ -223,70 +228,94 @@
       if (pval > 1) pval = 1;
     }
 
-    if (z != null && isFinite(z)) {
-      abSet('ab-m-z', abVU(z.toFixed(2), null), '(p_B − p_A) ÷ 표준오차(SE)');
-    } else {
-      abSet('ab-m-z', null, '(p_B − p_A) ÷ 표준오차(SE)');
-    }
+    // 분산=0(seVar<=0): 두 전환율이 같거나 모두 0%/100% → z/p 계산 불가
+    var computable = (seVar > 0 && z != null && isFinite(z) && pval != null && isFinite(pval));
 
-    if (pval != null && isFinite(pval)) {
+    if (computable) {
+      abSet('ab-m-z', abVU(z.toFixed(2), null), '(p_B − p_A) ÷ 표준오차(SE)');
       var pStr = pval < 0.001 ? '<0.001' : pval.toFixed(4);
       abSet('ab-m-p', abVU(pStr, null), '2 × (1 − Φ(|z|))');
     } else {
+      abSet('ab-m-z', null, '(p_B − p_A) ÷ 표준오차(SE)');
       abSet('ab-m-p', null, '2 × (1 − Φ(|z|))');
     }
 
     // ── 판정 ──
     var alpha = 1 - abConf;          // 0.05 또는 0.10
     var lowSample = (cA < 30 || cB < 30);  // 그룹 전환수<30 → 신뢰도 낮음
-    var significant = (pval != null && isFinite(pval) && pval < alpha);
+    var significant = (computable && pval < alpha);
 
     // 승자 결정
     var winner = null;
     if (pB > pA) winner = 'B';
     else if (pA > pB) winner = 'A';
 
-    // 판정 타일
-    if (pval == null || !isFinite(pval)) {
-      abSet('ab-m-verdict', '–', '');
+    // 상대 상승률 타일: 유의할 때만 good/bad, 비유의면 중립
+    if (upStr != null) {
+      var upCls = significant ? (uplift >= 0 ? 'good' : 'bad') : null;
+      abSet('ab-m-uplift', abVU(upStr, null), '(전환율B − 전환율A) ÷ 전환율A × 100', upCls);
+    } else {
+      abSet('ab-m-uplift', null, '(전환율B − 전환율A) ÷ 전환율A × 100');
+    }
+
+    // 판정 타일 (인라인 폰트크기 제거 → .unit 클래스 사용)
+    if (!computable) {
+      abSet('ab-m-verdict', '계산 불가', '');
     } else if (significant) {
       var wTxt = winner ? winner + ' 그룹 우세' : '차이 유의';
-      abSet('ab-m-verdict', '유의함<br><span style="font-size:.72em;color:var(--text-muted)">' + wTxt + '</span>', '', 'good');
+      abSet('ab-m-verdict', '유의함<br><span class="unit">' + wTxt + '</span>', '', 'good');
     } else {
       abSet('ab-m-verdict', '유의하지<br>않음', '', 'bad');
     }
 
-    // 판정 콜아웃
-    if (verdict) {
-      var confPct = fmtPct(abConf * 100, 0);
-      var html = '';
+    // 판정 콜아웃 + 복사 텍스트 구성
+    var confPct = fmtPct(abConf * 100, 0);
+    var verdictLine, html = '';
 
-      if (significant) {
-        var winTxt = winner
-          ? '<b>' + winner + ' 그룹</b>의 전환율이 더 높고, 그 차이는 '
-          : '두 그룹의 전환율 차이는 ';
-        html += '<div class="callout ok"><span class="c-ico">✅</span><div>'
-          + '<b>통계적으로 유의</b>합니다 (' + confPct + ' 신뢰수준, p ' + (pval < 0.001 ? '< 0.001' : '= ' + pval.toFixed(4)) + ' &lt; ' + alpha.toFixed(2) + '). '
-          + winTxt + '우연으로 보기 어렵습니다.'
-          + (winner ? ' → <b>' + winner + '안 채택</b>을 검토하세요.' : '')
-          + '</div></div>';
-      } else {
-        html += '<div class="callout warn"><span class="c-ico">⚠️</span><div>'
-          + '<b>유의하지 않습니다</b> (' + confPct + ' 신뢰수준, p ' + (pval < 0.001 ? '< 0.001' : '= ' + pval.toFixed(4)) + ' ≥ ' + alpha.toFixed(2) + '). '
-          + '관측된 차이가 우연일 가능성을 배제할 수 없어, 아직 승자를 단정할 수 없습니다. 표본을 더 모으세요.'
-          + '</div></div>';
-      }
-
-      // 표본 과소 경고 (전환수<30)
-      if (lowSample) {
-        html += '<div class="callout warn"><span class="c-ico">📉</span><div>'
-          + '한쪽 이상 그룹의 <b>전환수가 30건 미만</b>이라 z-검정 정규근사의 신뢰도가 낮습니다. '
-          + '판정을 참고용으로만 보고, 전환을 더 누적한 뒤 재검정하세요.'
-          + '</div></div>';
-      }
-
-      verdict.innerHTML = html;
+    if (!computable) {
+      verdictLine = '판정 불가 — 두 그룹 전환율이 같거나 극단(0/100%)이라 통계 차이를 계산할 수 없습니다.';
+      html += '<div class="callout warn"><span class="c-ico">⚠️</span><div>'
+        + '두 그룹 전환율이 같거나 극단(0/100%)이라 통계 차이를 계산할 수 없습니다 — 표본/전환을 더 모으세요.'
+        + '</div></div>';
+    } else if (significant) {
+      var winTxt = winner
+        ? '<b>' + winner + ' 그룹</b>의 전환율이 더 높고, 그 차이는 '
+        : '두 그룹의 전환율 차이는 ';
+      verdictLine = (winner ? winner + ' 그룹 우세 — ' : '') + '통계적으로 유의함 (' + confPct + ' 신뢰수준)';
+      html += '<div class="callout ok"><span class="c-ico">✅</span><div>'
+        + '<b>통계적으로 유의</b>합니다 (' + confPct + ' 신뢰수준, p ' + (pval < 0.001 ? '< 0.001' : '= ' + pval.toFixed(4)) + ' &lt; ' + alpha.toFixed(2) + '). '
+        + winTxt + '우연으로 보기 어렵습니다.'
+        + (winner ? ' → <b>' + winner + '안 채택</b>을 검토하세요.' : '')
+        + '</div></div>';
+    } else {
+      verdictLine = '유의하지 않음 (' + confPct + ' 신뢰수준)';
+      html += '<div class="callout warn"><span class="c-ico">⚠️</span><div>'
+        + '<b>유의하지 않습니다</b> (' + confPct + ' 신뢰수준, p ' + (pval < 0.001 ? '< 0.001' : '= ' + pval.toFixed(4)) + ' ≥ ' + alpha.toFixed(2) + '). '
+        + '관측된 차이가 우연일 가능성을 배제할 수 없어, 아직 승자를 단정할 수 없습니다. 표본을 더 모으세요.'
+        + '</div></div>';
     }
+
+    // 표본 과소 경고 (전환수<30)
+    if (lowSample) {
+      html += '<div class="callout warn"><span class="c-ico">📉</span><div>'
+        + '한쪽 이상 그룹의 <b>전환수가 30건 미만</b>이라 z-검정 정규근사의 신뢰도가 낮습니다. '
+        + '판정을 참고용으로만 보고, 전환을 더 누적한 뒤 재검정하세요.'
+        + '</div></div>';
+    }
+
+    if (verdict) verdict.innerHTML = html;
+
+    // ── 복사용 plain text 요약 저장 ──
+    var lines = [];
+    lines.push('[A/B 유의성 검정]');
+    lines.push('전환율 A: ' + fmtPct(pA * 100) + '% (' + fmtInt(cA) + '/' + fmtInt(nA) + ')');
+    lines.push('전환율 B: ' + fmtPct(pB * 100) + '% (' + fmtInt(cB) + '/' + fmtInt(nB) + ')');
+    lines.push('상대 상승률(uplift): ' + (upStr != null ? upStr + '%' : '–'));
+    lines.push('z값: ' + (computable ? z.toFixed(2) : '–') + ' / p-value(양측): ' + (computable ? (pval < 0.001 ? '<0.001' : pval.toFixed(4)) : '–'));
+    lines.push('판정(' + confPct + '% 신뢰수준): ' + verdictLine);
+    lines.push('공식: z = (p_B − p_A) ÷ SE,  p = 2 × (1 − Φ(|z|))');
+    if (lowSample) lines.push('주의: 한쪽 이상 전환수<30 — 정규근사 신뢰도 낮음, 참고용.');
+    abLastSummary = lines.join('\n');
   }
 
   // ── 예시 / 초기화 ──
@@ -325,6 +354,12 @@
     var sb = abQ('#ab-sample'); if (sb) sb.addEventListener('click', abFillSample);
     var rb = abQ('#ab-reset'); if (rb) rb.addEventListener('click', abReset);
 
+    // 결과 복사
+    var cp = abQ('#ab-copy');
+    if (cp) cp.addEventListener('click', function () {
+      if (abLastSummary && typeof copyToClipboard === 'function') copyToClipboard(abLastSummary, cp);
+    });
+
     // 페이지 이동 버튼(위임)
     abQA('[data-page]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -346,6 +381,11 @@
       + '    <h1>A/B 유의성 검정</h1>'
       + '    <p>두 그룹의 전환율 차이가 <b>우연인지, 진짜 차이인지</b> 양측 z-검정으로 판정합니다. '
       + '    표본수·전환수만 넣으면 전환율·상대 상승률·z값·p-value와 함께 통계적 유의성을 즉시 계산해요.</p>'
+      + '    <div class="seg" id="ab-conf-seg" role="tablist">'
+      + '      <button type="button" class="seg-btn on" data-conf="0.95">95% 신뢰</button>'
+      + '      <button type="button" class="seg-btn" data-conf="0.90">90% 신뢰</button>'
+      + '    </div>'
+      + '    <div class="field-hint">95% = 유의수준 5%(p&lt;0.05) 기준으로 판정합니다.</div>'
       + '  </div>'
       + '  <div class="tool-grid wide-right">'
       + '    <div>'
@@ -354,7 +394,7 @@
       + abGroupPanel('B', '🅱️', 'ab-nB', 'ab-cB')
       + '      <div class="btn-row">'
       + '        <button type="button" class="btn btn-ghost btn-sm" id="ab-sample">✨ 예시 채우기</button>'
-      + '        <button type="button" class="btn btn-ghost btn-sm" id="ab-reset">↺ 초기화</button>'
+      + '        <button type="button" class="btn btn-ghost btn-sm" id="ab-reset">🗑 입력 비우기</button>'
       + '      </div>'
       + '    </div>'
       + abResultsHtml()

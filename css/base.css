@@ -17,7 +17,7 @@
   --accent-purple: #9F7AEA;
   --accent-green: #68D391;
   --accent-yellow: #F6E05E;
-  --accent-orange: #FC8181;
+  --accent-orange: #F6AD55;
   --accent-pink: #F687B3;
   /* Primary accent (indigo) — used across nav, buttons, links, tools */
   --primary: #646CFF;
@@ -283,6 +283,7 @@ main {
   line-height: 1.7;
   max-width: 580px;
   margin-bottom: 32px;
+  word-break: keep-all;
 }
 
 .hero-stats {
@@ -627,7 +628,7 @@ main {
 
 .tag.green { background: rgba(104,211,145,0.12); color: var(--accent-green); border-color: rgba(104,211,145,0.2); }
 .tag.purple { background: rgba(159,122,234,0.12); color: var(--accent-purple); border-color: rgba(159,122,234,0.2); }
-.tag.orange { background: rgba(252,129,74,0.12); color: #FC8181; border-color: rgba(252,129,74,0.2); }
+.tag.orange { background: rgba(246,173,85,0.12); color: #F6AD55; border-color: rgba(246,173,85,0.25); }
 .tag.yellow { background: rgba(246,224,94,0.12); color: var(--accent-yellow); border-color: rgba(246,224,94,0.2); }
 
 /* Content list */
@@ -899,42 +900,3 @@ main {
   .glossary-grid, .spec-grid { grid-template-columns: 1fr; }
   .media-grid { grid-template-columns: 1fr; }
 }
-
-/* ������ Beginner-Friendly Additions ������ */
-.day-meta { display:flex; align-items:center; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
-.diff-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; }
-.diff-easy   { background:rgba(104,211,145,0.12); color:#68D391; border:1px solid rgba(104,211,145,0.25); }
-.diff-normal { background:rgba(246,224,94,0.12);  color:#F6E05E; border:1px solid rgba(246,224,94,0.25); }
-.diff-hard   { background:rgba(252,129,129,0.12); color:#FC8181; border:1px solid rgba(252,129,129,0.25); }
-.time-badge  { display:inline-flex; align-items:center; gap:4px; font-size:11px; color:#505A6E; font-weight:500; }
-.why-box { background:rgba(159,122,234,0.07); border:1px solid rgba(159,122,234,0.2); border-left:3px solid #9F7AEA; border-radius:8px; padding:14px 16px; margin-bottom:20px; }
-.why-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#9F7AEA; margin-bottom:5px; }
-.why-text { font-size:13px; color:#8892A4; line-height:1.7; }
-.tip-box { background:rgba(246,224,94,0.06); border:1px solid rgba(246,224,94,0.2); border-left:3px solid #F6E05E; border-radius:8px; padding:14px 16px; margin-top:16px; }
-.tip-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#F6E05E; margin-bottom:5px; }
-.tip-list { list-style:none; display:flex; flex-direction:column; gap:5px; }
-.tip-list li { font-size:12.5px; color:#8892A4; line-height:1.6; display:flex; gap:7px; }
-.tip-list li::before { content:'??'; font-size:11px; flex-shrink:0; margin-top:1px; }
-.example-box { background:rgba(var(--primary-rgb),0.05); border:1px solid rgba(var(--primary-rgb),0.15); border-radius:8px; padding:14px 16px; margin-top:12px; }
-.example-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--primary); margin-bottom:8px; }
-.example-text { font-size:12.5px; color:#8892A4; line-height:1.7; }
-.welcome-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:300; align-items:center; justify-content:center; padding:20px; }
-.welcome-overlay.open { display:flex; }
-.welcome-modal { background:linear-gradient(145deg,#141929,#0F1422); border:1px solid rgba(var(--primary-rgb),0.2); border-radius:20px; width:100%; max-width:520px; padding:40px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.6); }
-.welcome-emoji { font-size:52px; margin-bottom:16px; display:block; }
-.welcome-title { font-size:24px; font-weight:800; letter-spacing:-0.5px; margin-bottom:10px; }
-.welcome-desc { font-size:14px; color:#8892A4; line-height:1.7; margin-bottom:24px; }
-.welcome-steps { display:flex; flex-direction:column; gap:10px; margin-bottom:28px; text-align:left; }
-.welcome-step { display:flex; align-items:center; gap:12px; padding:12px 14px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; font-size:13px; color:#8892A4; }
-.welcome-step-num { width:24px; height:24px; background:linear-gradient(135deg,#667eea,#764ba2); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
-.welcome-btn { width:100%; padding:14px; background:var(--primary); color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:800; cursor:pointer; font-family:inherit; transition:all 0.25s; }
-.welcome-btn:hover { transform:translateY(-2px); background:var(--primary-hover); box-shadow:0 8px 24px rgba(var(--primary-rgb),0.35); }
-.faq-grid { display:flex; flex-direction:column; gap:10px; }
-.faq-item { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; overflow:hidden; transition:all 0.25s; }
-.faq-item:hover { border-color:rgba(var(--primary-rgb),0.4); }
-.faq-q { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; cursor:pointer; font-size:14px; font-weight:600; gap:12px; user-select:none; }
-.faq-icon { font-size:18px; color:#505A6E; transition:all 0.25s; flex-shrink:0; }
-.faq-item.open .faq-icon { transform:rotate(45deg); color:var(--primary); }
-.faq-a { display:none; padding:14px 20px 16px; font-size:13.5px; color:#8892A4; line-height:1.7; border-top:1px solid rgba(255,255,255,0.08); }
-.faq-item.open .faq-a { display:block; }
-.modal-meta-bar { display:flex; align-items:center; gap:8px; padding:10px 32px; border-bottom:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.02); }

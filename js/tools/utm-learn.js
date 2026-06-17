@@ -73,8 +73,8 @@
     {
       ico: '🟢',
       name: '네이버 검색광고',
-      url: 'https://www.hllcenter.com/product?utm_source=naver&utm_medium=cpc&utm_campaign=spring_sale&utm_term=봄세일',
-      desc: '검색 키워드로 유입 → medium은 cpc(클릭당 과금), term에 입찰 키워드 기록.'
+      url: 'https://www.hllcenter.com/product?utm_source=naver&utm_medium=cpc&utm_campaign=spring_sale&utm_term=running_shoes',
+      desc: '검색 키워드로 유입 → medium은 cpc(클릭당 과금), term에 입찰 키워드(영문 슬러그)를 기록. 한글 키워드는 %인코딩으로 깨져 권장하지 않아요.'
     },
     {
       ico: '🟣',
@@ -101,7 +101,8 @@
     { key: 'utm_source', req: true, q: '어디서?', desc: '유입 출처(매체/사이트)', tags: ['naver', 'google', 'instagram', 'youtube', 'newsletter'] },
     { key: 'utm_medium', req: true, q: '어떤 방법?', desc: '마케팅 채널 유형', tags: ['cpc', 'display', 'email', 'paid_social', 'organic'] },
     { key: 'utm_campaign', req: true, q: '어떤 캠페인?', desc: '캠페인/프로모션 이름', tags: ['spring_sale', 'summer_launch', 'june_weekly'] },
-    { key: 'utm_term', req: false, q: '어떤 키워드?', desc: '검색광고 입찰 키워드', tags: ['봄세일', 'running_shoes'] },
+    // utm_term 키워드는 영문 슬러그로 통일. 한글은 %인코딩되어 깨지므로 권장하지 않음.
+    { key: 'utm_term', req: false, q: '어떤 키워드?', desc: '검색광고 입찰 키워드(영문 슬러그)', tags: ['spring_sale', 'running_shoes'] },
     { key: 'utm_content', req: false, q: '어떤 소재?', desc: 'A/B 소재·버튼 위치 구분', tags: ['video_a', 'top_banner', 'cta_red'] }
   ];
 
@@ -239,7 +240,10 @@
       // 7. CTA
       '<div class="callout info" style="align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-top:20px">' +
         '<div style="display:flex;gap:11px;align-items:center"><span class="c-ico">🚀</span><div>이제 개념은 충분해요. <b>직접 UTM을 만들어 볼 차례</b>입니다!</div></div>' +
-        '<button id="utmLearnGoBuilder" class="btn btn-primary">UTM 빌더로 이동 →</button>' +
+        '<div class="btn-row">' +
+          '<button id="utmLearnGlossary" class="btn btn-ghost">📖 용어 사전</button>' +
+          '<button id="utmLearnGoBuilder" class="btn btn-primary">UTM 빌더로 이동 →</button>' +
+        '</div>' +
       '</div>' +
 
     '</div>';
@@ -373,6 +377,14 @@
     if (goBtn) {
       goBtn.addEventListener('click', function () {
         if (typeof showPage === 'function') showPage('tool-utm', null);
+      });
+    }
+
+    // CTA: 용어 사전으로 이동(공통 연계 버튼)
+    var glossaryBtn = el.querySelector('#utmLearnGlossary');
+    if (glossaryBtn) {
+      glossaryBtn.addEventListener('click', function () {
+        if (typeof showPage === 'function') showPage('glossary');
       });
     }
 
