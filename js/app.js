@@ -255,6 +255,82 @@ function paintSel() {
   const sel = box.querySelector('.search-item.sel'); if (sel) sel.scrollIntoView({ block: 'nearest' });
 }
 
+// ─── 홈 질문형 검색창 (의도 파악 + 자료 점프) ───
+// 자연어 질문의 의도를 키워드로 잡아 알맞은 도구/페이지로 안내
+const SEARCH_INTENTS = [
+  { kw:['급등','올랐','올라','떨어','하락','안나와','안 나와','미집계','집계','문제','왜','진단','이상','튀','폭등'], go:'tool-diagnose', label:'🩺 트러블슈팅 진단기 — 증상으로 원인·액션 찾기' },
+  { kw:['계산','얼마','지표','roas','cpa','cpc','ctr','cvr','cpm','전환율','클릭률'], go:'tool-kpi', label:'📊 KPI 계산기 — 지표 자동 계산·역산' },
+  { kw:['utm','링크','추적','파라미터','소스','source','medium'], go:'tool-utm', label:'🔗 UTM 빌더 — 추적 링크 생성' },
+  { kw:['규격','사이즈','크기','소재','배너','픽셀','해상도','비율'], go:'specs', label:'📐 소재 규격표 — 매체별 이미지·영상 규격' },
+  { kw:['예산','손익','마진','본전','분기','얼마 써','배분'], go:'tool-budget', label:'💰 손익분기·예산 시뮬레이터' },
+  { kw:['리포트','보고','주간','보고서','대시보드'], go:'tool-report', label:'📝 주간 리포트 빌더' },
+  { kw:['벤치마크','정상','평균','범위','기준','좋은','나쁜'], go:'benchmark', label:'📊 매체 벤치마크 — CTR·CVR 정상 범위' },
+  { kw:['ab','a/b','유의','테스트','표본','통계'], go:'tool-abtest', label:'🧪 A/B 유의성 검정' },
+  { kw:['네이밍','이름','규칙','컨벤션','표준'], go:'naming', label:'🏷️ 네이밍 규칙' },
+  { kw:['용어','뜻','무슨','뭐','뭔','약자','의미','이란','란?'], go:'glossary', label:'📖 광고 용어 사전 — 모르는 용어 검색' },
+];
+const HS_CHIPS = [
+  ['📊 KPI 계산기','tool-kpi'], ['🔗 UTM 빌더','tool-utm'], ['💰 손익분기','tool-budget'],
+  ['🩺 트러블슈팅','tool-diagnose'], ['📊 매체 벤치마크','benchmark'], ['📖 용어 사전','glossary'],
+];
+function renderHomeSearch() {
+  const m = document.getElementById('homeSearchMount');
+  if (!m) return;
+  m.innerHTML =
+    '<div class="home-search">' +
+    '<div class="hs-title">💬 무엇이든 물어보세요 — 알맞은 자료로 안내해 드려요</div>' +
+    '<div class="hs-input-wrap"><span class="hs-ico">✨</span>' +
+    '<input id="hsInput" class="hs-input" type="text" autocomplete="off" ' +
+    'placeholder="예) ROAS 어떻게 계산해? · 비즈보드 규격 · CPA가 갑자기 올랐어요 · UTM 만들기">' +
+    '<button class="hs-go" onclick="homeSearchEnter()" aria-label="검색">→</button></div>' +
+    '<div id="hsResults" class="hs-results"></div>' +
+    '<div id="hsChips" class="hs-chips"><span class="hs-chips-label">자주 찾는:</span>' +
+    HS_CHIPS.map(c => '<button class="hs-chip" onclick="showPage(\'' + c[1] + '\')">' + c[0] + '</button>').join('') +
+    '</div></div>';
+  const inp = document.getElementById('hsInput');
+  inp.addEventListener('input', homeSearchRun);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); homeSearchEnter(); } });
+}
+let _hsHits = [];
+function homeSearchRun() {
+  const q = (document.getElementById('hsInput').value || '').trim().toLowerCase();
+  const box = document.getElementById('hsResults');
+  const chips = document.getElementById('hsChips');
+  if (!q) { box.innerHTML = ''; box.classList.remove('on'); _hsHits = []; if (chips) chips.style.display = ''; return; }
+  if (chips) chips.style.display = 'none';
+  _searchIndex = _searchIndex || buildSearchIndex();
+  const tokens = q.split(/\s+/).filter(Boolean);
+  const scored = _searchIndex.map(it => {
+    const hay = (it.label + ' ' + it.kw).toLowerCase();
+    let s = 0;
+    tokens.forEach(t => { if (hay.indexOf(t) >= 0) s++; });
+    if (hay.indexOf(q) >= 0) s += 2;
+    return { it, s };
+  }).filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 8).map(x => x.it);
+  // 의도 기반 바로가기 제안
+  let suggest = null;
+  for (const intent of SEARCH_INTENTS) {
+    if (intent.kw.some(k => q.indexOf(k) >= 0)) { suggest = intent; break; }
+  }
+  _hsHits = (suggest ? [{ type: '바로가기', label: suggest.label, go: () => showPage(suggest.go), _suggest: true }] : []).concat(scored);
+  if (!_hsHits.length) {
+    box.innerHTML = '<div class="hs-empty">딱 맞는 결과가 없어요.<br>아래 [자주 찾는] 버튼이나 좌측 메뉴, 또는 <b>Ctrl+K</b> 전체 검색을 이용해보세요.</div>';
+    box.classList.add('on'); return;
+  }
+  box.innerHTML = _hsHits.map((h, i) =>
+    '<button class="hs-item' + (h._suggest ? ' hs-suggest' : '') + (i === 0 ? ' sel' : '') + '" data-i="' + i + '">' +
+    '<span class="hs-type">' + escapeHtml(h.type) + '</span><span class="hs-label">' + escapeHtml(h.label) + '</span></button>'
+  ).join('');
+  [...box.querySelectorAll('.hs-item')].forEach(b => b.addEventListener('click', () => { const h = _hsHits[+b.dataset.i]; if (h) h.go(); }));
+  box.classList.add('on');
+}
+function homeSearchEnter() {
+  if (_hsHits && _hsHits.length) { _hsHits[0].go(); return; }
+  // 입력은 있는데 히트가 없으면 전체 검색 팔레트로
+  const q = (document.getElementById('hsInput') || {}).value || '';
+  if (q.trim()) { openSearch(); const si = document.getElementById('searchInput'); if (si) { si.value = q; runSearch(); } }
+}
+
 // ─── 첫 주 온보딩 체크리스트 (홈) ───
 const ONBOARD_ITEMS = [
   { id: 'utm',      label: 'UTM 완전정복 학습하기',          sub: '개념·5파라미터·퀴즈',  go: 'utm-learn' },
@@ -299,5 +375,6 @@ document.addEventListener('keydown', e => {
 });
 
 // ─── 초기화 ───
+renderHomeSearch();
 renderOnboarding();
 initRouting();
