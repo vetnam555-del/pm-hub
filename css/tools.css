@@ -230,6 +230,16 @@
   .tool-wrap { padding-left:4px; padding-right:4px; }
 }
 
+/* 미션 합격 기준(루브릭) / 체크포인트 */
+.rubric-box { background: rgba(104,211,145,.06); border:1px solid rgba(104,211,145,.22); border-left:3px solid var(--ok); border-radius:8px; padding:14px 16px; margin-top:14px; }
+.rubric-box.checkpoint { background: rgba(var(--primary-rgb),.07); border-color: rgba(var(--primary-rgb),.25); border-left-color: var(--primary); }
+.rubric-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color: var(--ok); margin-bottom:8px; }
+.rubric-box.checkpoint .rubric-label { color: var(--primary); }
+.rubric-list { list-style:none; display:flex; flex-direction:column; gap:7px; }
+.rubric-list li { font-size:12.5px; color: var(--text-secondary); line-height:1.6; display:flex; gap:8px; }
+.rubric-list li::before { content:'☑'; color: var(--ok); flex-shrink:0; font-size:13px; }
+.rubric-box.checkpoint .rubric-list li::before { color: var(--primary); }
+
 /* 다음 학습 Day 안내(홈) */
 .nextup { display:flex; align-items:center; gap:16px; flex-wrap:wrap; background: linear-gradient(135deg, rgba(var(--primary-rgb),.14), rgba(159,122,234,.08)); border:1px solid rgba(var(--primary-rgb),.3); border-radius: var(--radius); padding:18px 22px; }
 .nextup .nu-left { flex:1; min-width:220px; }
