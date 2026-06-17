@@ -137,7 +137,9 @@
 .t-table tr:last-child td { border-bottom:none; }
 .t-table tr.total td { background: rgba(255,255,255,.03); font-weight:800; color: var(--text-primary); border-top:2px solid var(--border); }
 .t-table tbody tr:hover td { background: rgba(255,255,255,.02); }
-.table-scroll { overflow-x:auto; border:1px solid var(--border); border-radius: var(--radius-sm); }
+.table-scroll { overflow-x:auto; border:1px solid var(--border); border-radius: var(--radius-sm); max-width:100%; min-width:0; -webkit-overflow-scrolling:touch; }
+/* grid/flex 자식이 콘텐츠보다 작아질 수 있게(min-width:auto 기본값 때문에 넓은 표가 페이지를 늘리는 문제 방지) */
+.tool-grid > *, .panel, .tool-wrap { min-width: 0; }
 
 /* ── 콜아웃(안내/경고/성공/위험) ── */
 .callout { display:flex; gap:11px; border-radius:var(--radius-sm); padding:13px 15px; font-size:12.5px; line-height:1.65; margin-top:14px; border:1px solid; }
