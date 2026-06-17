@@ -58,14 +58,14 @@ const dayData = {
     mission:'HLL의 4대 핵심 사업(매거진/스튜디오/커머스/엔터) 중 자신이 마케터로서 가장 시너지를 낼 수 있는 분야 1p 메모 제출'
   },
   day2: {
-    week:'1주차', title:'퍼포먼스 마케팅 개념 이해',
+    week:'1주차', title:'퍼포먼스 마케팅 개념 이해', diff:'easy', time:'4시간',
     tags:['PM개념','마케팅퍼널','광고구조'],
     items:['브랜딩 광고 vs 퍼포먼스 광고 차이점 이해','마케팅 퍼널: 인지 → 고려 → 전환 → 리텐션 4단계','공통 광고 계정 구조: 캠페인 > 광고그룹 > 소재','퍼포먼스 마케터의 하루 루틴 설명 (실무자 강의)'],
     tips:["퍼포먼스 마케팅은 예술이 아니라 통계입니다. 직감보다 데이터로 말하는 습관을 들이세요."],
     mission:'마케팅 퍼널 4단계를 자신의 언어로 정리해서 제출'
   },
   day3: {
-    week:'1주차', title:'핵심 KPI 지표 마스터',
+    week:'1주차', title:'핵심 KPI 지표 마스터', diff:'normal', time:'5~6시간',
     tags:['CPM','CPC','CTR','CVR','CPA','ROAS'],
     table: [
       ['CPM','1,000회 노출당 비용','광고비 ÷ 노출수 × 1,000'],
@@ -142,7 +142,7 @@ const dayData = {
       '특화상품: 동영상(인스트림·아웃스트림), NDA 다이내믹광고(브랜드스토어 연동), 쇼핑 프로모션',
       '미노출 체크리스트: 심사상태 / 예산소진 / 입찰가 / 노출 조건 미충족'
     ],
-    tips:["GFA는 초기 학습 7~14일 동안 성과가 안 좋다고 소재를 계속 끄고 켜면 머신러닝이 바보가 됩니다. 인내심을 가지세요."],
+    tips:["GFA는 초기 학습 7~14일 동안 성과가 안 좋다고 소재를 계속 끄고 켜면 머신러닝이 바보가 됩니다. 인내심을 가지세요.","매체별 학습 종료 정량 기준(예: Meta 광고세트 주 50회 전환)은 Day47에서 정리합니다. 지금은 '학습 기간엔 함부로 수정하지 않는다'는 개념만 잡으세요."],
     mission:'GFA 테스트 계정에서 캠페인 구조 설계 및 타겟팅 설정 시뮬레이션'
   },
   day8: {
@@ -262,7 +262,7 @@ const dayData = {
       '카피 3요소: 구체적 혜택 + 타겟 언급("당신은") + 명확한 CTA',
       'A/B 테스트 원칙: 변수는 반드시 1개씩만 변경 (소재 vs 카피는 동시 테스트 금지)'
     ],
-    tips:['소재 제작 전 반드시 각 매체 공식 가이드의 최신 버전을 확인하세요. 규격은 수시로 업데이트됩니다','카피는 "혜택 + 타겟 + CTA" 3가지 요소를 반드시 포함하세요. 예: "30% 세일 | 20대 여성 #1 인기템 | 지금 바로 보기"'],
+    tips:['소재 제작 전 반드시 각 매체 공식 가이드의 최신 버전을 확인하세요. 규격은 수시로 업데이트됩니다','카피는 "혜택 + 타겟 + CTA" 3가지 요소를 반드시 포함하세요. 예: "30% 세일 | 20대 여성 #1 인기템 | 지금 바로 보기"','여기서 언급한 A/B 테스트 원칙(변수 1개)의 통계적 근거·세팅·결과 해석은 5주차(Day 21~25)에서 깊게 다룹니다.'],
     example:'카카오 비즈보드 심사 반려 사례: PNG가 아닌 JPG로 제출하거나 투명 배경이 없는 경우. 또는 배너 크기가 1029×258이 아닌 잘못된 규격 사용 시 즉시 반려됨.',
     mission:'가상 클라이언트의 Meta·카카오·네이버 소재 기획안 작성 (카피 + 규격 + 비주얼 방향)'
   },
@@ -293,7 +293,7 @@ const dayData = {
     ,
       '<a href="https://publy.co/content/7733" target="_blank" style="color:var(--primary);text-decoration:underline;font-weight:bold">추천 아티클: 일이 밀린 주니어에게: 깔끔하게 처리하는 4단계 업무 처방전 (Publy)</a>'
     ],
-    tips:["문제가 발생했다면 '죄송합니다'로 끝내지 마세요. 'A 문제가 생겼으나, B 대안으로 C 조치를 취해 복구 중입니다'라고 보고하세요."],
+    tips:["문제가 발생했다면 '죄송합니다'로 끝내지 마세요. 'A 문제가 생겼으나, B 대안으로 C 조치를 취해 복구 중입니다'라고 보고하세요.","GA4에서 보는 이벤트가 어디서 오는지(GTM 태깅)는 Day26에서 직접 만들어봅니다 — '태깅→수집→분석' 순서로 이해하면 더 쉽습니다."],
     mission: '일일 성과가 전일 대비 30% 하락했을 때의 메일/팀즈 보고용 코멘트 초안 작성'
   },
   day17: {
@@ -785,7 +785,7 @@ const dayData = {
         "예산배분"
     ],
     items: [
-        "100~300만원 Test 예산 기준 캠페인 예산 분배(CBO vs ABO) 전략",
+        "100~300만원 Test 예산 기준 캠페인 예산 분배(CBO vs ABO) 전략 — CBO/ABO 판단 기준은 Day49에서 자세히 다루니, 지금은 ABO(광고세트 개별 예산) 기준으로 설계해도 됩니다",
         "인지/유도/전환 퍼널별 매체 할당(Spread) 로직"
     ],
     tips: [
@@ -1199,9 +1199,21 @@ function openModal(dayId, e) {
   if (d.tips) html += `<div class="tip-box"><div class="tip-label">🐣 초보자 팁</div><ul class="tip-list">${d.tips.map(t=>`<li>${applyTooltips(t)}</li>`).join('')}</ul></div>`;
   if (d.mission) html += `<div class="mission-box" style="margin-top:20px"><div class="mission-label">🎯 오늘의 미션</div><div class="mission-text">${d.mission}</div></div>`;
 
+  // 이전/다음 Day 이동 (순서대로 진행 지원)
+  const dn = parseInt(dayId.replace('day', ''));
+  const total = Object.keys(dayData).length;
+  const prevId = dn > 1 ? 'day' + (dn - 1) : null;
+  const nextId = dn < total ? 'day' + (dn + 1) : null;
+  html += `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:22px;padding-top:16px;border-top:1px solid var(--border)">
+    ${prevId ? `<button type="button" class="btn btn-ghost btn-sm" onclick="openModal('${prevId}')">← Day ${dn - 1}</button>` : '<span></span>'}
+    <span style="font-size:12px;color:var(--text-muted);font-weight:700">Day ${dn} / ${total}</span>
+    ${nextId ? `<button type="button" class="btn btn-ghost btn-sm" onclick="openModal('${nextId}')">Day ${dn + 1} →</button>` : '<span></span>'}
+  </div>`;
+
   document.getElementById('modalBody').innerHTML = html;
-  _modalLastFocus = document.activeElement;
-  document.getElementById('detailOverlay').classList.add('open');
+  const overlay = document.getElementById('detailOverlay');
+  if (!overlay.classList.contains('open')) _modalLastFocus = document.activeElement; // 모달 내 이동 시 원래 포커스 보존
+  overlay.classList.add('open');
   document.body.style.overflow = 'hidden'; // 배경 스크롤 잠금
   const closeBtn = document.querySelector('#detailModal .modal-close');
   if (closeBtn) setTimeout(() => closeBtn.focus(), 30); // 모달로 포커스 이동
@@ -1232,14 +1244,27 @@ const weekMeta = {
   week12: { num:'Week 12', title:'최종 포트폴리오 & 수료', sub:'3개월 성과 통합 랩업 · 최종 발표 (PT)', grad:'var(--gradient-week4)', days:['day56','day57','day58','day59','day60'] }
 };
 
+// 주차 번호 → 학습 단계(Phase) 정보
+function phaseOf(weekNum) {
+  if (weekNum <= 4) return { n:'PHASE 1 · 기초 마스터', g:'광고 용어·지표·매체·분석의 공통 언어를 익히는 “이해하기” 단계' };
+  if (weekNum <= 8) return { n:'PHASE 2 · 실전 섀도잉', g:'사수 옆에서 A/B·데이터·트러블슈팅·리포팅을 직접 손으로 해보는 “따라하기” 단계' };
+  return { n:'PHASE 3 · 독립 리딩', g:'소액 예산을 직접 기획·운영·확장하고 포트폴리오로 마무리하는 “혼자 하기” 단계' };
+}
+
 function renderWeekPage(weekId) {
   const m = weekMeta[weekId];
   const container = document.getElementById('page-' + weekId);
+  const wn = parseInt(weekId.replace('week', ''));
+  const ph = phaseOf(wn);
   container.innerHTML = `
     <div class="hero" style="padding-bottom:0">
-      <div class="hero-eyebrow" style="background:rgba(255,255,255,0.06);color:var(--text-secondary);border-color:var(--border)">${m.num}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <span class="hero-eyebrow" style="margin:0;background:var(--primary-soft);color:var(--primary);border-color:rgba(var(--primary-rgb),.25)">${ph.n}</span>
+        <span class="hero-eyebrow" style="margin:0;background:rgba(255,255,255,0.06);color:var(--text-secondary);border-color:var(--border)">${m.num}</span>
+      </div>
       <h1 class="hero-title" style="font-size:32px">${m.title}</h1>
-      <p class="hero-desc" style="margin-bottom:0">${m.sub}</p>
+      <p class="hero-desc" style="margin-bottom:8px">${m.sub}</p>
+      <div class="callout info" style="max-width:680px;margin-top:0"><span class="c-ico">🧭</span><div>${ph.g}<br><b>권장 페이스</b>: 주 5일 · 하루 1강(Day) — 전체 12주 과정. 위에서부터 순서대로 진행하세요.</div></div>
     </div>
     <div class="section-wrap">
       <div class="section-header"><span class="section-title">일차별 학습</span><span style="font-size:12px;color:var(--text-muted)">카드를 클릭하면 상세 내용, 동그라미를 누르면 완료 체크</span></div>

@@ -82,8 +82,8 @@ function applyPage(id) {
   const main = document.querySelector('main');
   if (main) { main.setAttribute('tabindex', '-1'); main.focus({ preventScroll: true }); }
 
-  // 홈 복귀 시 질문 검색창 초기화(지난 검색 결과 잔존 방지)
-  if (id === 'home') resetHomeSearch();
+  // 홈 복귀 시 질문 검색창 초기화 + 다음 학습 갱신
+  if (id === 'home') { resetHomeSearch(); renderNextUp(); }
 
   closeSidebar();
 }
@@ -380,6 +380,32 @@ function homeSearchEnter() {
   if (q.trim()) { openSearch(); const si = document.getElementById('searchInput'); if (si) { si.value = q; runSearch(); } }
 }
 
+// ─── 다음 학습 Day 안내 (홈, 순차 진행 길잡이) ───
+function renderNextUp() {
+  const mount = document.getElementById('nextUpMount');
+  if (!mount || typeof dayData !== 'object') return;
+  const total = Object.keys(dayData).length;
+  const done = (typeof getDoneSet === 'function') ? getDoneSet() : new Set();
+  const doneCount = [...done].filter(x => /^day\d+$/.test(x) && dayData[x]).length;
+  let nextN = 0;
+  for (let i = 1; i <= total; i++) { if (!done.has('day' + i)) { nextN = i; break; } }
+  if (nextN === 0) {
+    mount.innerHTML = '<div class="nextup done"><span class="nu-ico">🎓</span><div><div class="nu-title">커리큘럼 ' + total + '일 완주! 축하합니다 🎉</div><div class="nu-sub">이제 실무 도구로 실제 캠페인을 운영해 보세요.</div></div></div>';
+    return;
+  }
+  const d = dayData['day' + nextN];
+  const wk = 'week' + Math.ceil(nextN / 5);
+  mount.innerHTML =
+    '<div class="nextup"><div class="nu-left">' +
+      '<span class="nu-badge">📍 다음 학습</span>' +
+      '<div class="nu-title">Day ' + nextN + ' · ' + escapeHtml(d.title) + '</div>' +
+      '<div class="nu-sub">' + escapeHtml(d.week) + ' · 권장 페이스: 주 5일 · 하루 1강 (전체 12주) · 진도 ' + doneCount + '/' + total + '</div>' +
+    '</div><div class="nu-btns">' +
+      '<button class="btn btn-primary btn-sm" onclick="openModal(\'day' + nextN + '\')">바로 열기 →</button>' +
+      '<button class="btn btn-ghost btn-sm" onclick="showPage(\'' + wk + '\')">주차 보기</button>' +
+    '</div></div>';
+}
+
 // ─── 첫 주 온보딩 체크리스트 (홈) ───
 const ONBOARD_ITEMS = [
   { id: 'utm',      label: 'UTM 완전정복 학습하기',          sub: '개념·5파라미터·퀴즈',  go: 'utm-learn' },
@@ -439,6 +465,7 @@ document.addEventListener('keydown', e => {
 
 // ─── 초기화 ───
 renderHomeSearch();
+renderNextUp();
 renderOnboarding();
 a11yEnhance(document);
 initRouting();
