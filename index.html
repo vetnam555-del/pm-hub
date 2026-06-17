@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>퍼포먼스 마케팅 실무 허브 | HLL중앙</title>
+<meta name="description" content="HLL중앙 퍼포먼스마케팅팀 실무 허브 — 실무 도구(KPI 계산기·UTM 빌더·예산 시뮬레이터·리포트·진단·A/B) + 12주 커리큘럼 + 용어사전·규격·매체 가이드">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23646CFF'/%3E%3Ctext x='50' y='71' font-size='58' text-anchor='middle'%3E%F0%9F%9A%80%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/beginner.css">
+<link rel="stylesheet" href="css/tools.css">
+</head>
+<body>
+
+<!-- 모바일 상단바 -->
+<div class="mobile-topbar">
+  <button class="hamburger" onclick="toggleSidebar()" aria-label="메뉴 열기">☰</button>
+  <span class="mt-title" id="mtTitle">🚀 PM 실무 허브</span>
+</div>
+<div class="sidebar-scrim" id="sidebarScrim" onclick="toggleSidebar()"></div>
+
+<!-- ─── Sidebar ─── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-badge">
+      <span class="logo-icon">🚀</span>
+      <div>
+        <div>PM 실무 허브</div>
+        <span class="logo-sub">Performance Marketing Workbench</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="profile-row" id="profileRow" onclick="editProfileName()" title="이름 설정 (클릭)">
+    <span class="profile-avatar">👤</span>
+    <span id="profileName" class="profile-name">새내기 인턴 님 ✏️</span>
+  </div>
+
+  <div class="sidebar-search">
+    <button onclick="openSearch()" aria-label="전역 검색 열기">
+      🔍 <span>검색</span><span class="kbd">Ctrl K</span>
+    </button>
+  </div>
+
+  <nav class="sidebar-nav" aria-label="주요 메뉴">
+    <div class="nav-section-title">메인</div>
+    <button class="nav-item active" data-page="home" onclick="showPage('home',this)" aria-current="page">
+      <span class="nav-icon">🏠</span> 홈 대시보드
+    </button>
+
+    <div class="nav-section-title">🧰 실무 도구</div>
+    <button class="nav-item" data-page="tool-kpi" onclick="showPage('tool-kpi',this)"><span class="nav-icon">📊</span> KPI 계산기</button>
+    <button class="nav-item" data-page="tool-utm" onclick="showPage('tool-utm',this)"><span class="nav-icon">🔗</span> UTM 빌더</button>
+    <button class="nav-item" data-page="tool-budget" onclick="showPage('tool-budget',this)"><span class="nav-icon">💰</span> 손익분기·예산</button>
+    <button class="nav-item" data-page="tool-report" onclick="showPage('tool-report',this)"><span class="nav-icon">📝</span> 주간 리포트</button>
+    <button class="nav-item" data-page="tool-diagnose" onclick="showPage('tool-diagnose',this)"><span class="nav-icon">🩺</span> 트러블슈팅 진단</button>
+    <button class="nav-item" data-page="tool-abtest" onclick="showPage('tool-abtest',this)"><span class="nav-icon">🧪</span> A/B 유의성 검정</button>
+
+    <div class="nav-section-title">📘 학습</div>
+    <button class="nav-item" data-page="utm-learn" onclick="showPage('utm-learn',this)"><span class="nav-icon">🎯</span> UTM 완전정복</button>
+    <div class="nav-accordion" id="weekAccordion">
+      <button class="nav-acc-header" aria-expanded="false" onclick="toggleAccordion(this)">📚 12주 커리큘럼 <span class="acc-caret">▶</span></button>
+      <div class="nav-acc-body">
+        <div class="nav-group-label">PHASE 1 · 기초 마스터</div>
+        <button class="nav-item" data-page="week1" onclick="showPage('week1',this)"><span class="nav-icon">📖</span> 1주차 — 기초 & 용어</button>
+        <button class="nav-item" data-page="week2" onclick="showPage('week2',this)"><span class="nav-icon">🇰🇷</span> 2주차 — 국내 매체</button>
+        <button class="nav-item" data-page="week3" onclick="showPage('week3',this)"><span class="nav-icon">🌐</span> 3주차 — 글로벌 매체</button>
+        <button class="nav-item" data-page="week4" onclick="showPage('week4',this)"><span class="nav-icon">📊</span> 4주차 — 분석 기초</button>
+        <div class="nav-group-label">PHASE 2 · 실전 섀도잉</div>
+        <button class="nav-item" data-page="week5" onclick="showPage('week5',this)"><span class="nav-icon">🧪</span> 5주차 — A/B 테스트</button>
+        <button class="nav-item" data-page="week6" onclick="showPage('week6',this)"><span class="nav-icon">📈</span> 6주차 — 데이터 심화</button>
+        <button class="nav-item" data-page="week7" onclick="showPage('week7',this)"><span class="nav-icon">🚨</span> 7주차 — 트러블슈팅</button>
+        <button class="nav-item" data-page="week8" onclick="showPage('week8',this)"><span class="nav-icon">🤝</span> 8주차 — 리포팅 실무</button>
+        <div class="nav-group-label">PHASE 3 · 독립 리딩</div>
+        <button class="nav-item" data-page="week9" onclick="showPage('week9',this)"><span class="nav-icon">🚀</span> 9주차 — 캠페인 기획</button>
+        <button class="nav-item" data-page="week10" onclick="showPage('week10',this)"><span class="nav-icon">⚡</span> 10주차 — 라이브 최적화</button>
+        <button class="nav-item" data-page="week11" onclick="showPage('week11',this)"><span class="nav-icon">🧩</span> 11주차 — 믹스 확장</button>
+        <button class="nav-item" data-page="week12" onclick="showPage('week12',this)"><span class="nav-icon">🎓</span> 12주차 — 포트폴리오</button>
+      </div>
+    </div>
+
+    <div class="nav-section-title">📚 참고 자료</div>
+    <button class="nav-item" data-page="media" onclick="showPage('media',this)"><span class="nav-icon">📡</span> 매체 가이드</button>
+    <button class="nav-item" data-page="benchmark" onclick="showPage('benchmark',this)"><span class="nav-icon">📊</span> 매체 벤치마크</button>
+    <button class="nav-item" data-page="glossary" onclick="showPage('glossary',this)"><span class="nav-icon">📖</span> 광고 용어 사전</button>
+    <button class="nav-item" data-page="specs" onclick="showPage('specs',this)"><span class="nav-icon">📐</span> 소재 규격표</button>
+    <button class="nav-item" data-page="naming" onclick="showPage('naming',this)"><span class="nav-icon">🏷️</span> 네이밍 규칙</button>
+    <button class="nav-item" data-page="faq" onclick="showPage('faq',this)"><span class="nav-icon">❓</span> 자주 묻는 질문</button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>커리큘럼 진도 <span id="progressDone" style="color:var(--text-muted)">0</span>/60</span>
+        <span id="progressPct">0%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressBar"></div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ─── Main ─── -->
+<main>
+
+  <!-- ══ HOME ══ -->
+  <div class="page active" id="page-home">
+    <div class="hero">
+      <div class="hero-eyebrow">✦ HLL중앙 퍼포먼스마케팅팀 실무 허브 v1.1</div>
+      <h1 class="hero-title">배우고, 계산하고,<br><span class="highlight">바로 실무에 씁니다</span></h1>
+      <p class="hero-desc">매일 쓰는 계산기·빌더·시뮬레이터부터 12주 온보딩 커리큘럼, 용어사전·규격·매체 가이드까지.<br>퍼포먼스 마케터의 책상 위 모든 것을 한 곳에 모았습니다.</p>
+      <div class="hero-stats">
+        <div class="stat-item"><span class="stat-num">6</span><span class="stat-label">실무 도구</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat-item"><span class="stat-num">12</span><span class="stat-label">주 커리큘럼</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat-item"><span class="stat-num">9</span><span class="stat-label">개 매체</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat-item"><span class="stat-num">20+</span><span class="stat-label">광고 용어</span></div>
+      </div>
+    </div>
+
+    <!-- 온보딩 체크리스트 -->
+    <div class="section-wrap" style="padding-top:0">
+      <div id="onboardMount"></div>
+    </div>
+
+    <!-- 실무 도구 (핵심) -->
+    <div class="section-wrap" style="padding-top:0">
+      <div class="section-header">
+        <span class="section-title">🧰 실무 도구</span>
+        <span style="font-size:12px;color:var(--text-muted)">현업에서 바로 쓰는 계산·생성 도구</span>
+      </div>
+      <div class="toolcard-grid">
+        <button class="toolcard" onclick="showPage('tool-kpi',this)">
+          <span class="tc-ico">📊</span><span class="tc-title">KPI 계산기</span>
+          <span class="tc-desc">노출·클릭·비용·전환·매출만 넣으면 CTR·CPC·CPM·CVR·CPA·ROAS를 자동으로. 역산 모드까지.</span>
+          <span class="tc-go">열기 →</span>
+        </button>
+        <button class="toolcard" onclick="showPage('tool-utm',this)">
+          <span class="tc-ico">🔗</span><span class="tc-title">UTM 빌더</span>
+          <span class="tc-desc">팀 네이밍 규칙(소문자·언더스코어)을 강제하고, 여러 링크를 한 번에 만들어 엑셀로 복사.</span>
+          <span class="tc-go">열기 →</span>
+        </button>
+        <button class="toolcard" onclick="showPage('tool-budget',this)">
+          <span class="tc-ico">💰</span><span class="tc-title">손익분기·예산 시뮬레이터</span>
+          <span class="tc-desc">마진·객단가로 손익분기 ROAS/CPA를 역산하고, 예산을 퍼널별로 배분해 예상 성과를 추정.</span>
+          <span class="tc-go">열기 →</span>
+        </button>
+        <button class="toolcard" onclick="showPage('tool-report',this)">
+          <span class="tc-ico">📝</span><span class="tc-title">주간 리포트 빌더</span>
+          <span class="tc-desc">매체별 수치(전주 대비)를 넣으면 요약·매체 비교·인사이트 문구·다음 액션까지 자동 생성.</span>
+          <span class="tc-go">열기 →</span>
+        </button>
+        <button class="toolcard" onclick="showPage('tool-diagnose',this)">
+          <span class="tc-ico">🩺</span><span class="tc-title">트러블슈팅 진단기</span>
+          <span class="tc-desc">CTR↓·CVR↓·예산 미소진·CPA 급등… 증상을 고르면 원인과 액션을 단계별로 진단.</span>
+          <span class="tc-go">열기 →</span>
+        </button>
+        <button class="toolcard" onclick="showPage('tool-abtest',this)">
+          <span class="tc-ico">🧪</span><span class="tc-title">A/B 유의성 검정</span>
+          <span class="tc-desc">두 소재의 전환율 차이가 통계적으로 유의한지, 표본은 충분한지 z-검정으로 판정.</span>
+          <span class="tc-go">열기 →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 학습 -->
+    <div class="section-wrap" style="padding-top:0">
+      <div class="section-header">
+        <span class="section-title">📘 학습</span>
+        <span style="font-size:12px;color:var(--text-muted)">처음이라면 여기부터</span>
+      </div>
+      <div class="toolcard-grid">
+        <button class="toolcard" onclick="showPage('utm-learn',this)">
+          <span class="tc-ico">🎯</span><span class="tc-title">UTM 완전정복</span>
+          <span class="tc-desc">UTM 개념·5개 파라미터·자주 하는 실수·퀴즈까지. 처음 배우는 인턴용 학습 코너.</span>
+          <span class="tc-go">학습하기 →</span>
+        </button>
+        <button class="toolcard" onclick="showPage('week1',this)">
+          <span class="tc-ico">📚</span><span class="tc-title">12주 온보딩 커리큘럼</span>
+          <span class="tc-desc">디지털 광고 기초부터 독립 캠페인 리딩까지 60일 데일리 미션. 진도는 자동 저장됩니다.</span>
+          <span class="tc-go">시작하기 →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 12주 커리큘럼 미리보기 -->
+    <div class="section-wrap" style="padding-top:0">
+      <div class="section-header">
+        <span class="section-title">📅 이번 주 학습</span>
+        <span style="font-size:12px;color:var(--text-muted)">Day를 클릭하면 상세, 동그라미로 완료 체크</span>
+      </div>
+      <div class="weeks-grid">
+        <div class="week-card" onclick="showPage('week1',this)">
+          <div class="week-gradient-bar"></div>
+          <div class="week-card-header">
+            <div class="week-num">Week 01</div>
+            <div class="week-title">디지털 광고 기초 & 용어</div>
+            <div class="week-subtitle">KPI 지표 · 타겟팅 · 매체 생태계</div>
+          </div>
+          <div class="week-card-body">
+            <div class="day-list">
+              <div class="day-item" data-day="day1" onclick="openModal('day1',event)"><span class="day-badge">Day 1</span><span class="day-text">오리엔테이션 & 팀 온보딩</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+              <div class="day-item" data-day="day2" onclick="openModal('day2',event)"><span class="day-badge">Day 2</span><span class="day-text">퍼포먼스 마케팅 개념 이해</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+              <div class="day-item" data-day="day3" onclick="openModal('day3',event)"><span class="day-badge">Day 3</span><span class="day-text">핵심 KPI 지표 마스터</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+              <div class="day-item" data-day="day4" onclick="openModal('day4',event)"><span class="day-badge">Day 4</span><span class="day-text">타겟팅 & 추적 기술 이해</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+              <div class="day-item" data-day="day5" onclick="openModal('day5',event)"><span class="day-badge">Day 5</span><span class="day-text">매체 생태계 비교 & 정리</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+            </div>
+          </div>
+        </div>
+        <div class="week-card" onclick="showPage('week2',this)">
+          <div class="week-gradient-bar"></div>
+          <div class="week-card-header">
+            <div class="week-num">Week 02</div>
+            <div class="week-title">국내 매체 실습</div>
+            <div class="week-subtitle">네이버 SA · GFA · 카카오모먼트</div>
+          </div>
+          <div class="week-card-body">
+            <div class="day-list">
+              <div class="day-item" data-day="day6" onclick="openModal('day6',event)"><span class="day-badge">Day 6</span><span class="day-text">네이버 검색광고(SA) 실습</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+              <div class="day-item" data-day="day7" onclick="openModal('day7',event)"><span class="day-badge">Day 7</span><span class="day-text">네이버 성과형 DA(GFA) 실습</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+              <div class="day-item" data-day="day8" onclick="openModal('day8',event)"><span class="day-badge">Day 8</span><span class="day-text">카카오모먼트 실습</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+              <div class="day-item" data-day="day9" onclick="openModal('day9',event)"><span class="day-badge">Day 9</span><span class="day-text">국내 매체 통합 실습</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+              <div class="day-item" data-day="day10" onclick="openModal('day10',event)"><span class="day-badge">Day 10</span><span class="day-text">복습 & 퀴즈</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+            </div>
+          </div>
+        </div>
+        <div class="week-card" onclick="showPage('week3',this)">
+          <div class="week-gradient-bar"></div>
+          <div class="week-card-header">
+            <div class="week-num">Week 03</div>
+            <div class="week-title">글로벌 매체 + 소재 기획</div>
+            <div class="week-subtitle">구글 · 크리테오 · Meta · 소재 규격</div>
+          </div>
+          <div class="week-card-body">
+            <div class="day-list">
+              <div class="day-item" data-day="day11" onclick="openModal('day11',event)"><span class="day-badge">Day 11</span><span class="day-text">구글 광고 실습 (PMAX·검색·앱)</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+              <div class="day-item" data-day="day12" onclick="openModal('day12',event)"><span class="day-badge">Day 12</span><span class="day-text">크리테오(Criteo) 실습</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+              <div class="day-item" data-day="day13" onclick="openModal('day13',event)"><span class="day-badge">Day 13</span><span class="day-text">Meta & 기타 매체 개요</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+              <div class="day-item" data-day="day14" onclick="openModal('day14',event)"><span class="day-badge">Day 14</span><span class="day-text">소재 규격 & 카피라이팅</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+              <div class="day-item" data-day="day15" onclick="openModal('day15',event)"><span class="day-badge">Day 15</span><span class="day-text">매체 믹스 전략 수립</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+            </div>
+          </div>
+        </div>
+        <div class="week-card" onclick="showPage('week4',this)">
+          <div class="week-gradient-bar"></div>
+          <div class="week-card-header">
+            <div class="week-num">Week 04</div>
+            <div class="week-title">데이터 분석 & 첫 프로젝트</div>
+            <div class="week-subtitle">GA4 · 리포팅 · 최적화 · 발표</div>
+          </div>
+          <div class="week-card-body">
+            <div class="day-list">
+              <div class="day-item" data-day="day16" onclick="openModal('day16',event)"><span class="day-badge">Day 16</span><span class="day-text">GA4 & 전환 추적 기초</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+              <div class="day-item" data-day="day17" onclick="openModal('day17',event)"><span class="day-badge">Day 17</span><span class="day-text">업계 트렌드 & 자기학습법</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+              <div class="day-item" data-day="day18" onclick="openModal('day18',event)"><span class="day-badge">Day 18</span><span class="day-text">캠페인 최적화 & 커뮤니케이션</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+              <div class="day-item" data-day="day19" onclick="openModal('day19',event)"><span class="day-badge">Day 19</span><span class="day-text">미니 프로젝트 준비</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+              <div class="day-item" data-day="day20" onclick="openModal('day20',event)"><span class="day-badge">Day 20</span><span class="day-text">🎓 1개월차 랩업 & 점검</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:20px">
+        <button class="btn btn-ghost" onclick="showPage('week5',this)">PHASE 2·3 (5~12주차) 전체 보기 →</button>
+      </div>
+    </div>
+
+    <!-- 빠른 참고 -->
+    <div class="section-wrap" style="padding-top:0">
+      <div class="section-header">
+        <span class="section-title">📚 빠른 참고</span>
+        <span style="font-size:12px;color:var(--text-muted)">막힐 때 바로 찾아보세요</span>
+      </div>
+      <div class="toolcard-grid">
+        <button class="toolcard" onclick="showPage('media',this)"><span class="tc-ico">📡</span><span class="tc-title">매체 가이드</span><span class="tc-desc">9개 매체 특징·강점·공식 가이드 링크</span><span class="tc-go">열기 →</span></button>
+        <button class="toolcard" onclick="showPage('benchmark',this)"><span class="tc-ico">📊</span><span class="tc-title">매체 벤치마크</span><span class="tc-desc">매체별 CTR·CVR·CPC 정상 범위 (오판 방지)</span><span class="tc-go">열기 →</span></button>
+        <button class="toolcard" onclick="showPage('glossary',this)"><span class="tc-ico">📖</span><span class="tc-title">광고 용어 사전</span><span class="tc-desc">검색·필터 가능한 핵심 용어 + 공식</span><span class="tc-go">열기 →</span></button>
+        <button class="toolcard" onclick="showPage('specs',this)"><span class="tc-ico">📐</span><span class="tc-title">소재 규격표</span><span class="tc-desc">매체별 이미지·영상 규격과 주의사항</span><span class="tc-go">열기 →</span></button>
+        <button class="toolcard" onclick="showPage('naming',this)"><span class="tc-ico">🏷️</span><span class="tc-title">네이밍 규칙</span><span class="tc-desc">UTM·캠페인 표준 네이밍 컨벤션</span><span class="tc-go">열기 →</span></button>
+        <button class="toolcard" onclick="showPage('faq',this)"><span class="tc-ico">❓</span><span class="tc-title">자주 묻는 질문</span><span class="tc-desc">인턴들이 가장 헷갈리는 Q&A</span><span class="tc-go">열기 →</span></button>
+      </div>
+    </div>
+  </div><!-- /home -->
+
+  <!-- ══ 실무 도구 / 학습 (JS 렌더) ══ -->
+  <div class="page" id="page-tool-kpi"></div>
+  <div class="page" id="page-tool-utm"></div>
+  <div class="page" id="page-tool-budget"></div>
+  <div class="page" id="page-tool-report"></div>
+  <div class="page" id="page-tool-diagnose"></div>
+  <div class="page" id="page-tool-abtest"></div>
+  <div class="page" id="page-utm-learn"></div>
+
+  <!-- ══ WEEK PAGES (JS 렌더) ══ -->
+  <div class="page" id="page-week1"></div>
+  <div class="page" id="page-week2"></div>
+  <div class="page" id="page-week3"></div>
+  <div class="page" id="page-week4"></div>
+  <div class="page" id="page-week5"></div>
+  <div class="page" id="page-week6"></div>
+  <div class="page" id="page-week7"></div>
+  <div class="page" id="page-week8"></div>
+  <div class="page" id="page-week9"></div>
+  <div class="page" id="page-week10"></div>
+  <div class="page" id="page-week11"></div>
+  <div class="page" id="page-week12"></div>
+
+  <!-- ══ MEDIA ══ -->
+  <div class="page" id="page-media">
+    <div class="hero" style="padding-bottom:0">
+      <div class="hero-eyebrow">📡 매체 가이드</div>
+      <h1 class="hero-title" style="font-size:32px">매체별 핵심 정리</h1>
+      <p class="hero-desc" style="margin-bottom:0">각 매체의 특징, 강점, 주요 캠페인 유형과 공식 가이드 링크를 한눈에.</p>
+    </div>
+    <div class="section-wrap"><div class="media-grid" id="mediaGrid"></div></div>
+  </div>
+
+  <!-- ══ BENCHMARK (JS 렌더) ══ -->
+  <div class="page" id="page-benchmark"></div>
+
+  <!-- ══ GLOSSARY ══ -->
+  <div class="page" id="page-glossary">
+    <div class="hero" style="padding-bottom:0">
+      <div class="hero-eyebrow">📖 광고 용어 사전</div>
+      <h1 class="hero-title" style="font-size:32px">광고 용어 사전</h1>
+      <p class="hero-desc" style="margin-bottom:0">퍼포먼스 마케터라면 반드시 알아야 할 핵심 용어와 계산식.</p>
+    </div>
+    <div class="section-wrap">
+      <div class="glossary-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="glossarySearch" placeholder="용어 검색... (예: ROAS, CTR, 픽셀)" oninput="filterGlossary()">
+      </div>
+      <div class="glossary-filter" id="glossaryFilter"></div>
+      <div class="glossary-grid" id="glossaryGrid"></div>
+    </div>
+  </div>
+
+  <!-- ══ SPECS ══ -->
+  <div class="page" id="page-specs">
+    <div class="hero" style="padding-bottom:0">
+      <div class="hero-eyebrow">📐 소재 규격</div>
+      <h1 class="hero-title" style="font-size:32px">매체별 소재 규격표</h1>
+      <p class="hero-desc" style="margin-bottom:0">소재 제작 전 반드시 확인하세요. 매체별 이미지·영상 규격과 주의사항.</p>
+    </div>
+    <div class="section-wrap">
+      <div class="callout warn" style="max-width:1080px;margin:0 auto 18px"><span class="c-ico">⚠️</span><div>규격은 매체 정책에 따라 수시로 변경됩니다. <b>2026.06 기준</b>이며, 실제 소재 제작 전 각 매체 <b>공식 가이드</b>에서 최신 규격을 반드시 재확인하세요.</div></div>
+      <div class="spec-grid" id="specGrid"></div>
+    </div>
+  </div>
+
+  <!-- ══ NAMING (JS 렌더) ══ -->
+  <div class="page" id="page-naming"></div>
+
+  <!-- ══ FAQ ══ -->
+  <div class="page" id="page-faq">
+    <div class="hero" style="padding-bottom:0">
+      <div class="hero-eyebrow">❓ 자주 묻는 질문</div>
+      <h1 class="hero-title" style="font-size:32px">초보자 FAQ</h1>
+      <p class="hero-desc" style="margin-bottom:0">인턴들이 가장 많이 헷갈리는 질문과 실무자의 답변.</p>
+    </div>
+    <div class="section-wrap"><div class="faq-grid" id="faqGrid"></div></div>
+  </div>
+
+</main>
+
+<!-- ─── Welcome Modal ─── -->
+<div class="welcome-overlay" id="welcomeOverlay">
+  <div class="welcome-modal" style="max-width:640px; padding:32px; max-height:90vh; overflow-y:auto;">
+    <div style="text-align:center; margin-bottom:18px;">
+      <div style="font-size:30px; font-weight:900; color:var(--primary); letter-spacing:-1px; margin-bottom:4px">HLL<span style="color:#ffffff; opacity:0.95;">중앙</span></div>
+      <div style="font-size:12px; color:#aaa; font-weight:600; letter-spacing:1px">HOUSE OF LUXURY LIFESTYLE</div>
+    </div>
+    <h2 class="welcome-title" style="margin-bottom:12px; font-size:21px; text-align:center; line-height:1.4;">퍼포먼스 마케팅팀에 오신 걸 환영합니다 🎉</h2>
+    <p style="text-align:center; color:#8892A4; font-size:13px; margin-bottom:16px;">이 허브는 <b style="color:#F0F4FF">학습 + 실무 도구 + 참고자료</b>를 한 곳에 모은 작업대입니다.</p>
+
+    <div class="action-steps-box">
+      <div style="font-size:14px; font-weight:800; color:#fff; margin-bottom:12px;">✅ 이렇게 활용하세요</div>
+      <div class="action-step"><div class="action-num">1</div><div class="action-text"><b>처음이라면</b> [UTM 완전정복]과 [1주차 Day 1]부터 학습을 시작하세요.</div></div>
+      <div class="action-step"><div class="action-num">2</div><div class="action-text"><b>실무 중이라면</b> [🧰 실무 도구]의 KPI 계산기·UTM 빌더·예산 시뮬레이터를 바로 쓰세요.</div></div>
+      <div class="action-step"><div class="action-num">3</div><div class="action-text"><b>막힐 때는</b> 좌측 [🔍 검색(Ctrl+K)]으로 용어·도구·규격을 바로 찾으세요.</div></div>
+    </div>
+
+    <div style="text-align:center; margin-top:8px;">
+      <button class="welcome-btn" onclick="closeWelcome()" style="width:auto; padding:14px 40px;">실무 허브 입장하기 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Day Detail Modal ─── -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeModalOutside(event)">
+  <div class="detail-modal" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header">
+      <div class="modal-eyebrow" id="modalEyebrow"></div>
+      <h2 class="modal-title" id="modalTitle"></h2>
+      <button class="modal-close" onclick="closeModal()" aria-label="닫기">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script src="js/curriculum.js"></script>
+<script src="js/tools/kpi.js"></script>
+<script src="js/tools/utm.js"></script>
+<script src="js/tools/budget.js"></script>
+<script src="js/tools/report.js"></script>
+<script src="js/tools/diagnose.js"></script>
+<script src="js/tools/abtest.js"></script>
+<script src="js/tools/utm-learn.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
