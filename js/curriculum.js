@@ -1564,8 +1564,17 @@ function renderBenchmark() {
           </table>
         </div>
       </div>
+      <div class="panel" style="margin-top:14px">
+        <div class="panel-head"><span class="ico">📚</span><div><div class="panel-title">이 수치의 근거·출처</div><div class="panel-sub">단일 공식 출처가 아닌, 업계 통용 추정치입니다</div></div></div>
+        <ul class="content-list">
+          <li>위 범위는 <b>2026년 한국 디지털 광고 시장에서 매체별로 통용되는 일반적 범위</b>를 정리한 <b>상대 참고용 추정치</b>입니다. 특정 리포트의 단일 수치를 그대로 옮긴 값이 아닙니다.</li>
+          <li><b>가장 정확한 기준은 우리 계정의 과거 성과 데이터</b>(클라이언트·업종별 자체 평균)입니다. 표의 범위는 그 데이터가 없을 때의 출발점으로만 쓰세요.</li>
+          <li>공개 리포트로 교차 확인 — <a href="https://www.cjmezzomedia.com" target="_blank" rel="noopener noreferrer" style="color:var(--primary);font-weight:600">메조미디어</a> · <a href="https://www.nasmedia.co.kr" target="_blank" rel="noopener noreferrer" style="color:var(--primary);font-weight:600">나스미디어</a> · <a href="https://www.dmcreport.co.kr" target="_blank" rel="noopener noreferrer" style="color:var(--primary);font-weight:600">DMC리포트</a>의 매체·업종 트렌드 리포트, 그리고 <b>각 매체 광고관리자 내 업종 평균/추정치</b>(Meta·구글 Ads).</li>
+          <li>업종·시즌·소재·타겟·계정 성숙도에 따라 같은 매체도 2~3배씩 달라집니다. <b>분기마다 최신 리포트로 재확인</b>을 권장합니다.</li>
+        </ul>
+      </div>
       <div class="callout info" style="margin-top:14px"><span class="c-ico">💡</span><div>판단 순서: ① 이 표로 <b>매체 정상 범위</b> 확인 → ② [KPI 계산기]로 내 수치 산출 → ③ [트러블슈팅 진단기]로 원인·액션 도출.</div></div>
-      <div class="btn-row"><button class="btn btn-ghost btn-sm" onclick="showPage('tool-kpi')">📊 KPI 계산기</button><button class="btn btn-ghost btn-sm" onclick="showPage('tool-diagnose')">🩺 트러블슈팅 진단</button></div>
+      <div class="btn-row"><button class="btn btn-ghost btn-sm" onclick="showPage('tool-kpi')">📊 KPI 계산기</button><button class="btn btn-ghost btn-sm" onclick="showPage('tool-diagnose')">🩺 트러블슈팅 진단</button><button class="btn btn-ghost btn-sm" onclick="showPage('sources')">📰 인사이트 소스</button></div>
     </div>`;
 }
 
