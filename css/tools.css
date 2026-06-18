@@ -385,6 +385,18 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   outline: 2px solid var(--primary); outline-offset: 2px;
 }
 main:focus { outline: none; }
+
+/* ============================================================
+   마케팅 인사이트 소스 카드
+   ============================================================ */
+.src-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(248px,1fr)); gap:10px; margin-top:14px; }
+.src-card { display:flex; flex-direction:column; gap:6px; padding:14px 15px; background: rgba(255,255,255,.03); border:1px solid var(--border); border-radius: var(--radius-sm); text-decoration:none; transition: var(--transition); }
+.src-card:hover { border-color: var(--primary); background: var(--primary-soft); transform: translateY(-2px); }
+.src-top { display:flex; align-items:center; gap:7px; }
+.src-name { font-weight:700; color: var(--text-primary); font-size:14px; }
+.src-en { font-size:11px; color: var(--text-muted); font-weight:500; }
+.src-go { margin-left:auto; color: var(--primary); font-size:13px; font-weight:700; }
+.src-desc { font-size:12.5px; color: var(--text-secondary); line-height:1.55; }
 /* day-check 를 button 으로 쓸 때 기본 스타일 리셋 */
 button.day-check { background: transparent; }
 

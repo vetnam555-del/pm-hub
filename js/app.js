@@ -20,6 +20,7 @@ const _renderers = {
   'utm-learn':     () => window.renderUtmLearn && renderUtmLearn(),
   'benchmark':     () => window.renderBenchmark && renderBenchmark(),
   'naming':        () => window.renderNaming && renderNaming(),
+  'sources':       () => window.renderSources && renderSources(),
 };
 
 // 모바일 상단바·검색에 쓰는 페이지 제목
@@ -30,6 +31,7 @@ const PAGE_TITLES = {
   'tool-bid': '📈 적정 입찰가', 'tool-pacing': '⏱️ 예산 페이싱',
   'utm-learn': '🎯 UTM 완전정복', 'media': '📡 매체 가이드', 'glossary': '📖 광고 용어 사전',
   'specs': '📐 소재 규격표', 'faq': '❓ 자주 묻는 질문', 'benchmark': '📊 매체 벤치마크', 'naming': '🏷️ 네이밍 규칙',
+  'sources': '📰 인사이트 소스',
 };
 
 const VALID_PAGES = new Set(Object.keys(PAGE_TITLES).concat(
@@ -385,6 +387,7 @@ const SEARCH_INTENTS = [
   { kw:['입찰','입찰가','bid','cpc 얼마','클릭당'], go:'tool-bid', label:'📈 적정 입찰가 계산기' },
   { kw:['페이싱','소진','pacing','과속','월말','남은 예산'], go:'tool-pacing', label:'⏱️ 예산 페이싱 계산기' },
   { kw:['네이밍','이름','규칙','컨벤션','표준'], go:'naming', label:'🏷️ 네이밍 규칙' },
+  { kw:['뉴스레터','인사이트','소스','트렌드','구독','읽을거리','캐릿','모비인사이드','아이보스','사이트','블로그','리포트'], go:'sources', label:'📰 마케팅 인사이트 소스 — 뉴스레터·사이트' },
   { kw:['용어','뜻','무슨','뭐','뭔','약자','의미','이란','란?'], go:'glossary', label:'📖 광고 용어 사전 — 모르는 용어 검색' },
   { kw:['학습','학습상태','러닝','learning','learning phase','커리큘럼','온보딩','day','일차'], go:'glossary', label:'📖 광고 용어 사전 (학습 상태 등 용어 검색)' },
 ];

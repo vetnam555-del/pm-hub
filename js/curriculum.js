@@ -1619,6 +1619,58 @@ function renderNaming() {
     </div>`;
 }
 
+// ─── 마케팅 인사이트 소스 (참고) ───
+const sourceData = [
+  { name:'모비인사이드', en:'MobiInside', cat:'media', url:'https://www.mobiinside.co.kr', desc:'모바일·마케팅·스타트업을 아우르는 국내 대표 디지털 비즈니스 미디어.' },
+  { name:'오픈애즈', en:'OpenAds', cat:'media', url:'https://www.openads.co.kr', desc:'마케팅 트렌드·캠페인 사례·인사이트를 모은 콘텐츠 플랫폼.' },
+  { name:'아이보스', en:'i-boss', cat:'media', url:'https://www.i-boss.co.kr', desc:'국내 최대 규모의 퍼포먼스 마케팅 커뮤니티·교육. 실무 질문/답변이 활발.' },
+  { name:'캐릿', en:'Careet', cat:'newsletter', url:'https://www.careet.net', desc:'MZ세대 트렌드를 빠르게 정리해 주는 뉴스레터. 타겟 감각을 키우기에 좋음.' },
+  { name:'고구마팜', en:'Gogumafarm', cat:'newsletter', url:'https://gogumafarm.kr', desc:'콘텐츠·SNS 마케팅 트렌드 뉴스레터(제일기획 운영).' },
+  { name:'큐레터', en:'Qletter', cat:'newsletter', url:'https://qletter.co.kr', desc:'마케터를 위한 마케팅 소식·사례 큐레이션 뉴스레터.' },
+  { name:'안장 출근길', en:'', cat:'newsletter', url:'https://contents.premium.naver.com/anjang/anjangram', desc:'마케팅·브랜드 트렌드를 짧게 짚어 주는 큐레이션 뉴스레터(네이버 프리미엄콘텐츠).' },
+  { name:'나스미디어', en:'Nasmedia', cat:'agency', url:'https://www.nasmedia.co.kr', desc:'종합 디지털 미디어렙. 미디어 트렌드 리포트(NPR 등)를 제공.' },
+  { name:'메조미디어', en:'MezzoMedia', cat:'agency', url:'https://www.cjmezzomedia.com', desc:'CJ 계열 디지털 미디어렙. 업종별·매체별 트렌드 리포트가 풍부.' },
+  { name:'인크로스', en:'Incross', cat:'agency', url:'https://www.incross.com/insight', desc:'디지털 광고 미디어렙. 매체·디바이스 미디어 인사이트 리포트.' },
+  { name:'제일기획 매거진', en:'Cheil', cat:'agency', url:'https://magazine.cheil.com', desc:'제일기획의 광고·브랜드·크리에이티브 인사이트 매거진.' },
+  { name:'플레이디', en:'PlayD', cat:'agency', url:'https://www.playd.com', desc:'퍼포먼스 마케팅 대행사. 검색·디지털 광고 운영 인사이트.' },
+  { name:'오픈서베이', en:'OpenSurvey', cat:'research', url:'https://blog.opensurvey.co.kr', desc:'설문 데이터 기반 소비자 행동·트렌드 리포트(블로그).' },
+  { name:'DMC리포트', en:'DMC Report', cat:'research', url:'https://www.dmcreport.co.kr', desc:'디지털 미디어·마케팅 전문 리서치 리포트.' },
+  { name:'다이티', en:'Dighty', cat:'research', url:'https://market.dighty.com', desc:'데이터 마케팅 플랫폼. 이커머스·고객 데이터 트렌드 리포트.' }
+];
+function renderSources() {
+  const el = document.getElementById('page-sources');
+  if (!el) return;
+  const cats = [
+    ['newsletter','📬 트렌드 뉴스레터','구독해 두면 알아서 와줍니다 — 인턴에게 가장 추천'],
+    ['media','🧭 트렌드·인사이트 미디어','매일 훑어보면 좋은 마케팅 종합 미디어'],
+    ['agency','🏢 매체사·대행사 리포트','미디어렙·대행사의 매체/업종 인사이트 리포트'],
+    ['research','📊 리서치·데이터','설문·데이터 기반 소비자·시장 리포트']
+  ];
+  const card = s => `<a class="src-card" href="${s.url}" target="_blank" rel="noopener noreferrer"><div class="src-top"><span class="src-name">${s.name}</span>${s.en ? `<span class="src-en">${s.en}</span>` : ''}<span class="src-go" aria-hidden="true">↗</span></div><div class="src-desc">${s.desc}</div></a>`;
+  el.innerHTML = `
+    <div class="tool-wrap">
+      <div class="tool-hero">
+        <div class="eyebrow">📰 마케팅 인사이트 소스</div>
+        <h1>알아두면 좋은 뉴스레터 · 사이트</h1>
+        <p>실무 감각은 매일 보는 정보에서 나옵니다. 아래는 국내 마케터들이 자주 보는 트렌드·인사이트 소스 ${sourceData.length}곳입니다. <b>뉴스레터 2~3개를 구독</b>하고 <b>미디어 1~2곳을 매일 훑는</b> 습관부터 시작하세요.</p>
+      </div>
+      <div class="callout info"><span class="c-ico">💡</span><div>처음이라면: <b>캐릿·큐레터</b>로 트렌드 감을 잡고, <b>아이보스</b>에서 실무 질문을 검색하고, <b>나스미디어·메조미디어</b> 리포트로 매체 데이터를 챙기세요.</div></div>
+      ${cats.map(([key, title, sub]) => {
+        const items = sourceData.filter(s => s.cat === key);
+        if (!items.length) return '';
+        const ico = title.split(' ')[0];
+        const label = title.replace(/^\S+\s/, '');
+        return `<div class="panel" style="margin-top:18px">
+          <div class="panel-head"><span class="ico">${ico}</span><div><div class="panel-title">${label}</div><div class="panel-sub">${sub}</div></div></div>
+          <div class="src-grid">${items.map(card).join('')}</div>
+        </div>`;
+      }).join('')}
+      <div class="callout warn" style="margin-top:16px"><span class="c-ico">⚠️</span><div>외부 사이트 링크입니다. 일부는 로그인·구독이 필요하거나, 시간이 지나며 주소가 바뀔 수 있습니다.</div></div>
+      <div class="btn-row"><button class="btn btn-ghost btn-sm" onclick="showPage('media')">📡 매체 가이드</button><button class="btn btn-ghost btn-sm" onclick="showPage('glossary')">📖 용어 사전</button></div>
+    </div>`;
+}
+window.renderSources = renderSources;
+
 // ─── Init (reference pages) ───
 renderMedia();
 renderGlossary(glossaryData);
