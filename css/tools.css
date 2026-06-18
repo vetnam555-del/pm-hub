@@ -236,8 +236,8 @@
 .rubric-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color: var(--ok); margin-bottom:8px; }
 .rubric-box.checkpoint .rubric-label { color: var(--primary); }
 .rubric-list { list-style:none; display:flex; flex-direction:column; gap:7px; }
-.rubric-list li { font-size:12.5px; color: var(--text-secondary); line-height:1.6; display:flex; gap:8px; }
-.rubric-list li::before { content:'☑'; color: var(--ok); flex-shrink:0; font-size:13px; }
+.rubric-list li { font-size:12.5px; color: var(--text-secondary); line-height:1.6; position:relative; padding-left:22px; }
+.rubric-list li::before { content:'☑'; color: var(--ok); position:absolute; left:0; top:0; font-size:13px; }
 .rubric-box.checkpoint .rubric-list li::before { color: var(--primary); }
 
 /* 다음 학습 Day 안내(홈) */

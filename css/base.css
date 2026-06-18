@@ -634,20 +634,21 @@ main {
 /* Content list */
 .content-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .content-list li {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  display: block;
+  position: relative;
   font-size: 13.5px;
   color: var(--text-secondary);
   line-height: 1.6;
-  padding: 4px 0;
+  padding: 4px 0 4px 20px;
 }
 .content-list li::before {
   content: '›';
   color: var(--accent-blue);
   font-size: 16px;
   font-weight: 700;
-  flex-shrink: 0;
+  position: absolute;
+  left: 0;
+  top: 4px;
   line-height: 1.4;
 }
 

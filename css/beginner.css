@@ -18,8 +18,8 @@
 .tip-box { background:rgba(246,224,94,0.06); border:1px solid rgba(246,224,94,0.2); border-left:3px solid #F6E05E; border-radius:8px; padding:14px 16px; margin-top:16px; }
 .tip-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#F6E05E; margin-bottom:5px; }
 .tip-list { list-style:none; display:flex; flex-direction:column; gap:5px; }
-.tip-list li { font-size:12.5px; color:#8892A4; line-height:1.6; display:flex; gap:7px; }
-.tip-list li::before { content:"💡"; font-size:11px; flex-shrink:0; margin-top:1px; }
+.tip-list li { font-size:12.5px; color:#8892A4; line-height:1.6; position:relative; padding-left:20px; }
+.tip-list li::before { content:"💡"; font-size:11px; position:absolute; left:0; top:2px; }
 
 /* ── Example box ── */
 .example-box { background:rgba(99,179,237,0.05); border:1px solid rgba(99,179,237,0.15); border-radius:8px; padding:14px 16px; margin-top:12px; }
