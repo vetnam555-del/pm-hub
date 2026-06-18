@@ -301,23 +301,7 @@ const dayData = {
     diff:'easy', time:'4시간', 
     why:'디지털 광고 생태계는 6개월마다 바뀝니다. 사수가 떠먹여주길 기다리면 도태되며, 스스로 트렌드를 찾는 능력이 곧 연봉입니다.',
     tags:['트렌드','뉴스레터','큐레이션'],
-    table:[
-      ['안장 출근길', '<a href="https://contents.premium.naver.com/anjang/anjangram" target="_blank" style="color:var(--primary);text-decoration:underline">링크 접속</a>', '네이버 프리미엄 콘텐츠 / 이커머스·마케팅 실무'],
-      ['오픈서베이', '<a href="https://blog.opensurvey.co.kr" target="_blank" style="color:var(--primary);text-decoration:underline">링크 접속</a>', '소비자 데이터 기반 리포트 및 트렌드 분석'],
-      ['나스미디어', '<a href="https://nasmedia.co.kr" target="_blank" style="color:var(--primary);text-decoration:underline">링크 접속</a>', '국내 최고 디지털 미디어 렙사 / 매월 정기 미디어 리포트'],
-      ['모비인사이드', '<a href="https://mobiinside.co.kr" target="_blank" style="color:var(--primary);text-decoration:underline">링크 접속</a>', '모바일 마케팅 및 애드테크 전문 미디어'],
-      ['제일기획 매거진', '<a href="https://magazine.cheil.com" target="_blank" style="color:var(--primary);text-decoration:underline">링크 접속</a>', '종합 광고대행사의 크리에이티브 및 브랜딩 인사이트'],
-      ['아이보스', '<a href="https://i-boss.co.kr" target="_blank" style="color:var(--primary);text-decoration:underline">링크 접속</a>', '마케터들의 가장 거대한 실무 커뮤니티 및 정보'],
-      ['오픈애즈', '<a href="https://openads.co.kr" target="_blank" style="color:var(--primary);text-decoration:underline">링크 접속</a>', '각종 마케팅 칼럼 및 최신 매체 업데이트 소식'],
-      ['캐릿 (Careet)', '<a href="https://careet.net" target="_blank" style="color:var(--primary);text-decoration:underline">링크 접속</a>', 'MZ세대/알파세대 최신 밈과 트렌드 캐치업'],
-      ['DMC리포트', '<a href="https://dmcreport.co.kr" target="_blank" style="color:var(--primary);text-decoration:underline">링크 접속</a>', '통계청 뺨치는 정밀한 디지털 미디어/타겟 리포트'],
-      ['CJ 메조미디어', '<a href="https://cjmezzomedia.com" target="_blank" style="color:var(--primary);text-decoration:underline">링크 접속</a>', 'CJ ENM 계열 탑티어 렙사 / 연령 및 업종별 타겟 리포트'],
-      ['인크로스', '<a href="https://incross.com/insight" target="_blank" style="color:var(--primary);text-decoration:underline">링크 접속</a>', 'SK네트웍스 계열 렙사 / 마켓 동향 및 디지털 광고 데이터'],
-      ['플레이디', '<a href="https://www.playd.com" target="_blank" style="color:var(--primary);text-decoration:underline">링크 접속</a>', 'SOOP(구 아프리카TV) 계열 디지털 광고대행사의 미디어 인사이트'],
-      ['다이티', '<a href="https://market.dighty.com" target="_blank" style="color:var(--primary);text-decoration:underline">링크 접속</a>', '앱 설치 데이터 및 검색어 기반 트렌드 분석'],
-      ['큐레터', '<a href="https://qletter.co.kr" target="_blank" style="color:var(--primary);text-decoration:underline">링크 접속</a>', '아이보스에서 매일 아침 배달해주는 마케팅 뉴스레터'],
-      ['고구마팜', '<a href="https://gogumafarm.kr" target="_blank" style="color:var(--primary);text-decoration:underline">링크 접속</a>', '아이디어 넘치는 영감/크리에이티브 사례 아카이브']
-    ],
+    // 트렌드 소스 표는 sourceData 단일 소스에서 init이 생성함(중복·드리프트 제거)
     tableHeaders:['소스명', '바로가기', '추천 이유 및 특징'],
     items: [
       
@@ -1236,6 +1220,20 @@ function closeModal() {
 }
 function closeModalOutside(e) { if (e.target === document.getElementById('detailOverlay')) closeModal(); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+// 모달 포커스 트랩: 열려 있는 동안 Tab이 배경으로 새지 않고 모달 안에서 순환
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return;
+  const overlay = document.getElementById('detailOverlay');
+  const modal = document.getElementById('detailModal');
+  if (!overlay || !overlay.classList.contains('open') || !modal) return;
+  const f = [].slice.call(modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+    .filter(el => !el.disabled && el.offsetParent !== null);
+  if (!f.length) return;
+  const first = f[0], last = f[f.length - 1], act = document.activeElement;
+  if (!modal.contains(act)) { e.preventDefault(); first.focus(); return; }
+  if (e.shiftKey && act === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && act === last) { e.preventDefault(); first.focus(); }
+});
 
 // ─── Week Pages ───
 const weekMeta = {
@@ -1680,12 +1678,33 @@ function renderSources() {
 }
 window.renderSources = renderSources;
 
+// ─── 홈 '이번 주 학습' 주차 카드 (weekMeta + dayData 단일 소스로 생성) ───
+function renderHomeWeeks() {
+  const grid = document.getElementById('homeWeeksGrid');
+  if (!grid || typeof weekMeta === 'undefined') return;
+  grid.innerHTML = ['week1', 'week2', 'week3', 'week4'].map(wid => {
+    const w = weekMeta[wid];
+    if (!w) return '';
+    const days = w.days.map(id => {
+      const d = dayData[id] || {};
+      const n = id.replace('day', '');
+      return `<div class="day-item" data-day="${id}" onclick="openModal('${id}',event)"><span class="day-badge">Day ${n}</span><span class="day-text">${d.title || ''}</span><button type="button" class="day-check" onclick="toggleDone(this,event)" aria-label="완료 체크"></button></div>`;
+    }).join('');
+    return `<div class="week-card" onclick="showPage('${wid}',this)"><div class="week-gradient-bar"></div><div class="week-card-header"><div class="week-num">${w.num}</div><div class="week-title">${w.title}</div><div class="week-subtitle">${w.sub}</div></div><div class="week-card-body"><div class="day-list">${days}</div></div></div>`;
+  }).join('');
+}
+
 // ─── Init (reference pages) ───
 renderMedia();
 renderGlossary(glossaryData);
 renderSpecs();
 renderFAQ();
-restoreProgress();
+// day17 트렌드 소스 표를 sourceData 단일 소스에서 생성(중복·드리프트 제거)
+if (typeof sourceData !== 'undefined' && dayData.day17) {
+  dayData.day17.table = sourceData.map(s => [s.name, '<a href="' + s.url + '" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:underline">링크 접속</a>', s.desc]);
+}
+renderHomeWeeks();   // 홈 주차 카드를 weekMeta·dayData에서 생성(정적 마크업은 no-JS 폴백)
+restoreProgress();   // 렌더된 day-item에 진도 체크 복원
 
 // ─── Profile System ───
 function editProfileName() {
