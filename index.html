@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css?v=8">
-<link rel="stylesheet" href="css/beginner.css?v=8">
-<link rel="stylesheet" href="css/tools.css?v=8">
+<link rel="stylesheet" href="css/base.css?v=9">
+<link rel="stylesheet" href="css/beginner.css?v=9">
+<link rel="stylesheet" href="css/tools.css?v=9">
 </head>
 <body>
 
@@ -109,6 +109,7 @@
     <button class="nav-item" data-page="specs" onclick="showPage('specs',this)"><span class="nav-icon">📐</span> 소재 규격표</button>
     <button class="nav-item" data-page="naming" onclick="showPage('naming',this)"><span class="nav-icon">🏷️</span> 네이밍 규칙</button>
     <button class="nav-item" data-page="sources" onclick="showPage('sources',this)"><span class="nav-icon">📰</span> 인사이트 소스</button>
+    <button class="nav-item" data-page="qa" onclick="showPage('qa',this)"><span class="nav-icon">💬</span> 현직자 Q&A</button>
     <button class="nav-item" data-page="faq" onclick="showPage('faq',this)"><span class="nav-icon">❓</span> 자주 묻는 질문</button>
   </nav>
 
@@ -325,6 +326,7 @@
         <button class="toolcard" onclick="showPage('naming',this)"><span class="tc-ico">🏷️</span><span class="tc-title">네이밍 규칙</span><span class="tc-desc">UTM·캠페인 표준 네이밍 컨벤션</span><span class="tc-go">열기 →</span></button>
         <button class="toolcard" onclick="showPage('faq',this)"><span class="tc-ico">❓</span><span class="tc-title">자주 묻는 질문</span><span class="tc-desc">인턴들이 가장 헷갈리는 Q&A</span><span class="tc-go">열기 →</span></button>
         <button class="toolcard" onclick="showPage('sources',this)"><span class="tc-ico">📰</span><span class="tc-title">인사이트 소스</span><span class="tc-desc">알아두면 좋은 마케팅 뉴스레터·사이트 15곳</span><span class="tc-go">열기 →</span></button>
+        <button class="toolcard" onclick="showPage('qa',this)"><span class="tc-ico">💬</span><span class="tc-title">현직자 실무 Q&A</span><span class="tc-desc">선배 인턴들이 물어본 매체별 실전 질문·답변</span><span class="tc-go">열기 →</span></button>
       </div>
     </div>
   </div><!-- /home -->
@@ -403,6 +405,9 @@
   <!-- ══ SOURCES (JS 렌더) ══ -->
   <div class="page" id="page-sources"></div>
 
+  <!-- ══ 현직자 Q&A (JS 렌더) ══ -->
+  <div class="page" id="page-qa"></div>
+
   <!-- ══ FAQ ══ -->
   <div class="page" id="page-faq">
     <div class="hero" style="padding-bottom:0">
@@ -450,16 +455,16 @@
   </div>
 </div>
 
-<script src="js/curriculum.js?v=8"></script>
-<script src="js/tools/kpi.js?v=8"></script>
-<script src="js/tools/utm.js?v=8"></script>
-<script src="js/tools/budget.js?v=8"></script>
-<script src="js/tools/report.js?v=8"></script>
-<script src="js/tools/diagnose.js?v=8"></script>
-<script src="js/tools/abtest.js?v=8"></script>
-<script src="js/tools/bid.js?v=8"></script>
-<script src="js/tools/pacing.js?v=8"></script>
-<script src="js/tools/utm-learn.js?v=8"></script>
-<script src="js/app.js?v=8"></script>
+<script src="js/curriculum.js?v=9"></script>
+<script src="js/tools/kpi.js?v=9"></script>
+<script src="js/tools/utm.js?v=9"></script>
+<script src="js/tools/budget.js?v=9"></script>
+<script src="js/tools/report.js?v=9"></script>
+<script src="js/tools/diagnose.js?v=9"></script>
+<script src="js/tools/abtest.js?v=9"></script>
+<script src="js/tools/bid.js?v=9"></script>
+<script src="js/tools/pacing.js?v=9"></script>
+<script src="js/tools/utm-learn.js?v=9"></script>
+<script src="js/app.js?v=9"></script>
 </body>
 </html>

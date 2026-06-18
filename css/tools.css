@@ -397,6 +397,10 @@ main:focus { outline: none; }
 .src-en { font-size:11px; color: var(--text-muted); font-weight:500; }
 .src-go { margin-left:auto; color: var(--primary); font-size:13px; font-weight:700; }
 .src-desc { font-size:12.5px; color: var(--text-secondary); line-height:1.55; }
+
+/* 현직자 실무 Q&A 매체 섹션 */
+.qa-section { margin-top:22px; }
+.qa-sec-title { font-size:15px; font-weight:800; color: var(--text-primary); margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); }
 /* day-check 를 button 으로 쓸 때 기본 스타일 리셋 */
 button.day-check { background: transparent; }
 
