@@ -44,12 +44,12 @@
       q: '내부(자사) 사이트 배너 링크에 UTM을 그대로 넣으면?',
       opts: [
         '페이지 로딩이 느려진다',
-        '세션이 끊기고 원래 유입 소스가 덮어써진다',
+        '원래 유입 소스 기여가 내부 값으로 오염돼 어트리뷰션이 왜곡된다',
         '브라우저가 자동으로 삭제한다',
         '아무 문제 없다'
       ],
       correct: 1,
-      why: '내부 링크 클릭 시 GA가 <b>새 세션</b>으로 인식하고, 진짜 유입 소스(예: naver/cpc)가 internal 같은 값으로 <b>덮어써집니다</b>. UTM은 "외부 → 우리 사이트" 유입에만 사용하세요.'
+      why: '내부 링크에 UTM을 붙이면 진짜 유입 소스(예: naver/cpc) 대신 internal 같은 값이 들어가 <b>어트리뷰션이 오염</b>됩니다. (세션이 끊기는 게 아니라, 다음 세션이 direct로 들어올 때 직전 UTM 값이 상속돼 보고가 왜곡됨) UTM은 "외부 → 우리 사이트" 유입에만 사용하세요.'
     }
   ];
 
@@ -85,8 +85,8 @@
     {
       ico: '🔴',
       name: '유튜브 영상광고',
-      url: 'https://www.hllcenter.com/?utm_source=youtube&utm_medium=video&utm_campaign=brand_film&utm_content=15s_skip',
-      desc: '유튜브 영상 광고 → medium은 video, content로 15초/스킵 버전 구분.'
+      url: 'https://www.hllcenter.com/?utm_source=youtube&utm_medium=cpv&utm_campaign=brand_film&utm_content=15s_skip',
+      desc: '유튜브 유료 영상광고 → medium은 cpv. (video로 쓰면 GA4가 \'Organic Video\'로 오분류해 유료가 자연유입으로 잡힘) content로 15초/스킵 버전 구분.'
     },
     {
       ico: '✉️',
