@@ -233,7 +233,7 @@ const dayData = {
       'Meta 구조: 캠페인(목표) > 광고세트(타겟·예산·일정) > 광고(소재)',
       'Meta 목표: 인지도/트래픽/참여/리드/앱/전환/카탈로그 판매',
       'Advantage+: AI 기반 타겟·소재·예산 자동 최적화 (2024~ 주력 고려)',
-      '픽셀 + Conversions API(CAPI) 병행: iOS14 이후 필수 구성',
+      '픽셀 + Conversions API(CAPI) 병행: iOS14.5 이후 권장 표준 구성',
       '틱톡: 9:16 세로형 영상 9~15초 권장. MZ세대 집중. 세이프존 준수 필수',
       '당근마켓: 지역 기반 초정밀 타겟. 동네 주민. 1:1 또는 1.91:1 이미지',
       '토스애즈: 금융 고의도 유저. 네온 컬러 etc 제한 있음. 검수 2~3 영업일'
@@ -538,7 +538,7 @@ const dayData = {
     mission: "GA4 데모 계정에서 '모바일 유입 유저의 장바구니 전환 퍼널' 보고서 제출"
 },
   day29: {
-    example: "같은 캠페인인데 Meta 어드민 전환 120건, GA4 purchase 95건으로 약 26% 차이가 났다. Meta가 노출 기여(View-through)와 7일 클릭 기여를 포함하고 GA4는 마지막 클릭 기준이라 생긴 정상 오차임을 설명하고, 보고서에는 두 수치를 병기하되 정산 기준은 GA4로 통일한다.",
+    example: "같은 캠페인인데 Meta 어드민 전환 120건, GA4 purchase 95건으로 약 26% 차이가 났다. Meta가 노출 기여(View-through)와 7일 클릭 어트리뷰션을 포함하는 반면, GA4는 노출 기여를 기본 집계하지 않고 클릭·참여 기반으로만 잡아서 생긴 정상 오차임을 설명하고, 보고서에는 두 수치를 병기하되 정산 기준은 GA4로 통일한다.",
     week: "6주차",
     title: "매체별 전환 데이터 정합성 검증",
     diff: "normal",
@@ -1359,11 +1359,11 @@ const glossaryData = [
   { term:'품질지수', en:'Quality Score', cat:'개념', catColor:'yellow', desc:'네이버·구글 검색광고의 광고 품질 점수. 높을수록 낮은 입찰가로 높은 순위 획득. (구글=예상 CTR+광고 관련성+방문페이지 경험 / 네이버=예상 클릭률+광고 품질. 전환율은 구성요소 아님)', formula:'예상 CTR + 광고 관련성 + 랜딩 경험 (정확한 산식은 매체 비공개)' },
   { term:'학습 상태', en:'Learning Phase', cat:'개념', catColor:'yellow', desc:'광고 플랫폼 알고리즘이 최적의 유저를 찾는 초기 7~14일 기간. 섣불리 수정하면 학습 초기화.', formula:null },
   { term:'CTA', en:'Call To Action', cat:'개념', catColor:'yellow', desc:'지금 구매, 더 알아보기 등 유저 행동을 유도하는 버튼 또는 문구.', formula:null },
-  { term:'CAPI', en:'Conversions API', cat:'추적', catColor:'orange', desc:'서버 투 서버 전환 데이터 전송. iOS 14 이후 픽셀 손실 보완을 위해 Meta 필수 세팅.', formula:null },
+  { term:'CAPI', en:'Conversions API', cat:'추적', catColor:'orange', desc:'서버 투 서버(S2S) 전환 데이터 전송. iOS 14.5 ATT로 픽셀 신호가 손실돼, 픽셀과 CAPI 병행이 Meta 권장 표준(사실상 필수)입니다.', formula:null },
   { term:'DPA', en:'Dynamic Product Ads', cat:'개념', catColor:'yellow', desc:'카탈로그 피드와 연동, 유저가 본 상품을 자동으로 광고 소재에 삽입하는 동적 광고.', formula:null },
   { term:'PMAX', en:'Performance Max', cat:'개념', catColor:'yellow', desc:'구글의 AI 기반 전 채널 자동 최적화 캠페인. 검색·디스플레이·유튜브·쇼핑을 하나로 통합.', formula:null },
   { term:'객단가(AOV)', en:'Average Order Value', cat:'지표', catColor:'blue', desc:'주문 1건당 평균 결제 금액. ROAS가 높아도 객단가가 낮으면 실제 수익성이 낮을 수 있어 함께 봐야 합니다.', formula:'매출 ÷ 구매(주문) 건수' },
-  { term:'LTV', en:'Lifetime Value', cat:'지표', catColor:'blue', desc:'한 고객이 거래 기간 전체에 걸쳐 발생시키는 총 가치(이익). 신규 획득 비용(CAC)의 적정선을 판단하는 기준.', formula:'평균 객단가 × 구매 빈도 × 고객 유지 기간' },
+  { term:'LTV', en:'Lifetime Value', cat:'지표', catColor:'blue', desc:'한 고객이 거래 기간 전체에 걸쳐 발생시키는 총 가치. 아래 공식은 매출 기준이며, 이익으로 보려면 마진율을 곱합니다. 신규 획득 비용(CAC)의 적정선을 판단하는 기준.', formula:'평균 객단가 × 구매 빈도 × 고객 유지 기간' },
   { term:'CAC', en:'Customer Acquisition Cost', cat:'지표', catColor:'blue', desc:'신규 고객 1명을 획득하는 데 든 총비용. 광고비뿐 아니라 마케팅 인건비·툴 비용까지 포함해 CPA보다 넓은 개념.', formula:'고객 획득 총비용 ÷ 신규 고객 수' },
   { term:'도달', en:'Reach', cat:'지표', catColor:'blue', desc:'광고를 1회 이상 본 순(unique) 사용자 수. 같은 사람이 여러 번 봐도 1로 계산되며, 노출수를 도달로 나누면 빈도가 됩니다.', formula:null },
   { term:'노출', en:'Impression', cat:'지표', catColor:'blue', desc:'광고가 화면에 표시된 총횟수. 같은 사용자에게 여러 번 보여도 매번 합산되며, 클릭·전환의 분모가 되는 기본 단위.', formula:null },
@@ -1374,7 +1374,7 @@ const glossaryData = [
   { term:'ROI', en:'Return On Investment', cat:'지표', catColor:'blue', desc:'투자 대비 순이익률. 매출 기준인 ROAS와 달리 원가·마진을 반영한 실제 수익성. ROI 100%는 투자비용만큼의 순이익이 났다는 뜻.', formula:'(순이익 ÷ 투자비용) × 100(%)' },
   { term:'MMP', en:'Mobile Measurement Partner', cat:'추적', catColor:'orange', desc:'앱 설치·인앱 행동의 출처를 매체별로 집계·정산하는 모바일 어트리뷰션 솔루션. 앱스플라이어·애드저스트가 대표적.', formula:null },
   { term:'전환 윈도우', en:'Conversion Window', cat:'추적', catColor:'orange', desc:'광고 클릭(또는 조회) 후 일어난 전환을 그 광고 성과로 인정하는 기간(예: 클릭 후 7일). 매체마다 기본값이 달라 비교 시 반드시 확인.', formula:null },
-  { term:'ATT', en:'App Tracking Transparency', cat:'추적', catColor:'orange', desc:'애플이 iOS 14.5부터 의무화한 추적 동의 정책. 사용자가 앱 간 추적을 거부하면 IDFA 수집이 막혀 정밀 타겟팅·전환 추적이 제한.', formula:null },
+  { term:'ATT', en:'App Tracking Transparency', cat:'추적', catColor:'orange', desc:'애플이 iOS 14.5부터 의무화한 추적 동의 정책. 사용자가 앱 간 추적을 거부하면 IDFA 수집이 막혀 정밀 타겟팅·전환 추적이 제한. 단, 앱 설치 전환은 IDFA 없이 SKAN(SKAdNetwork)으로 집계.', formula:null },
   { term:'핵심 이벤트', en:'Key Event', cat:'추적', catColor:'orange', desc:'GA4에서 비즈니스상 중요해 따로 표시한 이벤트(구매·가입·장바구니 등). 2024년 3월부터 기존 GA4의 전환(Conversion) 명칭이 핵심 이벤트로 변경.', formula:null },
   { term:'딥링크', en:'Deep Link', cat:'개념', catColor:'yellow', desc:'앱이 설치된 사용자를 광고 클릭 시 앱의 특정 화면(상품·이벤트 페이지)으로 바로 보내는 링크. 첫 화면을 거치지 않아 전환율이 높음.', formula:null },
   { term:'디퍼드 딥링크', en:'Deferred Deep Link', cat:'개념', catColor:'yellow', desc:'앱 미설치 사용자를 스토어로 보내 설치시킨 뒤, 첫 실행 시 원래 의도한 화면으로 연결해 주는 딥링크. 신규 설치 유저 경험을 끊김 없이 연결.', formula:null },
@@ -1384,7 +1384,8 @@ const glossaryData = [
   { term:'인크리멘탈리티', en:'Incrementality', cat:'개념', catColor:'yellow', desc:'광고가 없었어도 일어났을 전환을 제외하고, 광고 때문에 순수하게 추가로 발생한 전환만 따지는 개념. 대조군과 비교하는 리프트 테스트로 측정.', formula:null },
   { term:'통계적 유의성', en:'Statistical Significance', cat:'개념', catColor:'yellow', desc:'A/B 테스트 결과의 차이가 우연이 아니라고 볼 수 있는 신뢰 수준. 표본이 적으면 차이가 커 보여도 우연일 수 있어 충분한 데이터 확보 후 판단.', formula:null },
   { term:'코호트', en:'Cohort', cat:'개념', catColor:'yellow', desc:'가입일·첫 구매일 등 같은 시점·조건을 공유하는 사용자 집단. 시간 경과에 따른 재방문·잔존·구매 추이를 집단별로 비교 분석할 때 사용.', formula:null },
-  { term:'논오가닉', en:'Non-Organic', cat:'추적', catColor:'orange', desc:'광고를 통해 유입·설치된 트래픽. 자연 유입된 오가닉(Organic)과 구분되며, MMP로 매체별 기여를 집계해 성과를 평가.', formula:null }
+  { term:'논오가닉', en:'Non-Organic', cat:'추적', catColor:'orange', desc:'광고를 통해 유입·설치된 트래픽. 자연 유입된 오가닉(Organic)과 구분되며, MMP로 매체별 기여를 집계해 성과를 평가.', formula:null },
+  { term:'SKAN', en:'SKAdNetwork', cat:'추적', catColor:'orange', desc:'IDFA 없이도 iOS 앱 설치·전환을 집계하는 애플 공식 프라이버시 보존 어트리뷰션 프레임워크(2018년 도입, iOS 14.5 ATT 이후 앱 설치 측정의 사실상 표준). MMP가 이 포스트백을 받아 매체별 기여를 집계하며, iOS 18부터는 후속 AdAttributionKit로 이전 중.', formula:null }
 ];
 
 let activeFilter = 'ALL';
@@ -1486,7 +1487,7 @@ const faqData = [
   { q:'인턴 기간 동안 매체 세팅 말고 반드시 키워야 할 차별화 역량은 뭔가요?',
     a:'버튼 누르는 세팅 기술은 한 달이면 누구나 합니다. 진짜 실력은 1) 떨어진 데이터에서 원인을 찾아내는 날카로운 논리력, 2) 위기를 유연하게 넘기는 타 부서/클라이언트와의 부드러운 커뮤니케이션 능력입니다.' },
   { q:'GA4랑 매체 광고관리자(어드민) 전환수가 서로 달라요. 뭐가 맞는 건가요?',
-    a:'둘 다 "틀린" 게 아니라 집계 기준이 다른 겁니다. 매체 어드민은 노출만 보고 산 것까지 자기 성과로 잡는 "조회 기여(View-through)"를 포함하고 어트리뷰션 기간도 길어 보통 GA4보다 전환이 크게 잡힙니다. GA4는 보통 마지막 클릭 기준이라 더 보수적입니다. 보고 시 "어떤 기준의 숫자인지"를 명시하고, 정산용 KPI는 처음부터 "GA4 기준"으로 통일해두면 분쟁이 없습니다.' },
+    a:'둘 다 "틀린" 게 아니라 집계 기준이 다른 겁니다. 매체 어드민은 노출만 보고 산 것까지 자기 성과로 잡는 "조회 기여(View-through)"를 포함하고 어트리뷰션 기간도 길어 보통 GA4보다 전환이 크게 잡힙니다. GA4는 노출 기여를 기본 집계하지 않고 "클릭" 기반으로 잡아 더 보수적입니다(채널별 표준 리포트는 마지막 클릭 기준이지만, 전환 모델 기본값은 2023년 11월부터 "데이터 기반(DDA)"으로 바뀌었습니다). 보고 시 "어떤 기준의 숫자인지"를 명시하고, 정산용 KPI는 처음부터 "GA4 기준"으로 통일해두면 분쟁이 없습니다.' },
   { q:'선배들이 UTM을 안 달면 큰일 난다던데, 왜 그렇게 중요한가요?',
     a:'UTM이 없으면 그 클릭으로 들어온 매출이 GA4에서 출처 불명(direct/none)으로 잡혀, 내가 집행한 광고가 만든 성과를 증명할 수 없습니다. source/medium/campaign 3개는 빠짐없이, 팀 네이밍 규칙대로 통일해서 다세요. 한 글자라도 띄어쓰기·대소문자가 틀리면 GA4에서 다른 채널로 쪼개져 집계됩니다. ([UTM 빌더]·[네이밍 규칙] 참고)' },
   { q:'프리퀀시(빈도)는 몇 이하로 관리하는 게 적정한가요?',
@@ -1496,7 +1497,7 @@ const faqData = [
   { q:'전환이 며칠째 0건이에요. 뭐부터 확인해야 하나요?',
     a:'먼저 "추적이 안 되는 것"과 "진짜 전환이 없는 것"을 구분하세요. 픽셀/전환 태그가 정상 발화하는지(Meta Pixel Helper, 구글 Tag Assistant), 전환 이벤트가 캠페인 목표에 연결됐는지를 먼저 봅니다. 추적이 정상인데 0이면 → 클릭이 있는데 전환 0이면 랜딩/가격/재고, 클릭 자체가 없으면 소재·타겟 문제로 좁혀가세요.' },
   { q:'앱 광고랑 웹 광고는 성과 추적 방식이 어떻게 다른가요?',
-    a:'웹은 브라우저에 심는 "픽셀"로 추적하지만, 앱은 픽셀이 동작하지 않아 AppsFlyer·Adjust 같은 MMP의 SDK로 설치·인앱 행동을 추적합니다. 그래서 앱 캠페인은 "어트리뷰션 윈도우"(클릭 후 7일 등) 개념이 특히 중요합니다. 인턴 단계에선 "GA4=웹, MMP=앱"이라는 큰 그림과 어디서 설치가 잡히는지 흐름만 이해해도 충분합니다.' },
+    a:'웹은 브라우저에 심는 "픽셀"로 추적하지만, 앱은 픽셀이 동작하지 않아 AppsFlyer·Adjust 같은 MMP의 SDK로 설치·인앱 행동을 추적합니다. 그래서 앱 캠페인은 "어트리뷰션 윈도우"(클릭 후 7일 등) 개념이 특히 중요합니다. 인턴 단계에선 "웹은 주로 GA4·픽셀, 앱은 MMP(또는 GA4 for Firebase)"라는 큰 그림과 어디서 설치가 잡히는지 흐름만 이해해도 충분합니다. (GA4도 Firebase SDK로 앱 이벤트를 측정하지만, MMP는 앱 매체별 어트리뷰션·딥링크에 특화된 도구입니다.)' },
   { q:'대행 수수료는 보통 어떻게 책정되나요? 클라이언트가 물어보면요?',
     a:'국내 디지털 대행은 집행 광고비의 일정 비율을 받는 "미디어 커미션" 구조가 가장 흔하고, 고정 월 운영비(리테이너)나 성과 연동형도 있습니다. 정확한 요율·계약 조건은 회사마다 다르고 영업·계약 담당의 영역이니, 인턴이 임의로 숫자를 단정하지 마세요. 문의가 오면 "확인 후 담당자를 통해 정확히 안내드리겠다"고 받는 것이 안전합니다.' },
   { q:'한 캠페인에 소재는 몇 개나 만들어야 하나요?',
