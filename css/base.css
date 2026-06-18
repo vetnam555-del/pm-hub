@@ -12,7 +12,7 @@
   --border-active: rgba(var(--primary-rgb),0.4);
   --text-primary: #F0F4FF;
   --text-secondary: #8892A4;
-  --text-muted: #505A6E;
+  --text-muted: #7A8499; /* WCAG AA 통과(배경 5.1:1) — 이전 #505A6E는 2.8:1로 미달 */
   --accent-blue: var(--primary); /* 액센트 인디고로 통일 */
   --accent-purple: #9F7AEA;
   --accent-green: #68D391;
@@ -899,4 +899,15 @@ main {
   .section-wrap { padding: 24px; }
   .glossary-grid, .spec-grid { grid-template-columns: 1fr; }
   .media-grid { grid-template-columns: 1fr; }
+}
+
+/* 모션 민감 사용자 배려(WCAG 2.3.3): 애니메이션·부드러운 스크롤 최소화 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  html { scroll-behavior: auto; }
 }

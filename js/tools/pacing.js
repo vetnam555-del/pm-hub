@@ -246,7 +246,15 @@
       out.innerHTML =
         '<div class="callout info"><span class="c-ico">💡</span><div>' +
         '아직 입력이 필요합니다 — <b>' + miss.join(', ') + '</b>을(를) 채우면 페이스가 진단됩니다. ' +
-        '(전체 기간·경과 일수는 0보다 커야 합니다.)</div></div>';
+        '(전체 기간·경과 일수는 1일 이상이어야 합니다.)</div></div>';
+      return;
+    }
+
+    // 전체 기간·경과 일수가 1일 미만(0 포함)이면 페이스 계산 불가 — '÷ 0' 노출 방지
+    if (totalDays < 1 || elapsed < 1) {
+      out.innerHTML =
+        '<div class="callout info"><span class="c-ico">💡</span><div>' +
+        '<b>전체 기간</b>과 <b>경과 일수</b>는 1일 이상이어야 페이스를 진단할 수 있습니다.</div></div>';
       return;
     }
 

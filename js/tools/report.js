@@ -20,6 +20,11 @@
     if (isNaN(n) || !isFinite(n)) return null;
     return n;
   }
+  // 음수 차단(다른 도구의 비음수 규약과 통일) — 음수 ROAS/CPA 출력 방지
+  function reportNonNeg(v) {
+    var n = reportNum(v);
+    return (n == null || n < 0) ? null : n;
+  }
   function reportDiv(a, b) {
     // a/b, 분모 0/null 이면 null
     if (a == null || b == null || b === 0) return null;
@@ -285,14 +290,14 @@
       for (var j = 0; j < inps.length; j++) raw[inps[j].getAttribute('data-f')] = inps[j].value;
 
       var name = (raw.name || '').trim();
-      var cost = reportNum(raw.cost);
-      var imp  = reportNum(raw.imp);
-      var clk  = reportNum(raw.clk);
-      var cv   = reportNum(raw.cv);
-      var rev  = reportNum(raw.rev);
-      var pCost = reportNum(raw.pCost);
-      var pCv   = reportNum(raw.pCv);
-      var pRev  = reportNum(raw.pRev);
+      var cost = reportNonNeg(raw.cost);
+      var imp  = reportNonNeg(raw.imp);
+      var clk  = reportNonNeg(raw.clk);
+      var cv   = reportNonNeg(raw.cv);
+      var rev  = reportNonNeg(raw.rev);
+      var pCost = reportNonNeg(raw.pCost);
+      var pCv   = reportNonNeg(raw.pCv);
+      var pRev  = reportNonNeg(raw.pRev);
 
       // 의미있는 데이터가 하나도 없으면 스킵
       var hasData = (name !== '') || cost != null || imp != null || clk != null || cv != null || rev != null;

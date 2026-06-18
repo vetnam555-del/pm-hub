@@ -107,6 +107,11 @@
   }
 
   // 입력을 기본값으로 초기화
+  function utmSampleState() {
+    utmState.tab = 'single';
+    utmState.single = { url: 'https://www.example.com/event', source: 'naver', medium: 'cpc', campaign: 'newbalance_sale_20260601', term: '', content: 'banner_a' };
+    try { if (typeof saveToolState === 'function') saveToolState('utm', utmState); } catch (e) {}
+  }
   function utmClearState() {
     utmState.single = { url: '', source: '', medium: '', campaign: '', term: '', content: '' };
     utmState.bulk = {
@@ -216,6 +221,7 @@
         '<div class="btn-row" style="margin-bottom:14px;">' +
           '<button class="btn btn-ghost btn-sm" data-utm-naming-link>🏷️ 네이밍 규칙 보기</button>' +
           '<button class="btn btn-ghost btn-sm" data-utm-learn-link>🎯 UTM 완전정복</button>' +
+          '<button class="btn btn-ghost btn-sm" data-utm-sample>✨ 예시 채우기</button>' +
           '<button class="btn btn-ghost btn-sm" data-utm-clear>🗑 입력 비우기</button>' +
         '</div>' +
         // 탭 + 네이밍 토글
@@ -279,6 +285,14 @@
     if (learnLink) {
       learnLink.addEventListener('click', function () {
         if (typeof showPage === 'function') showPage('utm-learn');
+      });
+    }
+    // 예시 채우기
+    var sampleBtn = root.querySelector('[data-utm-sample]');
+    if (sampleBtn) {
+      sampleBtn.addEventListener('click', function () {
+        utmSampleState();
+        utmRenderBody(root);
       });
     }
     // 입력 비우기

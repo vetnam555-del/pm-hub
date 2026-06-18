@@ -1190,7 +1190,7 @@ function openModal(dayId, e) {
   if (d.why) html += `<div class="why-box"><div class="why-label">💬 왜 배우나요?</div><div class="why-text">${applyTooltips(d.why)}</div></div>`;
   if (d.tags) html += `<div class="content-block"><div class="tag-wrap">${d.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div></div>`;
   if (d.table) {
-    html += `<div class="content-block"><div class="block-title">📋 핵심 내용</div><div class="info-card" style="padding:0;overflow:hidden"><table class="styled-table"><thead><tr>${d.tableHeaders.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${d.table.map(row=>`<tr>${row.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    html += `<div class="content-block"><div class="block-title">📋 핵심 내용</div><div class="info-card" style="padding:0;overflow-x:auto"><table class="styled-table"><thead><tr>${d.tableHeaders.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${d.table.map(row=>`<tr>${row.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
     if (d.example) html += `<div class="example-box"><div class="example-label">📎 실무 예시</div><div class="example-text">${d.example}</div></div>`;
     html += '</div>';
   }
