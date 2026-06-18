@@ -43,7 +43,9 @@
   --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: clip; } /* 문서 가로 스크롤 원천 차단 */
+/* 긴 코드·URL(예: UTM 예시)이 모바일에서 컨테이너를 넘기지 않도록 줄바꿈 */
+code { overflow-wrap: anywhere; }
 body {
   font-family: 'Pretendard', 'Inter', -apple-system, sans-serif;
   background: var(--bg-primary);
@@ -207,6 +209,7 @@ main {
   min-height: 100vh;
   position: relative;
   z-index: 1;
+  overflow-x: clip; /* 어떤 페이지도 문서 가로 스크롤을 만들지 않게(표는 .table-scroll로 내부 스크롤) */
 }
 
 /* ─── Page sections ─── */
