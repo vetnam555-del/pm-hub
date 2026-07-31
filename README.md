@@ -46,5 +46,42 @@ js/    app.js(라우터·검색·헬퍼) · curriculum.js(커리큘럼·참고 �
 js/tools/  kpi · utm · budget · report · diagnose · abtest · bid · pacing · utm-learn
 ```
 
+## 🚀 배포 (GitHub Pages)
+
+주소: <https://vetnam555-del.github.io/pm-hub/>
+
+**`main` 에 푸시하면 자동 배포된다.**
+
+```bash
+git push origin main
+```
+
+`.github/workflows/deploy-pages.yml` 이 `main` 을 `gh-pages` 로 미러링하고,
+Pages 가 `gh-pages` 브랜치를 빌드해 게시한다. 보통 1~2분 걸린다.
+
+### 만져도 되는 것과 안 되는 것
+
+- **`gh-pages` 브랜치를 직접 수정하지 않는다.** 다음 미러링에서 강제로 덮어써진다. 항상 `main` 에서 작업한다.
+- **Settings → Pages 의 Source 를 바꾸지 않는다.** 현재 `gh-pages` / `/ (root)` 로 서비스 중이다. 여기를 건드리면 사이트가 다시 404 가 될 수 있다.
+- 경로는 모두 **상대경로**(`css/base.css` 형태)로 유지한다. `/css/...` 처럼 절대경로로 쓰면 `/pm-hub/` 하위 경로 배포에서 404 가 된다.
+- 루트의 `.nojekyll` 을 지우지 않는다. Jekyll 처리를 건너뛰게 하는 파일이다.
+
+### 404 가 날 때 확인 순서 (2026-07 실제 사고 기록)
+
+1. **리포지토리가 공개인지** — 비공개로 바꾸면 무료 플랜에서는 Pages 가 즉시 중단된다.
+2. **Pages 가 활성화돼 있는지** — `has_pages` 가 `false` 면 파일이 정상이어도 전체가 404 다.
+   ```bash
+   curl -s https://api.github.com/repos/vetnam555-del/pm-hub | grep has_pages
+   ```
+   Settings 화면의 브랜치 소스 저장이 반영되지 않는 일이 있었다. 그때는 `gh-pages` 브랜치를
+   푸시하면 Pages 가 자동 활성화된다(이 방법으로 복구했다).
+   ```bash
+   git push origin main:gh-pages
+   ```
+3. **Actions 실행 결과** — Actions 탭에서 `Mirror main to gh-pages` 와 `pages build and deployment` 가 모두 성공인지 본다.
+
+> `actions/deploy-pages` 방식은 쓰지 않는다. Actions 토큰에 Pages 생성·설정 권한이 없어
+> `Resource not accessible by integration` 으로 실패한다(2026-07-27 확인).
+
 ---
 © 2026 HLL중앙 퍼포먼스마케팅팀 · 내부 교육용
