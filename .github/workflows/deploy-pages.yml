@@ -1,0 +1,47 @@
+name: Deploy to GitHub Pages
+
+# 정적 사이트(루트에 index.html)를 GitHub Pages 로 배포한다.
+#
+# 왜 워크플로로 배포하는가:
+#   Settings → Pages 의 "Deploy from a branch" 토글이 저장되지 않아 Pages 가
+#   비활성(has_pages=false) 상태로 남는 일이 있었다. configure-pages 의
+#   enablement 옵션이 API 로 Pages 를 켜주므로 설정 화면을 거치지 않아도 된다.
+
+on:
+  push:
+    branches: [main]
+  # Actions 탭에서 수동 실행도 가능하게 둔다.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포가 겹치면 뒤에 들어온 것만 남긴다.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # enablement: true — Pages 가 꺼져 있으면 켠다.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      # 빌드 단계 없음. 저장소 루트를 그대로 올린다.
+      # .nojekyll 이 루트에 있어 Jekyll 처리도 건너뛴다.
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
