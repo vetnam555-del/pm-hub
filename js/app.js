@@ -718,13 +718,25 @@ function closeDataManager() {
 
 // 오프라인 캐시(서비스워커)만 비운다 — 진도·입력값(localStorage)은 건드리지 않는다.
 // 배포했는데 옛 화면이 남아 있을 때의 탈출구.
+//
+// ※ github.io 는 계정 전체가 한 오리진이라, 같은 계정의 다른 프로젝트 PWA 가 같이 등록돼 있다.
+//   전부 지우면 남의 앱까지 망가지므로 '이 허브 것'만 골라 지운다.
+//   - 캐시: 'pm-hub' 로 시작하는 것만
+//   - 서비스워커: 이 페이지 경로(scope) 아래 것만
 function clearHubCache() {
   const jobs = [];
-  if ('caches' in window) jobs.push(caches.keys().then(ks => Promise.all(ks.map(k => caches.delete(k)))));
+  if ('caches' in window) {
+    jobs.push(caches.keys().then(ks =>
+      Promise.all(ks.filter(k => k.indexOf('pm-hub') === 0).map(k => caches.delete(k)))
+    ));
+  }
   if ('serviceWorker' in navigator) {
-    jobs.push(navigator.serviceWorker.getRegistrations().then(rs => Promise.all(rs.map(r => r.unregister()))));
+    const base = location.origin + location.pathname.replace(/[^/]*$/, ''); // 예: https://…/pm-hub/
+    jobs.push(navigator.serviceWorker.getRegistrations().then(rs =>
+      Promise.all(rs.filter(r => r.scope.indexOf(base) === 0).map(r => r.unregister()))
+    ));
   }
   Promise.all(jobs)
-    .then(() => setDataMsg('ok', '캐시를 비웠습니다. <b>새로고침</b>하면 최신 버전으로 다시 받습니다.'))
+    .then(() => setDataMsg('ok', '이 허브의 캐시를 비웠습니다. <b>새로고침</b>하면 최신 버전으로 다시 받습니다.'))
     .catch(() => setDataMsg('bad', '캐시를 비우지 못했습니다. 브라우저 설정에서 사이트 데이터를 삭제해 주세요.'));
 }

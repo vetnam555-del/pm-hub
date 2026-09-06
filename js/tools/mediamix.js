@@ -81,6 +81,9 @@
   };
 
   // 직접 입력 행 빠른 추가 — 벤치마크에 없는 국내 매체(실제 믹스의 절반 이상을 차지한다)
+  // 직접 입력 행 색상 팔레트(추가 순서대로 순환). 벤치마크 행은 채널 고유색을 쓴다.
+  var MM_CUSTOM_COLORS = ['#646CFF', '#68D391', '#F6AD55', '#FC8181', '#4FD1C5', '#B794F4', '#90CDF4', '#F687B3'];
+
   var MM_QUICK_MEDIA = [
     { media: '네이버', adType: '파워링크(검색)' },
     { media: '네이버', adType: '브랜드검색' },
@@ -245,6 +248,7 @@
     };
     if (!ds) return res;
 
+    var customIdx = 0;
     var active = mmState.rows.filter(function (r) { return mmNum(r.ratio) > 0; });
     res.sumRatio = active.reduce(function (a, r) { return a + mmNum(r.ratio); }, 0);
     if (net == null || !active.length || res.sumRatio <= 0) return res;
@@ -307,7 +311,7 @@
         cvr: cvr, aov: aov, conv: conv, revenue: revenue, cpa: cpa, roas: roas,
         fallback: fallback, note: r.note,
         daily: days ? rNet / days : null,
-        color: ch ? ch.color : '#8892A4'
+        color: ch ? ch.color : MM_CUSTOM_COLORS[(customIdx++) % MM_CUSTOM_COLORS.length]
       });
 
       res.totals.net += rNet;
@@ -824,7 +828,7 @@
       var b2 = out.querySelector('#mm-copy-text');
       if (b2) b2.addEventListener('click', function () { copyToClipboard(mmSummaryText(res), b2); });
       var b3 = out.querySelector('#mm-print');
-      if (b3) b3.addEventListener('click', function () { window.print(); });
+      if (b3) b3.addEventListener('click', mmPrint);
     }
     var hint = mmQ('#mm-ratio-hint');
     if (hint) {
@@ -839,6 +843,24 @@
       why.innerHTML = p ? '<b style="color:var(--text-primary)">' + mmEsc(p.label) + '</b> — ' + mmEsc(p.why) : '';
     }
     mmSave();
+  }
+
+  // 믹스 표는 컬럼이 최대 16개라 A4 세로로는 안 들어간다.
+  // @page 는 클래스로 조건을 걸 수 없어서, 인쇄 직전에만 style 을 끼워 넣고 끝나면 제거한다.
+  function mmPrint() {
+    var st = document.createElement('style');
+    st.id = 'mm-print-page';
+    st.textContent = '@page { size: A4 landscape; margin: 12mm; }';
+    document.head.appendChild(st);
+    var cleanup = function () {
+      var el = document.getElementById('mm-print-page');
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
+    window.print();
+    // afterprint 를 안 쏘는 브라우저 대비 안전망
+    setTimeout(cleanup, 4000);
   }
 
   // 표 구조가 바뀔 때(행 추가·삭제·플랫폼 변경)만 전체 재렌더
