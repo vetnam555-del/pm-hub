@@ -47,7 +47,10 @@ html { scroll-behavior: smooth; overflow-x: clip; } /* 문서 가로 스크롤 �
 /* 긴 코드·URL(예: UTM 예시)이 모바일에서 컨테이너를 넘기지 않도록 줄바꿈 */
 code { overflow-wrap: anywhere; }
 body {
-  font-family: 'Pretendard', 'Inter', -apple-system, sans-serif;
+  /* CDN(jsDelivr/Google Fonts)이 사내망에서 막히거나 오프라인이면 Pretendard·Inter 를 못 받는다.
+     그때도 한글이 깨지지 않도록 OS 기본 한글 서체까지 폴백을 깔아둔다. */
+  font-family: 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
+               'Malgun Gothic', '맑은 고딕', 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;

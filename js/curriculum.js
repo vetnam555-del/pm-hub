@@ -1548,12 +1548,15 @@ function renderBenchmark() {
     <div class="tool-wrap">
       <div class="tool-hero">
         <div class="eyebrow">📊 매체 벤치마크</div>
-        <h1>매체별 정상 범위 (CTR · CVR · CPC)</h1>
-        <p>"CTR 1%면 좋은 건가요?"의 답은 <b>매체마다 다릅니다.</b> 검색은 CTR 3~10%가 정상이지만 디스플레이는 0.3~0.8%가 정상입니다. 내 숫자가 그 매체에서 좋은지 가늠하는 기준으로 쓰세요.</p>
+        <h1>내 숫자가 정상인지 가늠하는 두 가지 기준</h1>
+        <p>"CTR 1%면 좋은 건가요?"의 답은 <b>매체마다, 업종마다 다릅니다.</b> 아래 두 표를 순서대로 쓰세요.
+        <b>①</b> 매체별 정상 범위로 큰 감각을 잡고, <b>②</b> 업종별 실측 단가표로 우리 업종의 실제 수준을 확인합니다.</p>
       </div>
-      <div class="callout warn"><span class="c-ico">⚠️</span><div>아래 범위는 <b>업종·시즌·소재·타겟에 따라 크게 달라지는 대략치</b>입니다. 절대 합격선이 아니라, ‘같은 매체 안에서 내 캠페인이 어느 정도인지’ 가늠하는 <b>상대 참고용</b>으로만 쓰세요. (2026년 한국 시장 기준 근사치)</div></div>
-      <div class="panel" style="margin-top:18px;padding:0;overflow:hidden">
-        <div class="table-scroll">
+
+      <div class="panel" style="margin-top:4px">
+        <div class="panel-head"><span class="ico">①</span><div><div class="panel-title">매체별 정상 범위 (CTR · CVR · CPC)</div><div class="panel-sub">국내 주요 매체 10곳 — "이 매체에서 이 정도면 정상인가?"</div></div></div>
+        <div class="callout warn"><span class="c-ico">⚠️</span><div>아래 범위는 <b>업종·시즌·소재·타겟에 따라 크게 달라지는 대략치</b>입니다. 절대 합격선이 아니라, '같은 매체 안에서 내 캠페인이 어느 정도인지' 가늠하는 <b>상대 참고용</b>으로만 쓰세요. (2026년 한국 시장 기준 근사치)</div></div>
+        <div class="table-scroll" style="margin-top:14px">
           <table class="t-table">
             <thead><tr><th>매체</th><th>유형</th><th class="num">CTR</th><th class="num">CVR</th><th class="num">CPC</th><th>메모</th></tr></thead>
             <tbody>
@@ -1562,18 +1565,33 @@ function renderBenchmark() {
           </table>
         </div>
       </div>
-      <div class="panel" style="margin-top:14px">
-        <div class="panel-head"><span class="ico">📚</span><div><div class="panel-title">이 수치의 근거·출처</div><div class="panel-sub">단일 공식 출처가 아닌, 업계 통용 추정치입니다</div></div></div>
+
+      <div style="margin-top:20px" id="benchLookupMount"></div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-head"><span class="ico">📚</span><div><div class="panel-title">이 수치의 근거·출처</div><div class="panel-sub">두 표는 출처와 성격이 다릅니다</div></div></div>
         <ul class="content-list">
-          <li>위 범위는 <b>2026년 한국 디지털 광고 시장에서 매체별로 통용되는 일반적 범위</b>를 정리한 <b>상대 참고용 추정치</b>입니다. 특정 리포트의 단일 수치를 그대로 옮긴 값이 아닙니다.</li>
-          <li><b>가장 정확한 기준은 우리 계정의 과거 성과 데이터</b>(클라이언트·업종별 자체 평균)입니다. 표의 범위는 그 데이터가 없을 때의 출발점으로만 쓰세요.</li>
+          <li><b>① 매체별 정상 범위</b> — <b>2026년 한국 디지털 광고 시장에서 매체별로 통용되는 일반적 범위</b>를 정리한 <b>상대 참고용 추정치</b>입니다. 특정 리포트의 단일 수치를 그대로 옮긴 값이 아닙니다.</li>
+          <li><b>② 업종별 실측 벤치마크</b> — <b>2024~2025년 구글 Ads·Meta Ads 집행 데이터</b>를 업종×디바이스×채널로 집계한 값입니다(익명화·변형). ①과 달리 <b>범위가 아닌 평균 단가 한 점</b>이라, 그대로 믹스 계산에 넣을 수 있습니다. 대신 <b>전환·매출(ROAS·CPA·CVR)은 포함하지 않습니다.</b></li>
+          <li><b>가장 정확한 기준은 우리 계정의 과거 성과 데이터</b>(클라이언트·업종별 자체 평균)입니다. 두 표 모두 그 데이터가 없을 때의 출발점으로만 쓰세요.</li>
           <li>공개 리포트로 교차 확인 — <a href="https://www.cjmezzomedia.com" target="_blank" rel="noopener noreferrer" style="color:var(--primary);font-weight:600">메조미디어</a> · <a href="https://www.nasmedia.co.kr" target="_blank" rel="noopener noreferrer" style="color:var(--primary);font-weight:600">나스미디어</a> · <a href="https://www.dmcreport.co.kr" target="_blank" rel="noopener noreferrer" style="color:var(--primary);font-weight:600">DMC리포트</a>의 매체·업종 트렌드 리포트, 그리고 <b>각 매체 광고관리자 내 업종 평균/추정치</b>(Meta·구글 Ads).</li>
           <li>업종·시즌·소재·타겟·계정 성숙도에 따라 같은 매체도 2~3배씩 달라집니다. <b>분기마다 최신 리포트로 재확인</b>을 권장합니다.</li>
         </ul>
       </div>
-      <div class="callout info" style="margin-top:14px"><span class="c-ico">💡</span><div>판단 순서: ① 이 표로 <b>매체 정상 범위</b> 확인 → ② [KPI 계산기]로 내 수치 산출 → ③ [트러블슈팅 진단기]로 원인·액션 도출.</div></div>
-      <div class="btn-row"><button class="btn btn-ghost btn-sm" onclick="showPage('tool-kpi')">📊 KPI 계산기</button><button class="btn btn-ghost btn-sm" onclick="showPage('tool-diagnose')">🩺 트러블슈팅 진단</button><button class="btn btn-ghost btn-sm" onclick="showPage('sources')">📰 인사이트 소스</button></div>
+
+      <div class="callout info" style="margin-top:14px"><span class="c-ico">💡</span><div>판단 순서: ① 이 표로 <b>매체 정상 범위</b> 확인 → ② <b>업종 실측 단가</b> 확인 → ③ [🧩 미디어믹스 플래너]로 예산 배분·볼륨 추정 → ④ [KPI 계산기]로 내 수치 산출 → ⑤ [트러블슈팅 진단기]로 원인·액션 도출.</div></div>
+      <div class="btn-row">
+        <button class="btn btn-ghost btn-sm" onclick="showPage('tool-mediamix')">🧩 미디어믹스 플래너</button>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('tool-kpi')">📊 KPI 계산기</button>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('tool-diagnose')">🩺 트러블슈팅 진단</button>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('sources')">📰 인사이트 소스</button>
+      </div>
     </div>`;
+
+  // ② 업종별 실측 벤치마크 — js/tools/mediamix.js 의 렌더러를 재사용(데이터 단일 출처 유지)
+  if (typeof window.mmRenderLookup === 'function') {
+    window.mmRenderLookup(document.getElementById('benchLookupMount'));
+  }
 }
 
 // ─── UTM·캠페인 네이밍 규칙 (참고) ───
@@ -1763,10 +1781,9 @@ function renderHomeWeeks() {
 }
 
 // ─── Init (reference pages) ───
-renderMedia();
-renderGlossary(glossaryData);
-renderSpecs();
-renderFAQ();
+// 매체·용어·규격·FAQ 는 첫 화면(홈)에서 쓰이지 않는다. 예전엔 스크립트 로드 시점에
+// 전부 렌더해 홈만 보는 사용자도 비용을 냈다 → app.js 의 _renderers 로 옮겨 지연 렌더한다.
+// (아래 함수들은 window 에 노출된 전역이라 라우터가 페이지 진입 시 1회 호출한다)
 // day17 트렌드 소스 표를 sourceData 단일 소스에서 생성(중복·드리프트 제거)
 if (typeof sourceData !== 'undefined' && dayData.day17) {
   dayData.day17.table = sourceData.map(s => [s.name, '<a href="' + s.url + '" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:underline">링크 접속</a>', s.desc]);

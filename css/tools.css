@@ -38,7 +38,10 @@
 /* ── 필드 (라벨 + 인풋) ── */
 .field { margin-bottom:14px; }
 .field:last-child { margin-bottom:0; }
-.field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+/* .field-row 안의 마지막 .field 는 margin-bottom:0 이라, 모바일 1열에서 다음 블록과
+   붙어버린다. 행 자체에 여백을 줘 모든 도구에서 간격이 유지되게 한다. */
+.field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+.field-row:last-child { margin-bottom:0; }
 .field-row.c3 { grid-template-columns:repeat(3,1fr); }
 @media (max-width:520px){ .field-row, .field-row.c3 { grid-template-columns:1fr; } }
 .field label, .field-label {
@@ -420,3 +423,105 @@ button.day-check { background: transparent; }
   .print-only { display: block !important; }
 }
 .print-only { display: none; }
+
+/* ============================================================
+   미디어믹스 플래너 (js/tools/mediamix.js)
+   ============================================================ */
+.mm-wrap { max-width: 1180px; }
+.mm-dot {
+  display:inline-block; width:9px; height:9px; border-radius:3px;
+  margin-right:7px; vertical-align:middle; flex-shrink:0;
+}
+.mm-badge {
+  display:inline-block; font-size:10px; font-weight:700; letter-spacing:.2px;
+  padding:1px 6px; border-radius:20px; vertical-align:middle; white-space:nowrap;
+  color: var(--text-muted); background: rgba(255,255,255,.06); border:1px solid var(--border);
+}
+.mm-badge.warn { color:#F6AD55; background: rgba(246,173,85,.12); border-color: rgba(246,173,85,.3); }
+.mm-sub { font-size:11px; color: var(--text-muted); margin-top:3px; white-space:nowrap; }
+.mm-name-cell { min-width:150px; }
+.mm-note { font-size:11.5px; color: var(--text-muted); }
+
+/* 예산 배분 막대 — 세그먼트 폭은 인라인 style(width)로 지정 */
+.mm-bar {
+  display:flex; height:12px; border-radius:20px; overflow:hidden;
+  background: rgba(255,255,255,.06); border:1px solid var(--border);
+}
+.mm-bar > div { height:100%; min-width:2px; }
+
+/* ── 믹스 편집 표 ── */
+.t-table.mm-edit td { padding:8px 10px; vertical-align:middle; }
+.input.mm-cell {
+  padding:7px 9px; font-size:12.5px; text-align:right; width:100%;
+}
+.t-table.mm-edit td:first-child .input.mm-cell,
+.t-table.mm-edit td:nth-last-child(2) .input.mm-cell { text-align:left; }
+.mm-custom-name { display:flex; gap:6px; flex-wrap:wrap; }
+.mm-del {
+  background:transparent; border:1px solid var(--border); border-radius:6px;
+  color: var(--text-muted); cursor:pointer; font-size:12px; line-height:1;
+  padding:6px 8px; font-family:inherit; transition: var(--transition);
+}
+.mm-del:hover { color: var(--danger); border-color: var(--danger); }
+.mm-addbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:14px; }
+.mm-addgrp { display:flex; gap:6px; align-items:center; }
+.mm-addgrp .input { width:auto; min-width:150px; padding:8px 10px; font-size:12.5px; }
+.mm-th-sub { font-size:9.5px; font-weight:600; color: var(--text-muted); text-transform:none; letter-spacing:0; }
+
+/* ── 제안서 문서 헤더 ── */
+.mm-doc {
+  border:1px solid var(--border); border-radius: var(--radius-sm);
+  background: rgba(255,255,255,.02); padding:16px 18px;
+}
+.mm-doc-top { display:flex; flex-wrap:wrap; gap:8px; align-items:baseline; justify-content:space-between; }
+.mm-doc-title { font-size:18px; font-weight:800; letter-spacing:-.4px; color: var(--text-primary); }
+.mm-doc-sub { font-size:12.5px; color: var(--text-secondary); font-weight:600; }
+.mm-doc-meta { display:flex; flex-wrap:wrap; gap:14px; margin-top:8px; font-size:11.5px; color: var(--text-muted); }
+
+/* ── VAT 요약 줄 ── */
+.mm-vat {
+  display:flex; flex-wrap:wrap; gap:18px; justify-content:flex-end;
+  margin-top:10px; padding:10px 14px; font-size:12.5px; color: var(--text-secondary);
+  border:1px dashed var(--border); border-radius: var(--radius-sm);
+}
+.mm-vat b { color: var(--text-primary); }
+
+/* ── NOTICE (면책) ── */
+.mm-notice {
+  margin-top:16px; padding:14px 16px; border:1px solid var(--border);
+  border-radius: var(--radius-sm); background: rgba(0,0,0,.18);
+}
+.mm-notice-t { font-size:10.5px; font-weight:800; letter-spacing:1px; color: var(--text-muted); margin-bottom:8px; }
+.mm-notice ul { margin:0; padding-left:16px; }
+.mm-notice li { font-size:11.5px; line-height:1.7; color: var(--text-muted); margin-bottom:3px; }
+.mm-notice b { color: var(--text-secondary); }
+
+/* ── 인쇄: 결과 패널만 남긴다 ── */
+@media print {
+  .mm-noprint { display:none !important; }
+  .mm-result-panel { border:none !important; padding:0 !important; }
+  .mm-doc { border-color:#ccc !important; background:#fff !important; }
+  .mm-doc-title, .mm-vat b { color:#111 !important; }
+  .mm-doc-sub, .mm-doc-meta, .mm-notice li, .mm-note, .mm-sub { color:#444 !important; }
+  .mm-notice { background:#fff !important; border-color:#ccc !important; }
+  .mm-bar { border-color:#ccc !important; }
+  .t-table.mm-mix { font-size:10px !important; }
+  .t-table.mm-mix th, .t-table.mm-mix td { padding:5px 6px !important; }
+  .table-scroll { overflow:visible !important; border:none !important; }
+}
+
+/* ── 내 데이터 관리 (내보내기·가져오기·초기화) ── */
+.sf-link {
+  display:block; width:100%; margin-top:10px; padding:8px 10px;
+  background:transparent; border:1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text-muted); font-family:inherit; font-size:11.5px; font-weight:600;
+  cursor:pointer; transition: var(--transition); text-align:center;
+}
+.sf-link:hover { color: var(--text-secondary); border-color: var(--primary); }
+.dm-row {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:12px 0; border-top:1px solid var(--border);
+}
+.dm-row.danger .dm-t { color: var(--danger); }
+.dm-t { font-size:13px; font-weight:700; color: var(--text-primary); }
+.dm-d { font-size:11.5px; color: var(--text-muted); margin-top:2px; line-height:1.5; }

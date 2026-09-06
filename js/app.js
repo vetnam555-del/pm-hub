@@ -12,6 +12,7 @@ const _renderers = {
   'tool-kpi':      () => window.renderKpiTool && renderKpiTool(),
   'tool-utm':      () => window.renderUtmTool && renderUtmTool(),
   'tool-budget':   () => window.renderBudgetTool && renderBudgetTool(),
+  'tool-mediamix': () => window.renderMediamixTool && renderMediamixTool(),
   'tool-report':   () => window.renderReportTool && renderReportTool(),
   'tool-diagnose': () => window.renderDiagnoseTool && renderDiagnoseTool(),
   'tool-abtest':   () => window.renderAbTestTool && renderAbTestTool(),
@@ -19,6 +20,12 @@ const _renderers = {
   'tool-pacing':   () => window.renderPacingTool && renderPacingTool(),
   'utm-learn':     () => window.renderUtmLearn && renderUtmLearn(),
   'benchmark':     () => window.renderBenchmark && renderBenchmark(),
+  // 참고자료 4종 — 예전엔 curriculum.js 로드 시점에 즉시 렌더했다(홈만 보는 사용자도 비용 부담).
+  'media':         () => window.renderMedia && renderMedia(),
+  // ※ glossaryData 는 const 라 window 프로퍼티가 아니다(전역 렉시컬 스코프로만 접근).
+  'glossary':      () => window.renderGlossary && renderGlossary(typeof glossaryData !== 'undefined' ? glossaryData : []),
+  'specs':         () => window.renderSpecs && renderSpecs(),
+  'faq':           () => window.renderFAQ && renderFAQ(),
   'naming':        () => window.renderNaming && renderNaming(),
   'sources':       () => window.renderSources && renderSources(),
   'qa':            () => window.renderQA && renderQA(),
@@ -28,7 +35,7 @@ const _renderers = {
 const PAGE_TITLES = {
   'home': '🏠 홈 대시보드',
   'tool-kpi': '📊 KPI 계산기', 'tool-utm': '🔗 UTM 빌더', 'tool-budget': '💰 손익분기·예산',
-  'tool-report': '📝 주간 리포트', 'tool-diagnose': '🩺 트러블슈팅 진단', 'tool-abtest': '🧪 A/B 유의성',
+  'tool-mediamix': '🧩 미디어믹스 플래너', 'tool-report': '📝 주간 리포트', 'tool-diagnose': '🩺 트러블슈팅 진단', 'tool-abtest': '🧪 A/B 유의성',
   'tool-bid': '📈 적정 입찰가', 'tool-pacing': '⏱️ 예산 페이싱',
   'utm-learn': '🎯 UTM 완전정복', 'media': '📡 매체 가이드', 'glossary': '📖 광고 용어 사전',
   'specs': '📐 소재 규격표', 'faq': '❓ 자주 묻는 질문', 'benchmark': '📊 매체 벤치마크', 'naming': '🏷️ 네이밍 규칙',
@@ -106,7 +113,9 @@ window.addEventListener('hashchange', () => {
 // 초기 로드: 해시 있으면 해당 페이지로
 function initRouting() {
   const id = location.hash.replace(/^#/, '');
-  if (id && VALID_PAGES.has(id)) applyPage(id);
+  // 잘못된 해시(구버전 링크·오타)도 applyPage 로 넘긴다 — 안에서 home 으로 정규화하며
+  // 주소창의 죽은 해시까지 지운다. 여기서 걸러버리면 화면은 홈인데 URL 만 어긋난 채 남는다.
+  if (id) applyPage(id);
 }
 
 // ─── 모바일 사이드바 ───
@@ -316,6 +325,27 @@ function buildSearchIndex() {
   if (typeof specData === 'object') specData.forEach(s => idx.push({ type: '규격', label: s.name, kw: s.name + ' ' + s.tagline, go: () => showPage('specs') }));
   // FAQ
   if (typeof faqData === 'object') faqData.forEach((f, i) => idx.push({ type: 'FAQ', label: f.q, kw: f.q + ' ' + f.a, go: () => { showPage('faq'); setTimeout(() => { const el = document.getElementById('faq-' + i); if (el) { el.classList.add('open'); el.scrollIntoView({ block: 'center' }); } }, 60); } }));
+  // 현직자 Q&A — 매체별 실전 질문. 본문에 답이 있어도 검색에 안 걸리던 구멍을 메움
+  if (typeof practitionerQA === 'object') practitionerQA.forEach(sec => {
+    (sec.items || []).forEach(it => idx.push({ type: '현직자 Q&A', label: it.q, kw: it.q + ' ' + it.a + ' ' + (sec.sec || ''), go: () => showPage('qa') }));
+  });
+  // 인사이트 소스(뉴스레터·사이트)
+  if (typeof sourceData === 'object') sourceData.forEach(s =>
+    idx.push({ type: '인사이트 소스', label: s.name, kw: s.name + ' ' + (s.en || '') + ' ' + (s.desc || ''), go: () => showPage('sources') }));
+  // 매체 벤치마크(정상 범위) — "GFA CTR 정상 범위" 같은 질문이 바로 걸리도록
+  if (typeof benchmarkData === 'object') benchmarkData.forEach(b =>
+    idx.push({ type: '벤치마크', label: b.media + ' — CTR ' + b.ctr + ' · CVR ' + b.cvr, kw: b.media + ' ' + b.type + ' ' + b.ctr + ' ' + b.cvr + ' ' + b.cpc + ' ' + b.note + ' 정상 범위 벤치마크', go: () => showPage('benchmark') }));
+  // 업종별 실측 벤치마크(미디어믹스 데이터) — 업종명으로 바로 플래너 진입
+  if (window.MM_DATA) {
+    ['google', 'meta'].forEach(pid => {
+      const ds = window.MM_DATA[pid]; if (!ds) return;
+      ds.industries.forEach(ind => idx.push({
+        type: '업종 단가', label: ind + ' · ' + ds.label,
+        kw: ind + ' ' + ds.label + ' 업종 벤치마크 단가 CPC CPM 미디어믹스',
+        go: () => window.mediamixPrefill && window.mediamixPrefill({ platform: pid, industry: ind })
+      }));
+    });
+  }
   return idx;
 }
 let _searchIndex = null;
@@ -382,6 +412,9 @@ const SEARCH_INTENTS = [
   { kw:['utm','링크','추적','파라미터','소스','source','medium'], go:'tool-utm', label:'🔗 UTM 빌더 — 추적 링크 생성' },
   { kw:['규격','사이즈','크기','소재','배너','픽셀','해상도','비율'], go:'specs', label:'📐 소재 규격표 — 매체별 이미지·영상 규격' },
   { kw:['예산','손익','마진','본전','분기','얼마 써','배분'], go:'tool-budget', label:'💰 손익분기·예산 시뮬레이터' },
+  // ※ '배분'은 위 예산 인텐트가, '벤치마크'는 아래 벤치마크 인텐트가 먼저 잡는다(첫 매칭 우선).
+  //    여기엔 미디어믹스에만 해당하는 키워드만 둔다.
+  { kw:['믹스','미디어믹스','미디어 믹스','채널 배분','플래너','미디어 플랜','예상 클릭','예상 노출','업종','업종별','단가','cpv','cpi'], go:'tool-mediamix', label:'🧩 미디어믹스 플래너 — 업종 벤치마크로 채널 배분·볼륨 추정' },
   { kw:['리포트','보고','주간','보고서','대시보드'], go:'tool-report', label:'📝 주간 리포트 빌더' },
   { kw:['벤치마크','정상','평균','범위','기준','좋은','나쁜'], go:'benchmark', label:'📊 매체 벤치마크 — CTR·CVR 정상 범위' },
   { kw:['ab','a/b','유의','테스트','표본','통계'], go:'tool-abtest', label:'🧪 A/B 유의성 검정' },
@@ -395,7 +428,7 @@ const SEARCH_INTENTS = [
 ];
 const HS_CHIPS = [
   ['📊 KPI 계산기','tool-kpi'], ['🔗 UTM 빌더','tool-utm'], ['💰 손익분기','tool-budget'],
-  ['🩺 트러블슈팅','tool-diagnose'], ['📊 매체 벤치마크','benchmark'], ['📖 용어 사전','glossary'],
+  ['🧩 미디어믹스','tool-mediamix'], ['🩺 트러블슈팅','tool-diagnose'], ['📊 매체 벤치마크','benchmark'], ['📖 용어 사전','glossary'],
 ];
 function renderHomeSearch() {
   const m = document.getElementById('homeSearchMount');
@@ -546,6 +579,7 @@ document.addEventListener('keydown', e => {
     closeSearch(); closeSidebar();
     if (typeof closeWelcome === 'function') { const w = document.getElementById('welcomeOverlay'); if (w && w.classList.contains('open')) closeWelcome(); }
     if (typeof closeNameModal === 'function') closeNameModal();
+    closeDataManager();
     return;
   }
   // 포커스된 클릭형 카드를 Enter/Space로 활성화
@@ -565,3 +599,132 @@ renderNextUp();
 renderOnboarding();
 a11yEnhance(document);
 initRouting();
+
+// ─── 내 데이터 관리 (내보내기 · 가져오기 · 초기화) ───
+// 진도·이름·도구 입력은 전부 이 브라우저의 localStorage 에만 있다. 기기를 바꾸거나
+// 다음 기수에 넘길 때 옮기고 지울 수단이 없으면 개발자도구를 열어야 한다.
+// 관리 대상: 'pm_' 로 시작하는 모든 키 + 'internName'
+const DATA_SCHEMA = 1;
+
+function collectHubData() {
+  const data = {};
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k === 'internName' || k.indexOf('pm_') === 0) data[k] = localStorage.getItem(k);
+    }
+  } catch (_) {}
+  return data;
+}
+
+function exportHubData() {
+  const payload = {
+    _app: 'pm-hub',
+    _schema: DATA_SCHEMA,
+    _note: '퍼포먼스 마케팅 실무 허브 학습 데이터. 같은 사이트의 [데이터 관리 → 가져오기]로 복원하세요.',
+    data: collectHubData()
+  };
+  const name = (localStorage.getItem('internName') || 'pm-hub').replace(/[^\wㄱ-ㅎ가-힣.-]+/g, '_');
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name + '_진도백업.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setDataMsg('ok', '내보냈습니다. 새 기기에서 [가져오기]로 복원하세요.');
+}
+
+function importHubData(text) {
+  let obj;
+  try { obj = JSON.parse(text); } catch (_) { setDataMsg('bad', '파일을 읽지 못했습니다 — JSON 형식이 아닙니다.'); return; }
+  if (!obj || obj._app !== 'pm-hub' || !obj.data || typeof obj.data !== 'object') {
+    setDataMsg('bad', '이 허브에서 내보낸 백업 파일이 아닙니다.'); return;
+  }
+  let n = 0;
+  try {
+    Object.keys(obj.data).forEach(k => {
+      if (k === 'internName' || k.indexOf('pm_') === 0) { localStorage.setItem(k, obj.data[k]); n++; }
+    });
+  } catch (_) { setDataMsg('bad', '저장 공간이 가득 차 복원하지 못했습니다.'); return; }
+  setDataMsg('ok', n + '개 항목을 복원했습니다. 새로고침하면 반영됩니다.');
+}
+
+function resetHubData() {
+  const inp = document.getElementById('dmConfirm');
+  if (!inp || inp.value.trim() !== '초기화') { setDataMsg('bad', '확인란에 <b>초기화</b> 를 정확히 입력해야 지웁니다.'); return; }
+  try {
+    Object.keys(collectHubData()).forEach(k => localStorage.removeItem(k));
+  } catch (_) {}
+  setDataMsg('ok', '모두 지웠습니다. 새로고침하면 처음 상태로 돌아갑니다.');
+}
+
+function setDataMsg(kind, html) {
+  const el = document.getElementById('dmMsg');
+  if (!el) return;
+  el.className = 'callout ' + (kind === 'ok' ? 'ok' : 'danger');
+  el.innerHTML = '<span class="c-ico">' + (kind === 'ok' ? '✅' : '⛔') + '</span><div>' + html + '</div>';
+  el.style.display = '';
+}
+
+function openDataManager() {
+  let ov = document.getElementById('dataModal');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'dataModal'; ov.className = 'name-modal-overlay';
+    ov.innerHTML =
+      '<div class="name-modal" role="dialog" aria-modal="true" aria-label="내 데이터 관리" style="max-width:460px">' +
+        '<div class="nm-title">내 데이터 관리</div>' +
+        '<div class="nm-sub">진도·이름·도구 입력값은 <b>이 브라우저에만</b> 저장됩니다. 기기를 바꾸면 사라지니 백업하세요.</div>' +
+        '<div class="dm-row"><div><div class="dm-t">📤 내보내기</div><div class="dm-d">JSON 파일로 저장</div></div>' +
+          '<button type="button" class="btn btn-ghost btn-sm" id="dmExport">내보내기</button></div>' +
+        '<div class="dm-row"><div><div class="dm-t">📥 가져오기</div><div class="dm-d">백업 파일에서 복원(덮어쓰기)</div></div>' +
+          '<button type="button" class="btn btn-ghost btn-sm" id="dmImportBtn">파일 선택</button></div>' +
+        '<input type="file" id="dmFile" accept="application/json,.json" hidden>' +
+        '<div class="dm-row"><div><div class="dm-t">🧹 캐시 비우기</div><div class="dm-d">화면이 옛 버전으로 남아 있을 때 — 오프라인 캐시만 지웁니다(진도는 유지)</div></div>' +
+          '<button type="button" class="btn btn-ghost btn-sm" id="dmCache">비우기</button></div>' +
+        '<div class="dm-row danger"><div><div class="dm-t">🗑 전체 초기화</div><div class="dm-d">진도·이름·모든 도구 입력 삭제 — 되돌릴 수 없습니다</div></div></div>' +
+        '<input id="dmConfirm" class="input" type="text" placeholder="확인을 위해 초기화 라고 입력" autocomplete="off">' +
+        '<div id="dmMsg" style="display:none;margin-top:10px"></div>' +
+        '<div class="nm-btns">' +
+          '<button type="button" class="btn btn-ghost btn-sm" id="dmReset">초기화 실행</button>' +
+          '<button type="button" class="btn btn-primary btn-sm" id="dmClose">닫기</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click', e => { if (e.target === ov) closeDataManager(); });
+    ov.querySelector('#dmExport').addEventListener('click', exportHubData);
+    ov.querySelector('#dmImportBtn').addEventListener('click', () => ov.querySelector('#dmFile').click());
+    ov.querySelector('#dmFile').addEventListener('change', e => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => importHubData(String(r.result));
+      r.onerror = () => setDataMsg('bad', '파일을 읽지 못했습니다.');
+      r.readAsText(f);
+      e.target.value = '';
+    });
+    ov.querySelector('#dmCache').addEventListener('click', clearHubCache);
+    ov.querySelector('#dmReset').addEventListener('click', resetHubData);
+    ov.querySelector('#dmClose').addEventListener('click', closeDataManager);
+  }
+  const msg = ov.querySelector('#dmMsg'); if (msg) msg.style.display = 'none';
+  const cf = ov.querySelector('#dmConfirm'); if (cf) cf.value = '';
+  ov.classList.add('open');
+}
+function closeDataManager() {
+  const ov = document.getElementById('dataModal');
+  if (ov) ov.classList.remove('open');
+}
+
+// 오프라인 캐시(서비스워커)만 비운다 — 진도·입력값(localStorage)은 건드리지 않는다.
+// 배포했는데 옛 화면이 남아 있을 때의 탈출구.
+function clearHubCache() {
+  const jobs = [];
+  if ('caches' in window) jobs.push(caches.keys().then(ks => Promise.all(ks.map(k => caches.delete(k)))));
+  if ('serviceWorker' in navigator) {
+    jobs.push(navigator.serviceWorker.getRegistrations().then(rs => Promise.all(rs.map(r => r.unregister()))));
+  }
+  Promise.all(jobs)
+    .then(() => setDataMsg('ok', '캐시를 비웠습니다. <b>새로고침</b>하면 최신 버전으로 다시 받습니다.'))
+    .catch(() => setDataMsg('bad', '캐시를 비우지 못했습니다. 브라우저 설정에서 사이트 데이터를 삭제해 주세요.'));
+}

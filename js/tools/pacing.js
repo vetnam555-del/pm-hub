@@ -264,7 +264,10 @@
     var pace = (idealSpent > 0) ? (spent / idealSpent * 100) : null; // 페이스(%)
     var remainBudget = budget - spent;             // 남은 예산
     var remainDays = totalDays - elapsed;          // 남은 일수
-    var recDaily = (remainDays > 0) ? (remainBudget / remainDays) : null; // 권장 일소진(남은기간)
+    // 이미 예산을 넘겼으면(remainBudget<0) 권장 일소진은 음수가 아니라 0이다 —
+    // "일 -20만원 이하로 줄이세요" 같은 말이 안 되는 안내를 막는다.
+    var overspent = (remainBudget < 0);
+    var recDaily = (remainDays > 0) ? Math.max(0, remainBudget / remainDays) : null; // 권장 일소진(남은기간)
     var projected = (elapsed > 0) ? (spent / elapsed * totalDays) : null; // 예상 기간말 소진
     var projectedDiff = (projected != null) ? (projected - budget) : null; // 예산 대비 초과(+)/미달(-)
 
@@ -309,7 +312,8 @@
 
     // 권장 일소진(남은 기간)
     var recSub = (recDaily != null)
-      ? ('남은 ' + pacingTrim(remainDays) + '일 동안 매일')
+      ? (overspent ? '예산 소진 완료 — 추가 집행 시 증액 협의 필요'
+                   : '남은 ' + pacingTrim(remainDays) + '일 동안 매일')
       : (remainDays <= 0 ? '기간 종료 — 남은 일수 없음' : '계산 불가');
     html +=
       '<div class="metric">' +
@@ -340,10 +344,12 @@
           '<div class="m-value">' + (projected != null ? fmtWon(projected) : '–') + '</div>' +
           '<div class="m-sub">' + projSub + '</div>' +
         '</div>' +
-        '<div class="metric">' +
+        '<div class="metric' + (overspent ? ' bad' : '') + '">' +
           '<div class="m-label">💰 남은 예산</div>' +
           '<div class="m-value">' + fmtWon(remainBudget) + '</div>' +
-          '<div class="m-sub">총 예산 − 현재 소진 · 남은 ' + pacingTrim(remainDays) + '일</div>' +
+          '<div class="m-sub">' + (overspent
+            ? '<b>예산 초과</b> — 이미 ' + fmtWonShort(-remainBudget) + '원 더 썼습니다'
+            : '총 예산 − 현재 소진 · 남은 ' + pacingTrim(remainDays) + '일') + '</div>' +
         '</div>' +
       '</div>';
 
@@ -383,7 +389,9 @@
         '지금쯤 ' + fmtWon(idealSpent) + '를 썼어야 정상인데 실제로는 ' + fmtWon(spent) + '를 소진했습니다. ' +
         '이 속도면 기간말 ' + (projected != null ? fmtWon(projected) : '–') + '까지 소진해 예산을 <b>' +
         (projectedDiff != null && projectedDiff > 0 ? fmtWonShort(projectedDiff) + '원 초과' : '초과') + '</b>할 수 있습니다. ' +
-        '남은 ' + pacingTrim(remainDays) + '일은 일 ' + (recDaily != null ? fmtWon(recDaily) : '–') + ' 이하로 줄여 페이스를 늦추세요.</div></div>';
+        (overspent
+          ? '<b>이미 총 예산을 ' + fmtWonShort(-remainBudget) + '원 넘겼습니다.</b> 남은 ' + pacingTrim(remainDays) + '일은 집행을 멈추거나, 광고주와 증액을 협의한 뒤 재개하세요.'
+          : '남은 ' + pacingTrim(remainDays) + '일은 일 ' + (recDaily != null ? fmtWon(recDaily) : '–') + ' 이하로 줄여 페이스를 늦추세요.') + '</div></div>';
     } else if (paceState === 'ok') {
       html +=
         '<div class="callout ok"><span class="c-ico">✅</span><div>' +
