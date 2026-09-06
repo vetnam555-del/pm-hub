@@ -202,8 +202,11 @@
     } catch (e) { return false; }
   }
 
-  // 플랫폼/업종/디바이스를 데이터셋에 맞게 정리
-  function mmSyncPlatform() {
+  // 플랫폼/업종/디바이스를 데이터셋에 맞게 정리한다.
+  // seedIfEmptyBench: 플랫폼을 '전환할 때만' true. 전환 후 벤치마크 행이 하나도 안 남으면
+  //   새 플랫폼의 프리셋으로 채워준다. 저장값 복원 시에는 false —
+  //   국내 매체(직접 입력)로만 짠 믹스를 새로고침할 때마다 구글 채널이 되붙던 문제를 막는다.
+  function mmSyncPlatform(seedIfEmptyBench) {
     var ds = mmDataset(mmState.platform);
     if (!ds) return;
     if (ds.industries.indexOf(mmState.industry) < 0) mmState.industry = ALL;
@@ -211,12 +214,9 @@
     if (!mmPreset(mmState.preset)) mmState.preset = (MM_PRESETS[mmState.platform][0] || {}).id;
     // 다른 플랫폼의 채널을 참조하는 벤치마크 행은 제거(직접 입력 행은 유지)
     var valid = mmChannels(ds).map(function (c) { return c.id; });
-    var kept = mmState.rows.filter(function (r) { return r.kind === 'custom' || valid.indexOf(r.channel) >= 0; });
-    if (kept.filter(function (r) { return r.kind === 'bench'; }).length === 0) {
-      mmState.rows = kept;
+    mmState.rows = mmState.rows.filter(function (r) { return r.kind === 'custom' || valid.indexOf(r.channel) >= 0; });
+    if (seedIfEmptyBench && !mmState.rows.some(function (r) { return r.kind === 'bench'; })) {
       mmSeedFromPreset(mmState.preset);
-    } else {
-      mmState.rows = kept;
     }
   }
 
@@ -903,7 +903,7 @@
         var p = b.getAttribute('data-platform');
         if (p === mmState.platform) return;
         mmState.platform = p;
-        mmSyncPlatform();
+        mmSyncPlatform(true);   // 전환 시에만 새 플랫폼 프리셋으로 시드
         mmRefreshAll();
       });
     });
@@ -1119,8 +1119,9 @@
   // ============================================================
   function mmApplyPrefill(o) {
     if (!o) return;
+    var switched = (o.platform === 'google' || o.platform === 'meta') && o.platform !== mmState.platform;
     if (o.platform === 'google' || o.platform === 'meta') mmState.platform = o.platform;
-    mmSyncPlatform();
+    mmSyncPlatform(switched);
     var ds = mmDataset(mmState.platform);
     if (ds && o.industry && ds.industries.indexOf(o.industry) >= 0) mmState.industry = o.industry;
     if (ds && o.device && mmDeviceIds(ds).indexOf(o.device) >= 0) mmState.device = o.device;
@@ -1129,7 +1130,7 @@
   function renderMediamixTool() {
     if (!mmRoot()) return;
     var restored = mmLoad();
-    mmSyncPlatform();
+    mmSyncPlatform(false);      // 복원 시에는 사용자가 짠 행을 그대로 둔다
     if (!restored || !mmState.rows.length) mmSeedFromPreset(mmState.preset);
     if (mmPending) { mmApplyPrefill(mmPending); mmPending = null; }
     mmRenderAll();
