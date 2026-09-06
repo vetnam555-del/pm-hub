@@ -6,28 +6,28 @@
 //   · 폰트 CDN     → cache-first (사내망 차단·오프라인에서도 글꼴 유지)
 // CACHE 이름의 버전은 index.html 의 ?v=NN 과 함께 올린다.
 // ============================================================
-const CACHE = 'pm-hub-v23';
+const CACHE = 'pm-hub-v24';
 
 // 상대 경로로 등록 — /pm-hub/ 같은 하위 경로 배포에서도 동작한다
 const SHELL = [
   './',
   './index.html',
-  './css/base.css?v=23',
-  './css/beginner.css?v=23',
-  './css/tools.css?v=23',
-  './js/curriculum.js?v=23',
-  './js/data/mediamix-data.js?v=23',
-  './js/tools/kpi.js?v=23',
-  './js/tools/utm.js?v=23',
-  './js/tools/budget.js?v=23',
-  './js/tools/report.js?v=23',
-  './js/tools/diagnose.js?v=23',
-  './js/tools/abtest.js?v=23',
-  './js/tools/bid.js?v=23',
-  './js/tools/pacing.js?v=23',
-  './js/tools/mediamix.js?v=23',
-  './js/tools/utm-learn.js?v=23',
-  './js/app.js?v=23',
+  './css/base.css?v=24',
+  './css/beginner.css?v=24',
+  './css/tools.css?v=24',
+  './js/curriculum.js?v=24',
+  './js/data/mediamix-data.js?v=24',
+  './js/tools/kpi.js?v=24',
+  './js/tools/utm.js?v=24',
+  './js/tools/budget.js?v=24',
+  './js/tools/report.js?v=24',
+  './js/tools/diagnose.js?v=24',
+  './js/tools/abtest.js?v=24',
+  './js/tools/bid.js?v=24',
+  './js/tools/pacing.js?v=24',
+  './js/tools/mediamix.js?v=24',
+  './js/tools/utm-learn.js?v=24',
+  './js/app.js?v=24',
   './assets/icon-192.png',
   './manifest.webmanifest'
 ];
@@ -57,9 +57,12 @@ self.addEventListener('fetch', (e) => {
   const sameOrigin = url.origin === self.location.origin;
 
   // 1) HTML 문서 — 최신 우선, 오프라인이면 캐시
+  //    GitHub Pages 는 HTML 에 Cache-Control: max-age=600 을 붙인다. 그냥 fetch 하면
+  //    브라우저 HTTP 캐시가 최대 10분 지난 문서를 돌려줘서 network-first 가 무의미해진다.
+  //    cache:'reload' 로 HTTP 캐시를 건너뛰고 항상 원본을 받는다.
   if (req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html')) {
     e.respondWith(
-      fetch(req)
+      fetch(new Request(req.url, { cache: 'reload', credentials: 'same-origin' }))
         .then((res) => {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
