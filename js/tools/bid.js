@@ -19,7 +19,7 @@
     if (raw == null) return null;
     var s = String(raw).trim().replace(/,/g, '');
     if (s === '') return null;
-    var n = parseFloat(s);
+    var n = Number(s);
     if (!isFinite(n)) return null;
     return n;
   }

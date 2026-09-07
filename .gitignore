@@ -1,0 +1,3 @@
+qa-output/
+node_modules/
+*.private.json

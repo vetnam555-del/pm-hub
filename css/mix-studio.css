@@ -1,0 +1,46 @@
+.mix-studio {background:#f5f7f6;color:#202a28;padding:26px;min-height:100vh;letter-spacing:0;font-size:13px;line-height:1.6}
+.mix-studio * {letter-spacing:0}
+.mix-studio h1 {font-size:26px;color:#173e35;margin:0}
+.mix-studio h2 {font-size:17px;margin:0 0 12px;color:#202a28}
+.mix-studio small {font-size:11px;font-weight:400;color:#5b6b66;display:inline-block;margin-left:5px}
+.mix-heading,.mix-toolbar,.mix-section-head,.mix-projects,.mix-actions,.mix-checks {display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.mix-heading,.mix-toolbar,.mix-section-head {justify-content:space-between}
+.mix-heading {padding-bottom:22px}
+.mix-heading span,.mix-caption {color:#53625d}
+.mix-toolbar {border-top:1px solid #cdd6d1;border-bottom:1px solid #cdd6d1;padding:10px 0}
+.mix-toolbar nav {display:flex;gap:6px;flex-wrap:wrap}
+.mix-studio button {font:inherit;border:1px solid #adbcb5;background:#fff;color:#23473c;border-radius:4px;padding:7px 12px;cursor:pointer;line-height:1.4;min-height:34px;white-space:normal}
+.mix-studio button:hover {background:#e4efe9;border-color:#476e5f}
+.mix-studio button[aria-pressed=true],.mix-studio .mix-primary {background:#20614d;color:white;border-color:#20614d}
+.mix-studio .mix-primary:hover {background:#174a3b;color:white}
+.mix-studio button:focus-visible,.mix-studio input:focus-visible,.mix-studio select:focus-visible {outline:3px solid #bc771c;outline-offset:2px}
+.mix-section {padding:22px 0;border-bottom:1px solid #cdd6d1}
+.mix-projects {padding:14px 0;border-bottom:1px solid #cdd6d1}
+.mix-projects label {min-width:220px;max-width:420px}
+.mix-fields {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 18px;margin:10px 0 18px}
+.mix-studio label {display:flex;flex-direction:column;gap:4px;font-weight:600;color:#394c44;min-width:0}
+.mix-studio input,.mix-studio select {font:inherit;color:#202a28;background:#fff;border:1px solid #a9b8b0;border-radius:4px;padding:8px 10px;min-height:38px;max-width:100%;width:100%}
+.mix-studio .mix-actions select {width:auto;max-width:300px}
+.mix-studio .mix-actions span {color:#576960;font-size:12px}
+.mix-checks label {flex-direction:row;align-items:center}.mix-studio input[type=checkbox] {width:16px;min-height:16px;accent-color:#20614d}
+.mix-scroll {overflow:auto;max-width:100%;border:1px solid #cdd6d1;background:white}
+.mix-studio table {border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.mix-studio th,.mix-studio td {padding:9px 10px;border-bottom:1px solid #dde4df;text-align:right;vertical-align:middle}
+.mix-studio td:first-child,.mix-studio th:first-child {text-align:left;white-space:normal;min-width:130px}
+.mix-studio th {color:#fff;background:#345b4c;font-weight:600}
+.mix-studio td button {border:0;padding:4px;background:none;text-align:left}
+.mix-studio td small {display:block}.mix-studio tr.selected {background:#edf4d8}
+.mix-studio tfoot {background:#edf1ee;font-weight:bold}
+.mix-editor {border-left:4px solid #20614d;padding-left:16px}
+.mix-totals {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:16px 0}
+.mix-totals div {border-left:2px solid #9ab5aa;padding-left:12px;color:#576960}
+.mix-totals strong {display:block;font-size:18px;color:#1d4133;overflow-wrap:anywhere}
+.mix-errors {color:#9d2929;margin:12px 0 12px 20px}.mix-ok {color:#1c5b3d}
+.mix-studio details ul {margin:12px 0 0 22px}.mix-studio details {color:#715718}
+.mix-paper {background:#fff;color:#222;padding:28px;margin:20px 0;border:1px solid #bfc9c3}
+.mix-paper h3 {margin:24px 0 10px}.mix-paper p {margin:12px 0}.mix-paper li {margin-left:20px}
+.mix-studio dialog {margin:auto;max-width:min(560px,90vw);padding:28px;border:1px solid #a9b8b0;border-radius:6px;color:#202a28;background:white}
+.mix-studio dialog .mix-actions {margin-top:20px}.mix-studio dialog::backdrop {background:#0006}
+@media(max-width:900px){.mix-studio{padding:18px 14px}.mix-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.mix-totals{grid-template-columns:repeat(2,minmax(0,1fr))}.mix-projects label{max-width:100%}}
+@media(max-width:480px){.mix-fields{grid-template-columns:1fr}.mix-heading h1{font-size:23px}.mix-totals strong{font-size:16px}.mix-paper{padding:12px}.mix-toolbar nav{width:100%}}
+@media print {body.mix-print{display:block;background:white}body.mix-print>*:not(main){display:none!important}body.mix-print main{margin:0!important;padding:0!important;width:100%!important;max-width:none!important}body.mix-print .page:not(.active){display:none!important}body.mix-print .mix-studio{padding:0;background:white}body.mix-print .mix-studio>*:not(#mix-body),body.mix-print #mix-body>*:not(.mix-paper){display:none!important}body.mix-print .mix-paper{border:0;margin:0;padding:0}body.mix-print .mix-scroll{overflow:visible;border:0}body.mix-print table{white-space:normal;font-size:9px}body.mix-print th,body.mix-print td{padding:5px}body.mix-print .mix-paper h2{font-size:20px}@page{size:A3 landscape;margin:12mm}}

@@ -1528,7 +1528,7 @@ function closeWelcome() {
 }
 
 // ─── 매체 벤치마크 (참고) ───
-// 한국 디지털 광고 시장의 대략적 정상 범위. 업종·시즌·소재에 따라 크게 달라짐 → 절대 기준이 아닌 상대 참고용.
+// 한국 디지털 광고 시장의 대략적 참고 범위. 업종·시즌·소재에 따라 크게 달라짐 → 절대 기준이 아닌 상대 참고용.
 const benchmarkData = [
   { media:'네이버 SA (검색)',     type:'검색',     ctr:'3 ~ 10%',   cvr:'2 ~ 6%',   cpc:'200 ~ 1,500원', note:'구매의도 높음 — CTR·CVR 모두 높은 편' },
   { media:'구글 검색',            type:'검색',     ctr:'3 ~ 8%',    cvr:'2 ~ 5%',   cpc:'300 ~ 2,000원', note:'경쟁 키워드는 CPC 급등' },
@@ -1537,7 +1537,7 @@ const benchmarkData = [
   { media:'Meta 피드/릴스',       type:'소셜',     ctr:'0.8 ~ 2.5%', cvr:'1 ~ 4%',   cpc:'200 ~ 800원',  note:'소재 품질이 성과 좌우' },
   { media:'인스타 스토리',        type:'소셜',     ctr:'0.5 ~ 1.5%', cvr:'0.8 ~ 3%', cpc:'200 ~ 700원',  note:'풀스크린 몰입' },
   { media:'틱톡',                type:'소셜/영상', ctr:'0.8 ~ 2%',  cvr:'0.8 ~ 3%', cpc:'CPV 20~80원',  note:'영상 후킹 3초가 핵심' },
-  { media:'유튜브 (영상)',        type:'영상',     ctr:'0.5 ~ 1.5%', cvr:'—',        cpc:'CPV 30~100원', note:'조회율(VTR) 15~30%가 정상 범위' },
+  { media:'유튜브 (영상)',        type:'영상',     ctr:'0.5 ~ 1.5%', cvr:'—',        cpc:'CPV 30~100원', note:'조회율(VTR) 15~30%가 참고 범위' },
   { media:'크리테오 (리타겟팅)',   type:'리타겟팅',  ctr:'0.4 ~ 1.2%', cvr:'3 ~ 8%',   cpc:'200 ~ 600원',  note:'재방문 타겟이라 CVR 높음' },
   { media:'당근마켓',            type:'지역 DA',  ctr:'0.5 ~ 1.5%', cvr:'1 ~ 3%',   cpc:'100 ~ 400원',  note:'지역 관련성 높을수록 효율↑' },
 ];
@@ -1550,12 +1550,12 @@ function renderBenchmark() {
         <div class="eyebrow">📊 매체 벤치마크</div>
         <h1>내 숫자가 정상인지 가늠하는 두 가지 기준</h1>
         <p>"CTR 1%면 좋은 건가요?"의 답은 <b>매체마다, 업종마다 다릅니다.</b> 아래 두 표를 순서대로 쓰세요.
-        <b>①</b> 매체별 정상 범위로 큰 감각을 잡고, <b>②</b> 업종별 실측 단가표로 우리 업종의 실제 수준을 확인합니다.</p>
+        <b>①</b> 매체별 참고 범위로 큰 감각을 잡고, <b>②</b> 업종별 참고 단가표로 우리 업종의 실제 수준을 확인합니다.</p>
       </div>
 
       <div class="panel" style="margin-top:4px">
-        <div class="panel-head"><span class="ico">①</span><div><div class="panel-title">매체별 정상 범위 (CTR · CVR · CPC)</div><div class="panel-sub">국내 주요 매체 10곳 — "이 매체에서 이 정도면 정상인가?"</div></div></div>
-        <div class="callout warn"><span class="c-ico">⚠️</span><div>아래 범위는 <b>업종·시즌·소재·타겟에 따라 크게 달라지는 대략치</b>입니다. 절대 합격선이 아니라, '같은 매체 안에서 내 캠페인이 어느 정도인지' 가늠하는 <b>상대 참고용</b>으로만 쓰세요. (2026년 한국 시장 기준 근사치)</div></div>
+        <div class="panel-head"><span class="ico">①</span><div><div class="panel-title">매체별 참고 범위 (CTR · CVR · CPC)</div><div class="panel-sub">국내 주요 매체 10곳 — "이 매체에서 이 정도면 정상인가?"</div></div></div>
+        <div class="callout warn"><span class="c-ico">⚠️</span><div>아래 범위는 <b>업종·시즌·소재·타겟에 따라 크게 달라지는 대략치</b>입니다. 절대 합격선이 아니라, '같은 매체 안에서 내 캠페인이 어느 정도인지' 가늠하는 <b>상대 참고용</b>으로만 쓰세요. (출처·표본 검증 전 교육용 예시)</div></div>
         <div class="table-scroll" style="margin-top:14px">
           <table class="t-table">
             <thead><tr><th>매체</th><th>유형</th><th class="num">CTR</th><th class="num">CVR</th><th class="num">CPC</th><th>메모</th></tr></thead>
@@ -1571,15 +1571,15 @@ function renderBenchmark() {
       <div class="panel" style="margin-top:20px">
         <div class="panel-head"><span class="ico">📚</span><div><div class="panel-title">이 수치의 근거·출처</div><div class="panel-sub">두 표는 출처와 성격이 다릅니다</div></div></div>
         <ul class="content-list">
-          <li><b>① 매체별 정상 범위</b> — <b>2026년 한국 디지털 광고 시장에서 매체별로 통용되는 일반적 범위</b>를 정리한 <b>상대 참고용 추정치</b>입니다. 특정 리포트의 단일 수치를 그대로 옮긴 값이 아닙니다.</li>
-          <li><b>② 업종별 실측 벤치마크</b> — <b>2024~2025년 구글 Ads·Meta Ads 집행 데이터</b>를 업종×디바이스×채널로 집계한 값입니다(익명화·변형). ①과 달리 <b>범위가 아닌 평균 단가 한 점</b>이라, 그대로 믹스 계산에 넣을 수 있습니다. 대신 <b>전환·매출(ROAS·CPA·CVR)은 포함하지 않습니다.</b></li>
+          <li><b>① 매체별 참고 범위</b> — <b>출처 및 표본이 검증되지 않은 교육용 범위</b>를 정리한 <b>상대 참고용 추정치</b>입니다. 특정 리포트의 단일 수치를 그대로 옮긴 값이 아닙니다.</li>
+          <li><b>② 업종별 참고 벤치마크</b> — <b>2024~2025년 구글 Ads·Meta Ads 집행 데이터</b>를 업종×디바이스×채널로 집계한 값입니다(익명화·변형). ①과 달리 <b>범위가 아닌 평균 단가 한 점</b>이라, 계획의 초기 가정으로 활용할 수 있습니다. 제출 전 우리 계정 근거로 재검토해야 합니다. 대신 <b>전환·매출(ROAS·CPA·CVR)은 포함하지 않습니다.</b></li>
           <li><b>가장 정확한 기준은 우리 계정의 과거 성과 데이터</b>(클라이언트·업종별 자체 평균)입니다. 두 표 모두 그 데이터가 없을 때의 출발점으로만 쓰세요.</li>
           <li>공개 리포트로 교차 확인 — <a href="https://www.cjmezzomedia.com" target="_blank" rel="noopener noreferrer" style="color:var(--primary);font-weight:600">메조미디어</a> · <a href="https://www.nasmedia.co.kr" target="_blank" rel="noopener noreferrer" style="color:var(--primary);font-weight:600">나스미디어</a> · <a href="https://www.dmcreport.co.kr" target="_blank" rel="noopener noreferrer" style="color:var(--primary);font-weight:600">DMC리포트</a>의 매체·업종 트렌드 리포트, 그리고 <b>각 매체 광고관리자 내 업종 평균/추정치</b>(Meta·구글 Ads).</li>
           <li>업종·시즌·소재·타겟·계정 성숙도에 따라 같은 매체도 2~3배씩 달라집니다. <b>분기마다 최신 리포트로 재확인</b>을 권장합니다.</li>
         </ul>
       </div>
 
-      <div class="callout info" style="margin-top:14px"><span class="c-ico">💡</span><div>판단 순서: ① 이 표로 <b>매체 정상 범위</b> 확인 → ② <b>업종 실측 단가</b> 확인 → ③ [🧩 미디어믹스 플래너]로 예산 배분·볼륨 추정 → ④ [KPI 계산기]로 내 수치 산출 → ⑤ [트러블슈팅 진단기]로 원인·액션 도출.</div></div>
+      <div class="callout info" style="margin-top:14px"><span class="c-ico">💡</span><div>판단 순서: ① 이 표로 <b>매체 참고 범위</b> 확인 → ② <b>업종 참고 단가</b> 확인 → ③ [🧩 미디어믹스 플래너]로 예산 배분·볼륨 추정 → ④ [KPI 계산기]로 내 수치 산출 → ⑤ [트러블슈팅 진단기]로 원인·액션 도출.</div></div>
       <div class="btn-row">
         <button class="btn btn-ghost btn-sm" onclick="showPage('tool-mediamix')">🧩 미디어믹스 플래너</button>
         <button class="btn btn-ghost btn-sm" onclick="showPage('tool-kpi')">📊 KPI 계산기</button>
@@ -1588,7 +1588,7 @@ function renderBenchmark() {
       </div>
     </div>`;
 
-  // ② 업종별 실측 벤치마크 — js/tools/mediamix.js 의 렌더러를 재사용(데이터 단일 출처 유지)
+  // ② 업종별 참고 벤치마크 — js/tools/mediamix.js 의 렌더러를 재사용(데이터 단일 출처 유지)
   if (typeof window.mmRenderLookup === 'function') {
     window.mmRenderLookup(document.getElementById('benchLookupMount'));
   }

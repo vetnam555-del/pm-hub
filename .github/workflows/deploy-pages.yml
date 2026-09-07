@@ -30,5 +30,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify media mix calculations
+        run: node --test tests/mix-engine.test.cjs
+
       - name: Push main to gh-pages
         run: git push origin HEAD:gh-pages --force

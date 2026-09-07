@@ -30,9 +30,9 @@
     if (raw == null) return null;
     var s = String(raw).trim().replace(/,/g, '');
     if (s === '') return null;
-    var n = parseFloat(s);
-    if (!isFinite(n) || n < 0) return null;
-    return Math.floor(n);
+    var n = Number(s);
+    if (!isFinite(n) || n < 0 || !Number.isInteger(n)) return null;
+    return n;
   }
 
   // ── 표준정규 누적분포 Φ(x) — erf 근사(Abramowitz & Stegun 7.1.26) ──

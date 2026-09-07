@@ -3,7 +3,7 @@
 // 진입점: window.renderMediamixTool()   (컨테이너 id="page-tool-mediamix")
 // 보조 진입점:
 //   window.mediamixPrefill({platform, industry, device})  — 다른 페이지에서 조건 넘겨 열기
-//   window.mmRenderLookup(el)                             — 벤치마크 페이지에 '업종별 실측표' 삽입
+//   window.mmRenderLookup(el)                             — 벤치마크 페이지에 '업종별 참고표' 삽입
 //
 // 설계 근거 — 실제 클라이언트 산출물 3종의 공통 컬럼을 그대로 재현한다:
 //   · 매체 / 광고유형 / 예산비중 / 예산(VAT별도) / 마크업 제외 매체비
@@ -108,7 +108,7 @@
     if (raw == null) return null;
     var s = String(raw).trim().replace(/,/g, '');
     if (s === '') return null;
-    var n = parseFloat(s);
+    var n = Number(s);
     return isFinite(n) ? n : null;
   }
   function mmPos(raw) { var n = mmNum(raw); return (n == null || n <= 0) ? null : n; }
@@ -1088,7 +1088,7 @@
       '<div class="tool-hero mm-noprint">' +
         '<div class="eyebrow">🧰 실무 도구</div>' +
         '<h1>미디어믹스 플래너</h1>' +
-        '<p>업종별 실측 벤치마크 + 우리 계정 실적 가정으로 <b>광고주 제출용 미디어믹스</b>를 만듭니다. ' +
+        '<p>업종별 참고 벤치마크 + 우리 계정 실적 가정으로 <b>광고주 제출용 미디어믹스</b>를 만듭니다. ' +
         '채널 배분 · 예상 노출/클릭/전환/매출 · VAT · 마크업까지 계산해 <b>엑셀에 그대로 붙여넣을 수 있는 표</b>로 내보냅니다.</p>' +
       '</div>' +
 
@@ -1115,7 +1115,7 @@
   }
 
   // ============================================================
-  // 벤치마크 페이지용 '업종별 실측표'
+  // 벤치마크 페이지용 '업종별 참고표'
   // ============================================================
   var lkState = { platform: 'google', industry: ALL, device: 'MO' };
   function lkDs() { return mmDataset(lkState.platform); }
@@ -1173,8 +1173,8 @@
     el.innerHTML =
     '<div class="panel">' +
       '<div class="panel-head"><span class="ico">🎯</span><div>' +
-        '<div class="panel-title">업종별 실측 벤치마크 (구글 Ads · Meta Ads)</div>' +
-        '<div class="panel-sub">2024~2025 집행 데이터 기반 단가표 — 위 표가 “매체 감각”이라면, 이 표는 “업종 실측치”입니다</div>' +
+        '<div class="panel-title">업종별 참고 벤치마크 (구글 Ads · Meta Ads)</div>' +
+        '<div class="panel-sub">기존 간편 플래너의 2024~2025 참고값 · 원시 데이터 및 표본 미검증</div>' +
       '</div></div>' +
       '<div class="seg" id="lk-platform-seg" style="margin-bottom:12px">' +
         '<button type="button" class="seg-btn' + (lkState.platform === 'google' ? ' on' : '') + '" data-platform="google">구글 Ads</button>' +
@@ -1188,7 +1188,7 @@
       '<div id="lk-table">' + lkTableHtml() + '</div>' +
       '<div class="callout info" style="margin-top:12px"><span class="c-ico">💡</span><div>' +
         '<b>–</b> 는 해당 조합에 데이터가 없다는 뜻입니다(<span class="mm-badge warn">통합 대체</span>는 전 업종 평균으로 대체한 값). ' +
-        'CPC·CTR·CPM은 각각 따로 평균 낸 값이라 <b>CPC × CTR × 1000 ≠ CPM</b> 인 행이 있을 수 있습니다. ' +
+        'CPC·CTR·CPM은 각각 따로 평균 낸 값이라 <b>CPC × (CTR ÷ 100) × 1000 ≠ CPM</b> 인 행이 있을 수 있습니다. ' +
         '전환·매출(CVR·CPA·ROAS)은 이 데이터에 <b>없습니다</b> — 플래너에서 우리 실적값을 직접 넣어야 합니다.' +
       '</div></div>' +
       '<div class="btn-row">' +
