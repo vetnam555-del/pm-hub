@@ -160,8 +160,28 @@
     if (aov != null) { var ai = body.querySelector('#beAov'); if (ai) ai.value = budgetTrim(aov); }
     var margin = budgetNum(obj.margin);
     if (margin != null) { var mi = body.querySelector('#beMargin'); if (mi) mi.value = budgetTrim(margin); }
+    // 미디어믹스에서 넘어온 '예상 ROAS'를 목표 ROAS 칸에 넣으면 본전선과 바로 비교된다
+    var target = budgetNum(obj.target);
+    if (target != null) { var ti = body.querySelector('#beTarget'); if (ti) ti.value = budgetTrim(target); }
+    var other = budgetNum(obj.other);
+    if (other != null) { var oi = body.querySelector('#beVar'); if (oi) oi.value = budgetTrim(other); }
     budgetCalcBE(body);
     budgetPersist(root);
+    // 어디서 넘어온 값인지 알려준다(사용자가 직접 넣은 값과 헷갈리지 않게)
+    if (obj.from) {
+      var out = body.querySelector('#beResult');
+      if (out) {
+        var note = document.createElement('div');
+        note.className = 'callout info';
+        note.innerHTML = '<span class="c-ico">🔗</span><div>' +
+          '<b>' + String(obj.from) + '</b>에서 넘어온 값으로 채웠습니다' +
+          (target != null ? ' — <b>목표 ROAS</b> 칸이 믹스의 예상 ROAS 입니다' : '') +
+          '. ' + (margin != null
+            ? '아래 <b>건당 예상 이익</b>이 음수면 그 믹스는 본전에 못 미칩니다.'
+            : '<b>마진율</b>을 넣으면 본전선과 바로 비교됩니다.') + '</div>';
+        out.insertBefore(note, out.firstChild);
+      }
+    }
   }
 
   function budgetSyncSeg(root) {
@@ -292,6 +312,33 @@
     budgetCalcBE(body);
   }
 
+  // ── 손익분기 순수 계산 ──────────────────────────────────
+  // 손익분기 CPA = AOV × 마진율/100 − 기타변동비  (= 건당 공헌이익)
+  // 손익분기 ROAS = 기타변동비 0 이면 100 ÷ (마진율/100),
+  //                아니면 AOV ÷ 공헌이익 × 100 (공헌이익 ≤ 0 이면 달성 불가)
+  // ※ 미디어믹스 플래너가 window.budgetBreakEven 으로 이 함수를 호출한다.
+  //    손익분기 정의를 두 곳에서 따로 구현하지 않기 위해 여기 한 곳에만 둔다.
+  function budgetComputeBE(aov, margin, other) {
+    if (other == null || !(other >= 0)) other = 0;
+    var marginValid = (margin != null && margin > 0 && margin <= 100);
+    var beCpa = (aov != null && marginValid) ? (aov * (margin / 100) - other) : null;
+    var hasOther = (other > 0);
+    var beRoas = null, unreachable = false;
+    if (marginValid) {
+      if (hasOther) {
+        if (aov != null && beCpa != null && beCpa > 0) beRoas = aov / beCpa * 100;
+        else if (aov != null && beCpa != null && beCpa <= 0) unreachable = true;
+      } else {
+        beRoas = 100 / (margin / 100);
+      }
+    }
+    return {
+      marginValid: marginValid, beCpa: beCpa, beRoas: beRoas,
+      unreachable: unreachable, other: other, hasOther: hasOther
+    };
+  }
+  window.budgetBreakEven = budgetComputeBE;
+
   function budgetCalcBE(body) {
     var out = body.querySelector('#beResult');
 
@@ -302,8 +349,8 @@
 
     if (other == null) other = 0; // 선택값 → 비우면 0 처리
 
-    // 마진율 유효성: 0초과 100이하만 손익분기 ROAS 계산 가능
-    var marginValid = (margin != null && margin > 0 && margin <= 100);
+    var be = budgetComputeBE(aov, margin, other);
+    var marginValid = be.marginValid;
 
     // 아무 핵심 입력도 없으면 빈 상태
     if (aov == null && !marginValid) {
@@ -315,33 +362,12 @@
       return;
     }
 
-    // ── 핵심 계산 ──
-    // 손익분기 CPA(최대 허용 CPA) = AOV × (마진율/100) − 기타변동비 = 건당 공헌이익
-    var beCpa = (aov != null && marginValid) ? (aov * (margin / 100) - other) : null;
-    // 건당 공헌이익(마진금액 − 기타변동비) — 손익분기 CPA와 동일, 목표이익 계산의 기준
-    var contribution = beCpa;
-
-    // 기타변동비 반영 여부 (양수일 때만 공헌이익 기준 식 사용)
-    var hasOther = (other > 0);
-
-    // 손익분기 ROAS(%)
-    //  - 기타변동비 0: 100 ÷ (마진율/100)         = 매출 대비 마진만으로 본전
-    //  - 기타변동비 >0: AOV ÷ 공헌이익 × 100        = 공헌이익(CPA) 기준 본전
-    //                    (분모 = 공헌이익 ≤ 0 이면 달성 불가)
-    var beRoas = null;          // % (null이면 미계산)
-    var beRoasUnreachable = false; // 공헌이익<=0 으로 손익분기 ROAS 달성 불가
-    if (marginValid) {
-      if (hasOther) {
-        if (aov != null && beCpa != null && beCpa > 0) {
-          beRoas = aov / beCpa * 100;
-        } else if (aov != null && beCpa != null && beCpa <= 0) {
-          beRoasUnreachable = true; // 공헌이익이 0 이하 → 본전 도달 불가
-        }
-        // aov 없으면 공헌이익 기준 ROAS는 계산 불가(beRoas=null 유지)
-      } else {
-        beRoas = 100 / (margin / 100); // 기존 방식(= 10000/margin)
-      }
-    }
+    // ── 핵심 계산 (budgetComputeBE 로 추출 — 미디어믹스 플래너도 같은 함수를 쓴다) ──
+    var beCpa = be.beCpa;               // 손익분기 CPA(최대 허용 CPA) = 건당 공헌이익
+    var contribution = beCpa;           // 목표이익 계산의 기준
+    var hasOther = be.hasOther;
+    var beRoas = be.beRoas;             // % (null이면 미계산)
+    var beRoasUnreachable = be.unreachable;
 
     // 목표 ROAS 입력 시
     var targetCpa = (aov != null && target != null) ? (aov / (target / 100)) : null;

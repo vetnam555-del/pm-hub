@@ -82,6 +82,7 @@ js/tools/  kpi · utm · budget · mediamix · report · diagnose · abtest · b
 | 전환 가정 | 기본 CVR · 기본 AOV (행별 개별 입력으로 덮어쓰기 가능) |
 | 믹스 표 | 매체 · 광고유형 · 비중% · CPC · CTR · CVR · AOV · 마크업% · 비고 (빈칸이면 벤치마크/기본값) |
 | 결과 표 | 비중 · 예산(VAT별도) · **매체비(마크업 제외)** · 일예산 · 노출 · 클릭 · CTR · CPC · CPM · 조회 · CVR · 전환 · CPA · 매출 · ROAS · 비고 + **TOTAL** |
+| 손익분기 검증 | 마진율(+기타 변동비)을 넣으면 **손익분기 ROAS/CPA vs 이 믹스의 예상 ROAS/CPA** 를 그 자리에서 판정. 채널별 ROAS도 본전 대비 초록/빨강으로 표시 |
 | 하단 | 공급가/부가세/합계 · **NOTICE 면책 4줄** |
 | 내보내기 | **미디어믹스 복사(TSV)** — 엑셀에 그대로 붙여넣으면 표가 완성됨 / 요약 복사 / 인쇄·PDF(결과 영역만) |
 
@@ -90,6 +91,22 @@ js/tools/  kpi · utm · budget · mediamix · report · diagnose · abtest · b
 - 전환 = 클릭×CVR (앱 채널은 **설치수가 곧 전환**) · 매출 = 전환×AOV · CPA = 예산÷전환 · ROAS = 매출÷예산
 - 매체비(마크업 제외) = 예산 ÷ (1 + 마크업%/100)  ← 실제 산출물의 '마크업 제외' 컬럼과 동일
 - 비중 합계가 100%가 아니면 **비율대로 정규화**해 총예산을 전액 배분한다
+
+### 손익분기·예산 도구와의 연동
+
+손익분기 공식은 `js/tools/budget.js` 한 곳에만 둔다. 미디어믹스는 그 함수를 호출한다.
+
+```
+budget.js   window.budgetBreakEven(aov, margin, other) → { beCpa, beRoas, unreachable, ... }
+            └ 손익분기 CPA  = AOV × 마진율/100 − 기타변동비 (= 건당 공헌이익)
+            └ 손익분기 ROAS = 기타변동비 0 이면 100 ÷ (마진율/100)
+                              아니면 AOV ÷ 공헌이익 × 100 (공헌이익 ≤ 0 → 달성 불가)
+mediamix.js 결과 패널에서 위 함수를 호출해 본전 판정을 표시
+            [💰 손익분기 상세로] 버튼 → window.budgetPrefill({aov, margin, other, target, from})
+            └ target 에 믹스의 예상 ROAS 를 넣어, 손익분기 도구의 '목표 ROAS' 칸에서 바로 비교된다
+```
+
+**공식을 고칠 일이 생기면 budget.js 만 고친다.** 미디어믹스에 복제하지 말 것.
 
 ## 🚀 배포 (GitHub Pages)
 

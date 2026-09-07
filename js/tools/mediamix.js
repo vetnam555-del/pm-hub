@@ -41,6 +41,8 @@
       platform: 'google', industry: ALL, device: 'MO',
       // 전환 가정 (행별로 비우면 이 값을 씀)
       cvr: '', aov: '',
+      // 손익분기 검증용 (선택) — budget.js 의 손익분기 공식을 그대로 호출한다
+      margin: '', otherCost: '',
       // 믹스 행
       preset: 'balanced',
       rows: []
@@ -329,6 +331,16 @@
     });
 
     res.benchCount = res.rows.filter(function (r) { return r.kind === 'bench'; }).length;
+    // ── 손익분기 검증 ──
+    // 손익분기 공식은 budget.js(window.budgetBreakEven)에 한 곳만 둔다. 여기서 재구현하지 않는다.
+    res.be = null;
+    var mgn = mmPos(mmState.margin);
+    if (mgn != null && gAov != null && typeof window.budgetBreakEven === 'function') {
+      res.be = window.budgetBreakEven(gAov, mgn, mmNum(mmState.otherCost));
+      res.be.margin = mgn;
+      res.be.aov = gAov;
+    }
+
     var t = res.totals;
     t.ctr = (t.clicks != null && t.impr) ? t.clicks / t.impr * 100 : null;
     t.cpc = (t.clicks) ? t.net / t.clicks : null;
@@ -416,6 +428,21 @@
           '<div class="input-affix"><input type="text" inputmode="numeric" class="input" id="mm-aov" value="' + mmEsc(mmState.aov) + '" placeholder="70000"><span class="affix">원</span></div></div>' +
       '</div>' +
       '<div class="field-hint" style="margin-top:-8px">CVR·AOV를 넣어야 <b>전환수·CPA·매출·ROAS</b>가 나옵니다. 우리 계정 과거 실적값을 쓰세요 — 벤치마크에는 전환 데이터가 없습니다.</div>' +
+
+      '<div class="field-row" style="margin-top:14px">' +
+        '<div class="field"><label for="mm-margin">마진율 <span class="opt">손익분기 검증</span></label>' +
+          '<div class="input-affix"><input type="text" inputmode="decimal" class="input" id="mm-margin" value="' + mmEsc(mmState.margin) + '" placeholder="30"><span class="affix">%</span></div>' +
+          '<div class="qtags" id="mm-margin-tags">' +
+            '<button type="button" class="qtag" data-v="20">20%</button>' +
+            '<button type="button" class="qtag" data-v="30">30%</button>' +
+            '<button type="button" class="qtag" data-v="40">40%</button>' +
+            '<button type="button" class="qtag" data-v="50">50%</button>' +
+          '</div></div>' +
+        '<div class="field"><label for="mm-other">건당 기타 변동비 <span class="opt">선택</span></label>' +
+          '<div class="input-affix"><input type="text" inputmode="numeric" class="input" id="mm-other" value="' + mmEsc(mmState.otherCost) + '" placeholder="0"><span class="affix">원</span></div>' +
+          '<div class="field-hint">배송·수수료·포장 등 주문당 추가 비용</div></div>' +
+      '</div>' +
+      '<div class="field-hint" style="margin-top:-8px">마진율을 넣으면 <b>이 믹스가 본전을 넘는지</b> 아래 결과에서 바로 판정합니다. 손익분기 공식은 [💰 손익분기·예산]과 같은 함수를 씁니다.</div>' +
 
       '<div class="field" style="margin-top:16px">' +
         '<label class="field-label">벤치마크 기준</label>' +
@@ -634,7 +661,9 @@
         (showViews ? '<td class="num">' + mmN(r.views) + '</td>' : '') +
         (hasConv ? '<td class="num">' + (r.installs != null ? '<span title="앱 설치는 설치수가 곧 전환">설치</span>' : mmP(r.cvr)) + '</td>' +
                    '<td class="num">' + mmN(r.conv) + '</td><td class="num">' + mmW(r.cpa) + '</td>' : '') +
-        (hasRev ? '<td class="num">' + mmW(r.revenue) + '</td><td class="num">' + mmP(r.roas, 0) + '</td>' : '') +
+        (hasRev ? '<td class="num">' + mmW(r.revenue) + '</td>' +
+                  '<td class="num' + ((res.be && res.be.beRoas != null && r.roas != null)
+                      ? (r.roas >= res.be.beRoas ? ' mm-pass' : ' mm-fail') : '') + '">' + mmP(r.roas, 0) + '</td>' : '') +
         '<td class="mm-note">' + mmEsc(r.note) + '</td>' +
       '</tr>';
     }).join('');
@@ -647,7 +676,9 @@
       '<td class="num">' + mmP(t.ctr) + '</td><td class="num">' + mmW(t.cpc) + '</td><td class="num">' + mmW(t.cpm) + '</td>' +
       (showViews ? '<td class="num">' + mmN(t.views) + '</td>' : '') +
       (hasConv ? '<td class="num">–</td><td class="num">' + mmN(t.conv) + '</td><td class="num">' + mmW(t.cpa) + '</td>' : '') +
-      (hasRev ? '<td class="num">' + mmW(t.revenue) + '</td><td class="num">' + mmP(t.roas, 0) + '</td>' : '') +
+      (hasRev ? '<td class="num">' + mmW(t.revenue) + '</td>' +
+                '<td class="num' + ((res.be && res.be.beRoas != null && t.roas != null)
+                    ? (t.roas >= res.be.beRoas ? ' mm-pass' : ' mm-fail') : '') + '">' + mmP(t.roas, 0) + '</td>' : '') +
       '<td></td></tr>';
 
     html += '<div class="table-scroll" style="margin-top:16px"><table class="t-table mm-mix"><thead>' + th + '</thead><tbody>' + tb + tf + '</tbody></table></div>';
@@ -655,6 +686,50 @@
     // ── VAT 요약 ──
     html += '<div class="mm-vat"><span>공급가 ' + fmtWon(t.net) + '</span><span>부가세 ' + fmtWon(t.net * VAT) + '</span>' +
       '<b>합계(VAT 포함) ' + fmtWon(t.vatIncl) + '</b></div>';
+
+    // ── 손익분기 검증 ──
+    if (res.be && res.be.marginValid) {
+      var be = res.be;
+      var pass = (t.roas != null && be.beRoas != null) ? (t.roas >= be.beRoas) : null;
+      html += '<div class="mm-be' + (pass === true ? ' ok' : (pass === false ? ' bad' : '')) + '">' +
+        '<div class="mm-be-head">💰 손익분기 검증 <span>마진율 ' + fmtPct(be.margin, 0) +
+          (be.hasOther ? ' · 기타 변동비 ' + fmtWon(be.other) + '/건' : '') + ' 기준</span></div>' +
+        '<div class="result-grid c3">' +
+          mmMetric('🎯 손익분기 ROAS',
+            be.unreachable ? '달성 불가' : (be.beRoas != null ? fmtPct(be.beRoas, 0) : '–'),
+            be.unreachable ? '공헌이익이 0 이하' : '이 수치를 넘어야 본전') +
+          mmMetric('🧾 손익분기 CPA', be.beCpa != null ? fmtWon(be.beCpa) : '–',
+            '건당 공헌이익 = 최대 허용 CPA') +
+          mmMetric('📊 이 믹스 예상 ROAS', t.roas != null ? fmtPct(t.roas, 0) : '–',
+            t.cpa != null ? '예상 CPA ' + fmtWon(t.cpa) : '',
+            pass === true ? 'good' : (pass === false ? 'bad' : '')) +
+        '</div>';
+
+      if (pass === true) {
+        var gap = t.roas - be.beRoas;
+        var profit = (be.beCpa != null && t.cpa != null && t.conv != null)
+          ? (be.beCpa - t.cpa) * t.conv : null;
+        html += '<div class="callout ok"><span class="c-ico">✅</span><div>' +
+          '<b>본전선을 넘습니다.</b> 예상 ROAS ' + fmtPct(t.roas, 0) + ' 가 손익분기 ' + fmtPct(be.beRoas, 0) +
+          ' 보다 높습니다' +
+          (profit != null && profit > 0 ? '. 가정대로 나오면 광고비를 뺀 뒤 <b>약 ' + fmtWonShort(profit) + '원</b>이 남습니다' : '') +
+          '. 다만 CVR·객단가는 <b>가정값</b>이니 실집행 후 실제 전환으로 다시 검증하세요.</div></div>';
+      } else if (pass === false) {
+        var need = (be.beRoas != null && t.roas > 0) ? (be.beRoas / t.roas) : null;
+        html += '<div class="callout danger"><span class="c-ico">⛔</span><div>' +
+          '<b>본전선에 못 미칩니다.</b> 예상 ROAS ' + fmtPct(t.roas, 0) + ' 가 손익분기 ' + fmtPct(be.beRoas, 0) + ' 보다 낮습니다. ' +
+          (need != null ? '지금 가정대로면 <b>전환율이 약 ' + need.toFixed(2) + '배</b>가 되거나 CPC가 그만큼 낮아져야 본전입니다. ' : '') +
+          '단가가 낮은 채널로 비중을 옮기거나, 마진·객단가 가정을 재확인하세요.</div></div>';
+      } else if (be.unreachable) {
+        html += '<div class="callout danger"><span class="c-ico">⛔</span><div>' +
+          '<b>기타 변동비가 마진금액을 넘어섭니다.</b> 광고비가 0이어도 건당 적자라, 이 조건에서는 본전 자체가 불가능합니다. ' +
+          '객단가·마진율·변동비를 먼저 재확인하세요.</div></div>';
+      } else {
+        html += '<div class="callout warn"><span class="c-ico">⚠️</span><div>' +
+          '<b>기본 전환율(CVR)</b>을 넣어야 이 믹스의 예상 ROAS가 나와 본전선과 비교됩니다.</div></div>';
+      }
+      html += '</div>';
+    }
 
     // ── 경고 ──
     if (res.missingRate.length) {
@@ -709,7 +784,7 @@
       '<button type="button" class="btn btn-ghost btn-sm" id="mm-print">🖨 인쇄 / PDF</button>' +
       '</div>' +
       '<div class="btn-row mm-noprint">' +
-      '<button type="button" class="btn btn-ghost btn-sm" onclick="showPage(\'tool-budget\')">💰 손익분기로 검증</button>' +
+      '<button type="button" class="btn btn-ghost btn-sm" id="mm-to-budget">💰 손익분기 상세로 (값 전달)</button>' +
       '<button type="button" class="btn btn-ghost btn-sm" onclick="showPage(\'tool-kpi\')">📊 KPI 계산기</button>' +
       '<button type="button" class="btn btn-ghost btn-sm" onclick="showPage(\'benchmark\')">📊 매체 벤치마크</button>' +
       '</div>';
@@ -775,6 +850,14 @@
     tot.push('');
     L.push(tot.join('\t'));
 
+    if (res.be && res.be.marginValid) {
+      L.push('');
+      L.push(['손익분기 기준', '마진율 ' + res.be.margin + '%' + (res.be.hasOther ? ' / 기타변동비 ' + Math.round(res.be.other) + '원' : '')].join('\t'));
+      L.push(['손익분기 ROAS(%)', res.be.beRoas != null ? Math.round(res.be.beRoas) : '달성 불가'].join('\t'));
+      L.push(['손익분기 CPA', res.be.beCpa != null ? Math.round(res.be.beCpa) : ''].join('\t'));
+      L.push(['판정', (t.roas != null && res.be.beRoas != null)
+        ? (t.roas >= res.be.beRoas ? '본전 초과' : '본전 미달') : '판정 불가(CVR 미입력)'].join('\t'));
+    }
     L.push('');
     L.push('NOTICE');
     L.push('* 본 미디어믹스는 ' + (res.benchCount ? res.ds.label + ' ' + res.ds.period + ' 업종 평균 벤치마크와 ' : '') +
@@ -809,6 +892,11 @@
       ' / CTR ' + fmtPct(t.ctr) + ' / CPC ' + fmtWon(t.cpc) +
       (t.conv ? ' / 전환 ' + fmtInt(t.conv) + ' / CPA ' + fmtWon(t.cpa) : '') +
       (t.roas != null ? ' / ROAS ' + fmtPct(t.roas, 0) : ''));
+    if (res.be && res.be.marginValid && res.be.beRoas != null) {
+      L.push('손익분기: ROAS ' + fmtPct(res.be.beRoas, 0) + ' / CPA ' + fmtWon(res.be.beCpa) +
+        ' (마진율 ' + res.be.margin + '%)' +
+        (t.roas != null ? ' → ' + (t.roas >= res.be.beRoas ? '본전 초과' : '본전 미달') : ''));
+    }
     L.push('');
     L.push('※ 업종 평균 벤치마크 + 입력 가정 기반 추정치이며 보장 수치가 아닙니다.');
     return L.join('\n');
@@ -829,6 +917,18 @@
       if (b2) b2.addEventListener('click', function () { copyToClipboard(mmSummaryText(res), b2); });
       var b3 = out.querySelector('#mm-print');
       if (b3) b3.addEventListener('click', mmPrint);
+      // 손익분기·예산 도구로 값 전달 — 목표 ROAS 칸에 이 믹스의 예상 ROAS 를 넣어 바로 비교시킨다
+      var b4 = out.querySelector('#mm-to-budget');
+      if (b4) b4.addEventListener('click', function () {
+        if (typeof window.budgetPrefill !== 'function') { if (typeof showPage === 'function') showPage('tool-budget'); return; }
+        window.budgetPrefill({
+          aov: mmPos(mmState.aov),
+          margin: mmPos(mmState.margin),
+          other: mmNum(mmState.otherCost),
+          target: (res.totals && res.totals.roas != null) ? Math.round(res.totals.roas) : null,
+          from: '미디어믹스 플래너'
+        });
+      });
     }
     var hint = mmQ('#mm-ratio-hint');
     if (hint) {
@@ -877,7 +977,7 @@
   function mmBind() {
     ['mm-client:client', 'mm-campaign:campaign', 'mm-period:period', 'mm-docdate:docDate',
      'mm-agency:agency', 'mm-budget:budget', 'mm-days:days', 'mm-markup:markup',
-     'mm-cvr:cvr', 'mm-aov:aov'].forEach(function (pair) {
+     'mm-cvr:cvr', 'mm-aov:aov', 'mm-margin:margin', 'mm-other:otherCost'].forEach(function (pair) {
       var p = pair.split(':'); mmBindText(p[0], p[1]);
     });
 
@@ -894,6 +994,14 @@
       tag.addEventListener('click', function () {
         mmState.budget = tag.getAttribute('data-v');
         var b = mmQ('#mm-budget'); if (b) b.value = mmState.budget;
+        mmRefreshResult();
+      });
+    });
+    // 마진율 빠른 태그
+    mmQA('#mm-margin-tags .qtag').forEach(function (tag) {
+      tag.addEventListener('click', function () {
+        mmState.margin = tag.getAttribute('data-v');
+        var m = mmQ('#mm-margin'); if (m) m.value = mmState.margin;
         mmRefreshResult();
       });
     });

@@ -525,3 +525,19 @@ button.day-check { background: transparent; }
 .dm-row.danger .dm-t { color: var(--danger); }
 .dm-t { font-size:13px; font-weight:700; color: var(--text-primary); }
 .dm-d { font-size:11.5px; color: var(--text-muted); margin-top:2px; line-height:1.5; }
+
+/* ── 미디어믹스: 손익분기 검증 블록 ── */
+.mm-be {
+  margin-top:18px; padding:16px 18px; border-radius: var(--radius-sm);
+  border:1px solid var(--border); background: rgba(255,255,255,.02);
+}
+.mm-be.ok  { border-color: rgba(104,211,145,.32); background: rgba(104,211,145,.05); }
+.mm-be.bad { border-color: rgba(252,129,129,.32); background: rgba(252,129,129,.05); }
+.mm-be-head {
+  display:flex; flex-wrap:wrap; gap:10px; align-items:baseline;
+  font-size:14px; font-weight:800; color: var(--text-primary); margin-bottom:14px;
+}
+.mm-be-head span { font-size:11.5px; font-weight:600; color: var(--text-muted); }
+/* 본전 대비 채널별 ROAS */
+.t-table td.mm-pass { color: var(--ok) !important; }
+.t-table td.mm-fail { color: var(--danger) !important; }

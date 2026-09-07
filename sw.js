@@ -6,28 +6,28 @@
 //   · 폰트 CDN     → cache-first (사내망 차단·오프라인에서도 글꼴 유지)
 // CACHE 이름의 버전은 index.html 의 ?v=NN 과 함께 올린다.
 // ============================================================
-const CACHE = 'pm-hub-v24';
+const CACHE = 'pm-hub-v26';
 
 // 상대 경로로 등록 — /pm-hub/ 같은 하위 경로 배포에서도 동작한다
 const SHELL = [
   './',
   './index.html',
-  './css/base.css?v=24',
-  './css/beginner.css?v=24',
-  './css/tools.css?v=24',
-  './js/curriculum.js?v=24',
-  './js/data/mediamix-data.js?v=24',
-  './js/tools/kpi.js?v=24',
-  './js/tools/utm.js?v=24',
-  './js/tools/budget.js?v=24',
-  './js/tools/report.js?v=24',
-  './js/tools/diagnose.js?v=24',
-  './js/tools/abtest.js?v=24',
-  './js/tools/bid.js?v=24',
-  './js/tools/pacing.js?v=24',
-  './js/tools/mediamix.js?v=24',
-  './js/tools/utm-learn.js?v=24',
-  './js/app.js?v=24',
+  './css/base.css?v=26',
+  './css/beginner.css?v=26',
+  './css/tools.css?v=26',
+  './js/curriculum.js?v=26',
+  './js/data/mediamix-data.js?v=26',
+  './js/tools/kpi.js?v=26',
+  './js/tools/utm.js?v=26',
+  './js/tools/budget.js?v=26',
+  './js/tools/report.js?v=26',
+  './js/tools/diagnose.js?v=26',
+  './js/tools/abtest.js?v=26',
+  './js/tools/bid.js?v=26',
+  './js/tools/pacing.js?v=26',
+  './js/tools/mediamix.js?v=26',
+  './js/tools/utm-learn.js?v=26',
+  './js/app.js?v=26',
   './assets/icon-192.png',
   './manifest.webmanifest'
 ];
