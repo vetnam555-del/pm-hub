@@ -19,3 +19,55 @@ test('strict numeric parser rejects trailing junk',()=>{assert.equal(E.num('1,00
 test('invalid percentages and export approval block',()=>{const x=E.compute(fixture({ctr:101,approved:false}));assert.ok(x.errors.some(x=>x.includes('CTR')));assert.ok(x.errors.some(x=>x.includes('검토')));});
 test('conservative unit-cost scenario reduces clicks',()=>{const p=fixture();p.scenario=120;assert.ok(Math.abs(E.compute(p).rows[0].clicks-10000/1.2)<1e-8);});
 test('pack duplicate id rejected',()=>{const r={id:'x',brand:'x',source:'x',product:'naver-search'};assert.throws(()=>E.validatePack({version:1,benchmarks:[r,r]}));});
+test('invalid text percentages do not pass via null coercion',()=>{
+  for(const k of ['ctr','cvr','vtr'])assert.ok(E.compute(fixture({[k]:'garbage'})).errors.some(x=>x.includes(k.toUpperCase())));
+});
+test('missing or malformed markup and tax fail closed',()=>{
+  for(const v of ['',null,'garbage']){assert.ok(E.compute(fixture({markup:v})).errors.some(x=>x.includes('마크업')));const p=fixture();p.tax=v;assert.ok(E.compute(p).errors.some(x=>x.includes('VAT')));assert.equal(E.compute(p).totals.tax,null);}
+});
+test('invalid optional amounts fail even with valid billable rate',()=>{
+  for(const k of ['aov','fixedImpr','fixedClicks'])assert.ok(E.compute(fixture({[k]:'oops'})).errors.some(x=>x.includes(k)));
+});
+test('missing amount never becomes reported zero supply',()=>{const p=fixture({amount:''});assert.equal(E.compute(p).totals.amount,null);assert.ok(E.compute(p).errors.length);});
+test('approval must be a boolean true',()=>{for(const approved of ['true','false',1])assert.ok(E.compute(fixture({approved})).errors.some(x=>x.includes('검토')));});
+test('invalid source date and unknown goal block submission',()=>{
+  assert.ok(E.compute(fixture({sourceDate:'2026-99-99'})).errors.some(x=>x.includes('기준일')));
+  assert.ok(E.compute(fixture({goal:'signup'})).errors.some(x=>x.includes('전환 정의')));
+});
+test('zero inverse funnel rates rejected, forward zero CTR allowed',()=>{
+  assert.ok(E.compute(fixture({ctr:0})).errors.some(x=>x.includes('역산')));
+  assert.ok(E.compute(fixture({model:'CPV',rate:10,vtr:0})).errors.some(x=>x.includes('역산')));
+  assert.equal(E.compute(fixture({model:'CPM',rate:100,ctr:0})).rows[0].clicks,0);
+});
+test('malformed comma grouping rejected rather than changing amount',()=>{for(const v of ['1,00','10,','1,2,3'])assert.equal(E.num(v),null);assert.equal(E.num('1,000.50'),1000.5);});
+test('allocation rejects malformed inputs without mutating plan',()=>{
+  for(const changes of [{weight:'oops'},{amount:1.5},{amount:''}]){const p=fixture(changes),before=JSON.stringify(p);assert.throws(()=>E.allocate(p));assert.equal(JSON.stringify(p),before);}
+});
+test('allocation rejects missing tax and unknown budget basis',()=>{
+  for(const changes of [{tax:''},{vatMode:'unknown'},{budget:10.5}])assert.throws(()=>E.allocate({...fixture(),...changes}));
+});
+test('all six forecast models remain finite over a budget sweep',()=>{
+  for(const model of ['CPC','CPM','CPV','CPI','SEND','FIXED'])for(const amount of [1,999,10000000]){
+    const p=fixture({model,amount,rate:100,ctr:2,vtr:25,fixedClicks:100,fixedImpr:1000,goal:model==='CPI'?'설치':model==='SEND'?'기타':'구매'});p.budget=amount;
+    const x=E.compute(p);assert.deepEqual(x.errors,[]);for(const k of ['media','fee','clicks','views','installs','sends','conv','revenue'])assert.ok(x.rows[0][k]==null||Number.isFinite(x.rows[0][k]),model+' '+k);
+  }
+});
+test('pack rejects invalid rates percentages date and booleans as numbers',()=>{
+  const b={id:'x',brand:'QA',source:'QA',product:'naver-search'};
+  for(const changes of [{rate:'bad'},{ctr:101},{vtr:-1},{cvr:true},{sourceDate:'2026-02-30'},{model:'BOGUS'},{goal:'unknown'}])assert.throws(()=>E.validatePack({version:1,benchmarks:[{...b,...changes}]}));
+});
+test('backup validates every saved plan, not only active one',()=>{
+  const db={plan:fixture(),saved:[fixture()],benchmarks:[]};assert.equal(E.validateBackup(db).saved.length,1);
+  db.saved[0].rows=[null];assert.throws(()=>E.validateBackup(db));
+});
+test('backup blocks wrong object fields and nonboolean approval',()=>{
+  assert.throws(()=>E.validatePlan({...fixture(),client:{name:'QA'}}));
+  assert.throws(()=>E.validatePlan(fixture({approved:'false'})));
+  assert.throws(()=>E.validatePlan(fixture({source:{text:'QA'}})));
+});
+test('backup accepts unfinished numeric inputs without treating them as valid',()=>{
+  const p=E.validatePlan(fixture({rate:'oops'}));assert.ok(E.compute(p).errors.some(x=>x.includes('rate')||x.includes('단가')));
+});
+test('missing pack optional fields use defaults only at plan application',()=>{
+  const pack={version:1,benchmarks:[{id:'x',brand:'QA',source:'QA',product:'meta-leads'}]};assert.equal(E.validatePack(pack),pack);
+});

@@ -2,6 +2,8 @@
 
 Review date: 2026-09-07. Baseline: 92f68e3.
 
+The follow-up v28 review found and fixed additional validation/import/output issues. See [the final review](mediamix-final-review-20260907.md) for the newer 33-test coverage and remaining boundaries. Counts below describe the initial v27 release.
+
 ## Findings and Disposition
 
 | Priority | Finding | Disposition |

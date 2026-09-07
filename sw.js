@@ -6,33 +6,33 @@
 //   · 폰트 CDN     → cache-first (사내망 차단·오프라인에서도 글꼴 유지)
 // CACHE 이름의 버전은 index.html 의 ?v=NN 과 함께 올린다.
 // ============================================================
-const CACHE = 'pm-hub-v27';
+const CACHE = 'pm-hub-v28';
 
 // 상대 경로로 등록 — /pm-hub/ 같은 하위 경로 배포에서도 동작한다
 const SHELL = [
   './',
   './index.html',
-  './css/base.css?v=27',
-  './css/beginner.css?v=27',
-  './css/tools.css?v=27',
-  './css/mix-studio.css?v=27',
-  './js/tools/mix-engine.js?v=27',
-  './js/tools/mix-workbook.js?v=27',
-  './js/tools/mix-studio.js?v=27',
-  './js/vendor/exceljs.min.js?v=27',
-  './js/curriculum.js?v=27',
-  './js/data/mediamix-data.js?v=27',
-  './js/tools/kpi.js?v=27',
-  './js/tools/utm.js?v=27',
-  './js/tools/budget.js?v=27',
-  './js/tools/report.js?v=27',
-  './js/tools/diagnose.js?v=27',
-  './js/tools/abtest.js?v=27',
-  './js/tools/bid.js?v=27',
-  './js/tools/pacing.js?v=27',
-  './js/tools/mediamix.js?v=27',
-  './js/tools/utm-learn.js?v=27',
-  './js/app.js?v=27',
+  './css/base.css?v=28',
+  './css/beginner.css?v=28',
+  './css/tools.css?v=28',
+  './css/mix-studio.css?v=28',
+  './js/tools/mix-engine.js?v=28',
+  './js/tools/mix-workbook.js?v=28',
+  './js/tools/mix-studio.js?v=28',
+  './js/vendor/exceljs.min.js?v=28',
+  './js/curriculum.js?v=28',
+  './js/data/mediamix-data.js?v=28',
+  './js/tools/kpi.js?v=28',
+  './js/tools/utm.js?v=28',
+  './js/tools/budget.js?v=28',
+  './js/tools/report.js?v=28',
+  './js/tools/diagnose.js?v=28',
+  './js/tools/abtest.js?v=28',
+  './js/tools/bid.js?v=28',
+  './js/tools/pacing.js?v=28',
+  './js/tools/mediamix.js?v=28',
+  './js/tools/utm-learn.js?v=28',
+  './js/app.js?v=28',
   './assets/icon-192.png',
   './manifest.webmanifest'
 ];
