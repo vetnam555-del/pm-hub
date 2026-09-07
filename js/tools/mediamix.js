@@ -25,6 +25,16 @@
     return null;
   }
   function mmDeviceIds(ds) { return (ds.devices || []).map(function (d) { return d.id; }); }
+  // 선택 업종에 값이 없으면 '전 업종(통합)'으로 대체한다(표에 '통합 대체' 배지가 붙는다).
+  function mmBench(ds, industry, device, channel) {
+    var hit = mmFindRow(ds, industry, device, channel);
+    if (hit) return { b: hit, fallback: false };
+    if (industry !== ALL) {
+      var alt = mmFindRow(ds, ALL, device, channel);
+      if (alt) return { b: alt, fallback: true };
+    }
+    return { b: null, fallback: false };
+  }
   function mmFindRow(ds, industry, device, channel) {
     if (!ds || !ds.rows) return null;
     for (var i = 0; i < ds.rows.length; i++) {
