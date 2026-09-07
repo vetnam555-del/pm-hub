@@ -1,0 +1,72 @@
+const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
+const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
+const E=require('../js/tools/mix-engine.js');
+const dir=path.resolve(__dirname,'..'),out=process.env.QA_DIR||path.join(dir,'qa-output');fs.mkdirSync(out,{recursive:true});
+const server=http.createServer((req,res)=>{
+ const file=path.resolve(dir,'.'+decodeURIComponent(req.url.split('?')[0]||'/'));
+ if(file!==dir&&!file.startsWith(dir+path.sep)){res.writeHead(403);res.end();return;}
+ const p=file===dir?path.join(dir,'index.html'):file;if(!fs.existsSync(p)||fs.statSync(p).isDirectory()){res.writeHead(404);res.end();return;}
+ res.setHeader('Content-Type',({'.js':'text/javascript','.css':'text/css','.html':'text/html'})[path.extname(p)]||'application/octet-stream');res.end(fs.readFileSync(p));
+});
+(async()=>{
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;
+ try {
+  browser=await chromium.launch({channel:'chrome',headless:true});
+  const page=await browser.newPage({viewport:{width:1440,height:1000},acceptDownloads:true});
+  const errors=[],alerts=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',async d=>{alerts.push(d.message());await d.accept();});
+  await page.addInitScript(()=>localStorage.setItem('pm_welcomed','1'));
+  const base=process.env.LIVE_URL||`http://127.0.0.1:${server.address().port}/`;
+  await page.goto(base+'#tool-mediamix');
+  await page.locator('#mixf-auto-industry').selectOption('교육·커리어');await page.locator('#mixf-auto-objective').selectOption('리드');
+  await page.locator('[data-action="auto-generate"]').click();
+  const state=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('pm_mix_studio_v1')));
+  let db=await state();assert.ok(db.plan.rows.length>=2);assert.equal(db.plan.autoEnabled,true);assert.equal(db.preferences.industry,'교육·커리어');
+  await page.locator('#mixf-plan-budget').fill('300000');db=await state();assert.equal(db.plan.rows.length,1);assert.equal(db.plan.rows[0].amount,300000);
+  await page.locator('#mixf-plan-budget').fill('6000000');db=await state();assert.ok(db.plan.rows.length>=2);assert.equal(db.plan.rows.reduce((s,r)=>s+r.amount,0),6000000);
+  assert.equal(await page.locator('#mixf-plan-budget').evaluate(el=>document.activeElement===el),true);
+  await page.locator('#mixf-plan-client').fill('검수용 광고주');
+  await page.locator('#mixf-plan-start').fill('2026-09-01');await page.locator('#mixf-plan-end').fill('2026-09-30');await page.locator('#mixf-plan-date').fill('2026-09-07');
+  await page.locator('[data-edit="0"]').click();await page.locator('#mixf-plan-budget').fill('6600000');assert.equal(await page.locator('.mix-editor').count(),0,'no stale row editor after regeneration');
+  await page.locator('#mixf-plan-vatMode').selectOption('in');db=await state();assert.equal(db.plan.rows.reduce((s,r)=>s+r.amount,0),6000000);
+  await page.screenshot({path:path.join(out,'auto-desktop.png'),fullPage:true});
+  await page.locator('[data-action="go-preview"]').click();
+  await page.locator('[data-action="xlsx"]').click();assert.ok(alerts.some(s=>s.includes('필수 검수')));
+  await page.locator('[data-view="compose"]').click();
+  for(let i=0;i<(await state()).plan.rows.length;i++)await page.locator(`[data-approve="${i}"]`).check();
+  await page.locator('[data-action="go-preview"]').click();
+  const download=page.waitForEvent('download');await page.locator('[data-action="xlsx"]').click();await(await download).saveAs(path.join(out,'industry-auto.xlsx'));
+  const exported=(await state()).plan;assert.deepEqual(E.compute(exported).errors,[]);
+  fs.writeFileSync(path.join(out,'industry-auto-expected.json'),JSON.stringify({plan:exported,result:E.compute(exported)},null,2));
+  assert.ok((await page.locator('.mix-paper').innerText()).includes('산출 제한 및 확인 사항'));
+  await page.evaluate(()=>document.body.classList.add('mix-print'));await page.pdf({path:path.join(out,'industry-auto.pdf'),preferCSSPageSize:true,printBackground:true});await page.evaluate(()=>document.body.classList.remove('mix-print'));
+  await page.screenshot({path:path.join(out,'auto-preview-desktop.png'),fullPage:true});
+  await page.reload();assert.equal(await page.locator('#mixf-auto-industry').inputValue(),'교육·커리어');
+  for(const width of [390,768,1440]){
+   await page.setViewportSize({width,height:900});await page.screenshot({path:path.join(out,`auto-width-${width}.png`),fullPage:true});
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`page overflow ${width}`);
+  }
+  const amount=page.locator('[data-inline="0"]');await amount.fill('100000');assert.equal(await amount.evaluate(el=>document.activeElement===el),true);assert.equal((await state()).plan.autoEnabled,false);
+  await page.locator('[data-action="go-preview"]').click();assert.ok((await page.locator('#mix-body').innerText()).includes('예산 불일치'));
+  await page.locator('[data-view="library"]').click();
+  const pack={version:1,benchmarks:[{id:'synthetic-source',industry:'패션',brand:'PRIVATE_ACCOUNT',product:'naver-search',device:'MO',model:'CPC',rate:700,ctr:2,cvr:1,aov:50000,goal:'구매',source:'secretname.xlsx',sourceDate:'2026-09-01',sourceKind:'실적'}]};
+  await page.locator('#mix-file').setInputFiles({name:'synthetic.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(pack))});
+  await page.locator('[data-action="commit-import"]').click();await page.locator('#mix-industry').selectOption('패션·잡화');
+  const library=await page.locator('#mix-body').innerText();assert.ok(!library.includes('PRIVATE_ACCOUNT'));assert.ok(!library.includes('secretname.xlsx'));
+  await page.locator('#mix-media-filter').selectOption('naver-search');await page.locator('[data-bench-select]').first().check();await page.locator('[data-action="add-selected"]').click();
+  assert.equal((await state()).plan.rows.at(-1).rate,700);assert.equal((await state()).plan.rows.at(-1).cvr,1);
+  await page.locator('[data-view="library"]').click();
+  await page.locator('summary').filter({hasText:'성과 리포트 붙여넣기'}).click();
+  await page.locator('#mix-paste-industry').selectOption('패션·잡화');await page.locator('#mix-paste-goal').selectOption('리드');await page.locator('#mix-paste-cost').selectOption('vat');
+  await page.locator('#mix-paste-date').fill('2026-09-02');
+  await page.locator('#mix-paste-text').fill('매체\timps\tclick\tspending\t전환\n네이버 GFA 카탈로그\t1000\t20\t2200\t2');
+  await page.locator('[data-action="paste-report"]').click();await page.locator('[data-action="commit-import"]').click();
+  const parsed=(await state()).benchmarks.at(-1);assert.equal(parsed.product,'naver-gfa-catalog');assert.equal(parsed.rate,100);assert.equal(parsed.goal,'리드');assert.equal(parsed.cvr,10);
+  const templateEvent=page.waitForEvent('download');await page.locator('[data-action="template"]').click();await(await templateEvent).saveAs(path.join(out,'industry-template.xlsx'));
+  await page.locator('.mix-storage > summary').click();await page.locator('[data-action="new"]').click();
+  assert.equal(await page.locator('#mixf-auto-industry').inputValue(),'교육·커리어');
+  await page.locator('#mixf-plan-budget').fill('500000');assert.equal((await state()).plan.rows.length,1,'saved setup supports budget-only entry on next plan');
+  assert.deepEqual(errors,[]);
+  const result={budgetOnlyRegeneration:true,nextPlanBudgetOnly:true,vatInclusive:6600000,sourceIsolation:true,privateLabelsHidden:true,views:[390,768,1440],xlsx:true,pdf:true,parserUI:true,pageErrors:errors,live:!!process.env.LIVE_URL};
+  fs.writeFileSync(path.join(out,'auto-browser-results.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));
+ }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));}
+})().catch(e=>{console.error(e);process.exitCode=1;});

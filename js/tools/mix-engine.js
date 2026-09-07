@@ -118,6 +118,8 @@
     // 손익분기 — 마진율이 있을 때만 판정한다. 계획 전체를 대표할 객단가가 필요해
     // 구매 목적 행들의 '전환 가중 평균 객단가'를 쓴다(행마다 객단가가 다를 수 있다).
     let be=null;
+    if(present(p.margin)&&!valid(p.margin,0,100)) errors.push('마진율은 0~100%여야 합니다.');
+    if(present(p.otherCost)&&!valid(p.otherCost)) errors.push('건당 기타 변동비를 확인하세요.');
     if(present(p.margin)&&num(p.margin)>0){
       if(!valid(p.margin,0,100)) errors.push('마진율은 0~100%여야 합니다.');
       if(present(p.otherCost)&&!valid(p.otherCost)) errors.push('건당 기타 변동비를 확인하세요.');
@@ -137,7 +139,15 @@
   function validatePlan(p) {
     if(!p||typeof p!=='object'||Array.isArray(p)||!Array.isArray(p.rows)||p.rows.length>300) throw Error('계획 구조 또는 캠페인 수(최대 300개) 오류');
     const text=(o,keys)=>keys.forEach(k=>{if(o[k]!=null&&(typeof o[k]!=='string'||o[k].length>20000))throw Error(k+' 텍스트 형식 오류');});
-    text(p,['client','title','agency','date','start','end','vatMode']);
+    text(p,['client','title','agency','date','start','end','vatMode','autoSummary']);
+    if(p.autoEnabled!=null&&typeof p.autoEnabled!=='boolean')throw Error('자동 배분 설정 오류');
+    if(p.autoSettings!=null){
+      const a=p.autoSettings;if(typeof a!=='object'||Array.isArray(a))throw Error('업종 설정 오류');
+      text(a,['industry','objective','device']);
+      for(const k of ['feed','audience','allowReference'])if(a[k]!=null&&typeof a[k]!=='boolean')throw Error('업종 설정 오류');
+      for(const k of ['minDaily','maxChannels','markup'])if(a[k]!=null&&!['number','string'].includes(typeof a[k]))throw Error('자동 배분 수치 오류');
+    }
+    if(p.autoExcluded!=null&&(!Array.isArray(p.autoExcluded)||p.autoExcluded.length>100||p.autoExcluded.some(x=>typeof x!=='string'||x.length>2000)))throw Error('제외 매체 형식 오류');
     for(const k of ['budget','tax','scenario','margin','otherCost'])if(p[k]!=null&&!['string','number'].includes(typeof p[k]))throw Error(k+' 입력 형식 오류');
     const result={...plan(),...p};
     result.rows=p.rows.map(r=>{
@@ -152,18 +162,20 @@
   function validateBackup(db) {
     if(!db||!Array.isArray(db.saved)||db.saved.length>500)throw Error('저장 계획 구조 또는 수(최대 500개) 오류');
     validatePack({version:1,benchmarks:db.benchmarks});
+    if(db.preferences!=null)validatePlan({...plan(),autoSettings:db.preferences});
     return {...db,plan:validatePlan(db.plan),saved:db.saved.map(validatePlan)};
   }
   function validatePack(pack) {
     if(pack?.version!==1||!Array.isArray(pack.benchmarks)||pack.benchmarks.length>3000) throw Error('지원하지 않는 데이터팩입니다.');
     pack.benchmarks.forEach((r,i)=>{
-      if(!r||!['id','brand','source'].every(k=>typeof r[k]==='string'&&r[k].trim())||!products.some(p=>p.id===r.product))throw Error((i+1)+'행의 ID·브랜드·출처·매체를 확인하세요.');
+      if(!r||!['id','source'].every(k=>typeof r[k]==='string'&&r[k].trim())||!(r.brand?.trim()||r.industry?.trim())||!products.some(p=>p.id===r.product))throw Error((i+1)+'행의 ID·업종(또는 기존 브랜드)·출처·매체를 확인하세요.');
       for(const k of ['id','brand','source','media','campaign','device','industry','note','sourceDate','sourceKind','goal','model'])if(r[k]!=null&&(typeof r[k]!=='string'||r[k].length>20000))throw Error((i+1)+'행의 '+k+' 텍스트 오류');
       for(const k of ['rate','ctr','cvr','vtr','aov','markup','amount','fixedClicks','fixedImpr'])if(present(r[k])&&!valid(r[k],0,['ctr','cvr','vtr'].includes(k)?100:k==='markup'?1000:Number.MAX_SAFE_INTEGER))throw Error((i+1)+'행의 '+k+' 오류');
       if(present(r.amount)&&!Number.isSafeInteger(num(r.amount)))throw Error((i+1)+'행 예산은 정수 원 단위입니다.');
       if(present(r.model)&&!models.includes(r.model))throw Error((i+1)+'행 계산 기준 오류');
       if(present(r.goal)&&!goals.includes(r.goal))throw Error((i+1)+'행 전환 정의 오류');
       if(present(r.sourceKind)&&!kinds.includes(r.sourceKind))throw Error((i+1)+'행 근거 성격 오류');
+      if(present(r.costBasis)&&!['media-net','review-required'].includes(r.costBasis))throw Error((i+1)+'행 비용 기준 오류');
       if(present(r.sourceDate)&&day(r.sourceDate)==null)throw Error((i+1)+'행 근거 기준일 오류');
     });
     if(new Set(pack.benchmarks.map(r=>r.id)).size!==pack.benchmarks.length) throw Error('중복 ID가 있습니다.');
@@ -172,24 +184,6 @@
   // ── 성과 리포트 붙여넣기 파서 ─────────────────────────────
   // 매체 리포트 표(TSV/CSV)를 그대로 붙여넣으면 벤치마크 데이터팩으로 바꾼다.
   // imps·click·spending 만 있어도 CTR·CPC·CPM 을 역산하고, order·revenue 가 있으면 CVR·AOV 까지 만든다.
-  const REPORT_ALIAS=[
-    [/비즈\s*보드|bizboard/i,'kakao-biz'],[/카카오.*(디스플레이|display)/i,'kakao-display'],
-    [/(채널\s*)?메시지|알림톡|친구톡/i,'kakao-message'],[/카카오.*검색/i,'kakao-search'],
-    [/카탈로그|catalog|dpa|다이내믹/i,'meta-catalog'],[/릴스|reels|동영상\s*조회/i,'meta-video'],
-    [/잠재고객|리드|lead/i,'meta-leads'],[/인지도|awareness|도달|reach/i,'meta-awareness'],
-    [/메타.*앱|meta.*app/i,'meta-app'],
-    [/브랜드\s*검색/i,'naver-brand'],[/쇼핑\s*검색/i,'naver-shopping'],
-    [/gfa.*카탈로그/i,'naver-gfa-catalog'],[/gfa.*트래픽/i,'naver-gfa-traffic'],[/gfa/i,'naver-gfa'],
-    [/파워링크|네이버\s*sa|naver\s*sa/i,'naver-search'],
-    [/크리테오.*cca|cca/i,'criteo-cca'],[/크리테오.*(lal|유사)/i,'criteo-lal'],[/크리테오|criteo/i,'criteo-lf'],
-    [/유튜브|youtube|쇼츠|shorts/i,'google-video'],[/pmax|퍼포먼스\s*맥스/i,'google-pmax'],
-    [/디맨드\s*젠|demand\s*gen/i,'google-demand'],[/구글.*쇼핑|google.*shopping/i,'google-shopping'],
-    [/gdn|구글.*디스플레이/i,'google-display'],[/구글.*앱|google.*app/i,'google-app'],
-    [/구글|google/i,'google-search'],
-    [/틱톡|tiktok/i,'tiktok'],[/당근/i,'daangn'],[/토스/i,'toss'],
-    [/메타|meta|페이스북|facebook|인스타|instagram/i,'meta-traffic'],
-    [/카카오|kakao/i,'kakao-biz'],[/네이버|naver/i,'naver-search']
-  ];
   const REPORT_KEYS={
     media:/^(매체|media|채널|플랫폼)$/i, campaign:/^(캠페인|campaign|그룹|group|광고그룹)$/i,
     imps:/^(imps|impressions?|노출|노출수)$/i, clicks:/^(clicks?|클릭|클릭수)$/i,
@@ -197,13 +191,52 @@
     ctr:/^ctr$/i, cpc:/^cpc$/i, cpm:/^cpm$/i, cvr:/^cvr$/i, aov:/^aov$/i,
     conv:/^(oder|orders?|conversions?|전환|전환수|주문|주문수)$/i, revenue:/^(revenue|매출|매출액)$/i
   };
-  function matchProduct(text){const t=String(text||'');for(const [re,id] of REPORT_ALIAS)if(re.test(t))return id;return null;}
+  function matchProduct(text,campaign=''){
+    const media=String(text||''),t=media+' '+campaign;
+    // The media column owns the platform. Campaign words such as "lead" do not override it.
+    if(/네이버|naver|gfa|파워링크|브랜드\s*검색|쇼핑\s*검색/i.test(media)){
+      if(/gfa/i.test(t))return /카탈로그|catalog/i.test(t)?'naver-gfa-catalog':/트래픽|traffic/i.test(t)?'naver-gfa-traffic':'naver-gfa';
+      return /브랜드\s*검색/i.test(t)?'naver-brand':/쇼핑/i.test(t)?'naver-shopping':'naver-search';
+    }
+    if(/구글|google|유튜브|youtube|gdn|pmax/i.test(media)){
+      if(/pmax|퍼포먼스\s*맥스/i.test(t))return 'google-pmax';
+      if(/유튜브|youtube|쇼츠|shorts|video/i.test(t))return 'google-video';
+      if(/디맨드|demand/i.test(t))return 'google-demand';
+      if(/쇼핑|shopping/i.test(t))return 'google-shopping';
+      if(/앱|app/i.test(t))return 'google-app';
+      return /gdn|디스플레이|display/i.test(t)?'google-display':'google-search';
+    }
+    if(/메타|meta|페이스북|facebook|인스타/i.test(media)){
+      if(/카탈로그|catalog|dpa|다이내믹/i.test(t))return 'meta-catalog';
+      if(/잠재고객|리드|lead/i.test(t))return 'meta-leads';
+      if(/인지|도달|awareness|reach/i.test(t))return 'meta-awareness';
+      if(/영상|릴스|reels|video/i.test(t))return 'meta-video';
+      if(/앱|app/i.test(t))return 'meta-app';
+      return /판매|sales|purchase/i.test(t)?'meta-sales':'meta-traffic';
+    }
+    if(/크리테오|criteo/i.test(media))return /cca/i.test(t)?'criteo-cca':/lal|유사/i.test(t)?'criteo-lal':'criteo-lf';
+    if(/카카오|kakao/i.test(media))return /메시지|톡|message/i.test(t)?'kakao-message':/검색|search/i.test(t)?'kakao-search':/디스플레이|display|포커스/i.test(t)?'kakao-display':'kakao-biz';
+    if(/틱톡|tiktok/i.test(media))return 'tiktok';if(/당근/i.test(media))return 'daangn';if(/토스|toss/i.test(media))return 'toss';
+    return null;
+  }
+  function reportCells(text,sep){
+    const rows=[];let row=[],cell='',quoted=false;
+    for(let i=0;i<text.length;i++){
+      const c=text[i];
+      if(c==='"'){if(quoted&&text[i+1]==='"'){cell+='"';i++;}else quoted=!quoted;}
+      else if(c===sep&&!quoted){row.push(cell.trim());cell='';}
+      else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell.trim());if(row.some(Boolean))rows.push(row);row=[];cell='';}
+      else cell+=c;
+    }
+    if(quoted)throw Error('닫히지 않은 CSV 따옴표가 있습니다.');
+    row.push(cell.trim());if(row.some(Boolean))rows.push(row);return rows;
+  }
   function parseReport(text,opt){
     opt=opt||{};
-    const lines=String(text||'').split(/\r?\n/).filter(l=>l.trim()!=='');
+    const sourceText=String(text||'');let lines;
+    try{lines=reportCells(sourceText,sourceText.split(/\r?\n/)[0].includes('\t')?'\t':',');}catch(e){return {error:e.message};}
     if(lines.length<2) return {error:'표를 2줄 이상 붙여넣으세요(헤더 + 데이터).'};
-    const sep=lines[0].includes('\t')?'\t':',';
-    const cut=l=>l.split(sep).map(c=>c.trim().replace(/^"|"$/g,''));
+    const cut=l=>l;
     let head=-1,cols=null;
     for(let i=0;i<Math.min(lines.length,12);i++){
       const cells=cut(lines[i]),map={};let hits=0;
@@ -212,7 +245,10 @@
     }
     if(head<0) return {error:'헤더를 찾지 못했습니다. 매체·imps·click·spending 같은 컬럼명이 있어야 합니다.'};
     const brand=(opt.brand||'').trim();
-    if(!brand) return {error:'브랜드명을 입력하세요. 저장된 자료를 브랜드로 구분합니다.'};
+    if(!brand&&!opt.industry?.trim()) return {error:'업종을 입력하세요. 기존 자료는 브랜드 구분도 지원합니다.'};
+    if(opt.percentUnit&&!['points','fraction'].includes(opt.percentUnit))return {error:'비율 표기 기준을 확인하세요.'};
+    const costFactor=opt.costFactor==null?1:num(opt.costFactor);
+    if(!(costFactor>0))return {error:'비용 환산 계수를 확인하세요.'};
     const benchmarks=[],skipped=[];
     for(let r=head+1;r<lines.length;r++){
       const c=cut(lines[r]);
@@ -220,32 +256,33 @@
       // 비율은 "1.61%"(퍼센트)와 0.0161(소수)이 섞여 들어온다. 값 크기로 판단하면
       // CVR 0.18% 같은 작은 퍼센트를 18% 로 부풀린다 → 원본의 '%' 유무로 구분한다.
       const pctOf=k=>{if(cols[k]==null)return null;const raw=c[cols[k]],v=num(String(raw).replace(/%/g,''));
-        if(v==null)return null;return String(raw).includes('%')?v:(v>0&&v<=1?v*100:v);};
+        if(v==null)return null;return String(raw).includes('%')?v:opt.percentUnit==='fraction'?v*100:v;};
       const rawMedia=cols.media!=null?c[cols.media]:'',rawCamp=cols.campaign!=null?c[cols.campaign]:'';
       const label=String(rawMedia||rawCamp||'').trim();
       if(!label||/^(합계|total|계)$/i.test(label))continue;
-      const id=matchProduct(rawMedia+' '+rawCamp);
+      const id=matchProduct(rawMedia||rawCamp,rawMedia?rawCamp:'');
       if(!id){skipped.push(label);continue;}
       const prod=products.find(x=>x.id===id);
-      const imps=get('imps'),clicks=get('clicks'),cost=get('cost'),conv=get('conv'),revenue=get('revenue');
+      const imps=get('imps'),clicks=get('clicks'),rawCost=get('cost'),cost=rawCost==null?null:rawCost/costFactor,conv=get('conv'),revenue=get('revenue');
       let ctr=pctOf('ctr'),cvr=pctOf('cvr'),cpc=get('cpc'),cpm=get('cpm'),aov=get('aov');
-      if(ctr==null&&imps>0&&clicks!=null)ctr=clicks/imps*100;
-      if(cpc==null&&clicks>0&&cost!=null)cpc=cost/clicks;
-      if(cpm==null&&imps>0&&cost!=null)cpm=cost/imps*1000;
-      if(cvr==null&&clicks>0&&conv!=null)cvr=conv/clicks*100;
-      if(aov==null&&conv>0&&revenue!=null)aov=revenue/conv;
+      if([imps,clicks,cost,conv,revenue].some(v=>v!=null&&v<0)||(imps!=null&&clicks>imps))return {error:(r+1)+'행 원시 수치가 유효하지 않습니다.'};
+      if(imps>0&&clicks!=null)ctr=clicks/imps*100;
+      cpc=clicks>0&&cost!=null?cost/clicks:cpc==null?null:cpc/costFactor;
+      cpm=imps>0&&cost!=null?cost/imps*1000:cpm==null?null:cpm/costFactor;
+      if(clicks>0&&conv!=null)cvr=conv/clicks*100;
+      if(conv>0&&revenue!=null)aov=revenue/conv;
       // rate 는 상품의 과금 기준에 맞춰 담는다(CPC 상품이면 CPC, CPM 상품이면 CPM …)
       const rate=prod.model==='CPM'?cpm:prod.model==='CPC'?cpc:null;
       if(rate==null||!(rate>0)){skipped.push(label+'(단가 없음)');continue;}
       const round=(v,d)=>v==null||!Number.isFinite(v)?'':Math.round(v*10**d)/10**d;
       benchmarks.push({
-        id:'ref-'+id+'-'+brand.replace(/\s+/g,'_')+'-'+(benchmarks.length+1),
+        id:'ref-'+id+'-'+(brand||opt.industry).replace(/\s+/g,'_')+'-'+(opt.sourceDate||'undated')+'-'+(benchmarks.length+1),
         brand,industry:opt.industry||'',device:opt.device||'전체',product:id,
         media:prod.media,campaign:(rawCamp||prod.campaign).slice(0,120),model:prod.model,
-        rate:round(rate,0),ctr:round(ctr,2),cvr:round(cvr,4),aov:round(aov,0),vtr:'',
-        goal:prod.model==='CPI'?'설치':'구매',
+        rate:round(rate,6),ctr:round(ctr,6),cvr:opt.goal==='기타'?'':round(cvr,6),aov:opt.goal&&opt.goal!=='구매'?'':round(aov,6),vtr:'',
+        goal:opt.goal||(id==='meta-leads'?'리드':prod.model==='CPI'?'설치':'구매'),
         source:(opt.source||'성과 리포트 붙여넣기')+' / '+label,
-        sourceDate:opt.sourceDate||'',sourceKind:opt.sourceKind||'실적',note:''
+        sourceDate:opt.sourceDate||'',sourceKind:opt.sourceKind||'실적',costBasis:'media-net',note:'실매체비 환산: 입력 비용 / '+costFactor+'; 비율 '+(opt.percentUnit==='fraction'?'소수':'퍼센트포인트')+'; 원시 분자·분모 우선 역산'
       });
     }
     if(!benchmarks.length) return {error:'매체를 알아보지 못했습니다. 매체 칸에 "카카오 비즈보드", "메타", "네이버 GFA" 처럼 매체명이 들어가야 합니다.',skipped};

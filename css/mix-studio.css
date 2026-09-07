@@ -10,6 +10,30 @@
   align-items: center; justify-content: space-between;
 }
 .mix-status { font-size: 11.5px; color: var(--text-muted); }
+.mix-studio { min-width: 0; }
+.mix-studio .tool-hero { margin-bottom: 16px; }
+.mix-studio .tool-hero h1 { font-size: 28px; letter-spacing: 0; }
+.mix-studio .panel { border-radius: 8px; }
+.mix-storage { border-bottom: 1px solid var(--border); margin-bottom: 20px; padding: 12px 0; }
+.mix-storage summary, .mix-options summary { cursor: pointer; font-size: 12px; color: var(--text-secondary); padding: 10px 0; }
+.mix-storage summary span { color: var(--text-muted); margin-left: 10px; }
+.mix-storage[open] > .mix-bar { padding: 12px 0; }
+.mix-options { margin: 12px 0; }
+.mix-options > .panel { border: 0; background: transparent; box-shadow: none; padding: 12px 0; }
+.mix-policy { font-size: 11px; line-height: 1.7; color: var(--text-secondary); overflow-wrap: anywhere; margin-top: 12px; }
+.mix-summary { margin: 16px 0 20px; }
+.mix-summary .m-value { font-size: 23px; }
+.mix-quick .panel-head { margin-bottom: 14px; }
+.mix-cell-input { width: 125px; padding: 7px 8px; text-align: right; font-variant-numeric: tabular-nums; }
+.mix-studio input:focus-visible,.mix-studio select:focus-visible,.mix-studio button:focus-visible,.mix-studio summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.mix-studio .seg { flex-wrap: wrap; }
+@media (max-width: 600px) {
+  .mix-quick .field-row,.mix-summary.result-grid { grid-template-columns: 1fr; }
+  .mix-studio .panel { padding: 16px; }
+  .mix-studio .mix-bar,.mix-studio .btn-row { gap: 8px; }
+  .mix-studio .seg-btn { padding: 8px 9px; font-size: 11px; }
+  .mix-status { white-space: normal; overflow-wrap: anywhere; }
+}
 .mix-savedwrap { margin: 0; min-width: 220px; flex: 1; }
 .mix-count {
   display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 20px;
@@ -89,6 +113,7 @@ dialog.mix-dialog::backdrop { background: rgba(0, 0, 0, .6); backdrop-filter: bl
   body.mix-print .mobile-topbar,
   body.mix-print .sidebar-scrim { display: none !important; }
   body.mix-print main { margin: 0 !important; padding: 0 !important; max-width: none !important; }
+  body.mix-print .tool-wrap { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
   body.mix-print .page:not(.active) { display: none !important; }
   /* 제출본 영역 밖(탭·툴바·검수 패널)은 인쇄에서 제외 */
   body.mix-print .mix-studio > *:not(#mix-body),
@@ -98,5 +123,19 @@ dialog.mix-dialog::backdrop { background: rgba(0, 0, 0, .6); backdrop-filter: bl
   body.mix-print .table-scroll { overflow: visible !important; border: 0 !important; }
   body.mix-print .t-table { font-size: 9px !important; white-space: normal; }
   body.mix-print .t-table th, body.mix-print .t-table td { padding: 5px 6px !important; }
+  body.mix-print, body.mix-print .mix-paper { color: #111 !important; background: white !important; }
+  body.mix-print .mix-paper * { color: #111 !important; box-shadow: none !important; text-shadow: none !important; }
+  body.mix-print .mix-paper .mm-doc, body.mix-print .mix-paper .mm-notice, body.mix-print .mix-evidence-wrap { background: #fff !important; }
+  body.mix-print .mix-paper th { background: #eee !important; }
+  body.mix-print .mix-paper tr { break-inside: avoid; }
+  body.mix-print .mix-paper { margin: 0; }
+  body.mix-print .mix-paper .mix-sub { display: inline; margin: 0; }
+  body.mix-print .mix-paper td .mix-sub::before { content: ' / '; }
+  body.mix-print .mix-evidence-wrap { padding: 8px; margin-top: 8px; }
+  body.mix-print .mix-evidence li { font-size: 10px; line-height: 1.4; margin-bottom: 5px; }
+  body.mix-print .mm-notice { margin: 8px 0; padding: 8px; font-size: 10px; }
+  body.mix-print .mm-notice ul { columns: 2; column-gap: 24px; margin: 4px 0; }
+  body.mix-print .mm-notice li { break-inside: avoid; line-height: 1.4; margin-bottom: 3px; }
+  body.mix-print .mix-policy { font-size: 10px; line-height: 1.4; margin: 8px 0; }
   @page { size: A3 landscape; margin: 12mm; }
 }

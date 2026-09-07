@@ -82,12 +82,12 @@ test('parseReport: 매체명을 상품 id 로 매칭한다', () => {
 });
 test('parseReport: 퍼센트 표기(0.18%)를 소수로 오인하지 않는다', () => {
   const r = E.parseReport(REPORT, { brand: '뉴발란스' });
-  assert.equal(r.pack.benchmarks[0].cvr, 0.18);   // 18 이 되면 안 된다
-  assert.equal(r.pack.benchmarks[1].cvr, 0.06);
-  assert.equal(r.pack.benchmarks[0].ctr, 1.61);
+  assert.ok(Math.abs(r.pack.benchmarks[0].cvr-61/33196*100)<1e-6);
+  assert.ok(Math.abs(r.pack.benchmarks[1].cvr-29/45392*100)<1e-6);
+  assert.ok(Math.abs(r.pack.benchmarks[0].ctr-33196/2064155*100)<1e-6);
 });
 test('parseReport: 소수 표기(0.0161)는 퍼센트로 환산한다', () => {
-  const r = E.parseReport('매체\timps\tclick\tspending\tCTR\n메타\t1000\t16\t800\t0.0161', { brand: 'B' });
+  const r = E.parseReport('매체\tCPC\tCTR\n메타\t50\t0.0161', { brand: 'B',percentUnit:'fraction' });
   assert.equal(r.pack.benchmarks[0].ctr, 1.61);
 });
 test('parseReport: 원자료만 있어도 CTR·CPC·CPM·CVR·AOV 를 역산한다', () => {
@@ -96,9 +96,9 @@ test('parseReport: 원자료만 있어도 CTR·CPC·CPM·CVR·AOV 를 역산한�
     { brand: 'B' });
   const b = r.pack.benchmarks[0];
   assert.equal(b.product, 'naver-gfa');
-  assert.equal(b.rate, 167);                       // 2,000,000 ÷ 12,000
-  assert.equal(b.ctr, 1.38);                       // 12,000 ÷ 872,439
-  assert.equal(b.cvr, 0.1667);                     // 20 ÷ 12,000
+  assert.ok(Math.abs(b.rate-2000000/12000)<1e-6);
+  assert.ok(Math.abs(b.ctr-12000/872439*100)<1e-6);
+  assert.ok(Math.abs(b.cvr-20/12000*100)<1e-6);
   assert.equal(b.aov, 150000);                     // 3,000,000 ÷ 20
 });
 test('parseReport: CPM 과금 상품은 rate 에 CPM 을 담는다', () => {
@@ -113,7 +113,7 @@ test('parseReport: 결과 팩이 기존 검증을 통과한다', () => {
   assert.doesNotThrow(() => E.validatePack(r.pack));
 });
 test('parseReport: 브랜드명이 없으면 거부한다', () => {
-  assert.ok(E.parseReport(REPORT, {}).error.includes('브랜드명'));
+  assert.ok(E.parseReport(REPORT, {}).error.includes('업종'));
 });
 test('parseReport: 알 수 없는 매체는 건너뛰고 알려준다', () => {
   const r = E.parseReport('매체\timps\tclick\tspending\n알수없는매체\t100\t10\t1000', { brand: 'B' });

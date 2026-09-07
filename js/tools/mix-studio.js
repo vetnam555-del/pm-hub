@@ -12,27 +12,32 @@
 // ============================================================
 (function () {
   'use strict';
-  const E=window.MixEngine, key='pm_mix_studio_v1';
+  const E=window.MixEngine, A=window.MixAuto, key='pm_mix_studio_v1';
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const n=(v,d=0)=>v==null||!Number.isFinite(v)?'–':v.toLocaleString('ko-KR',{maximumFractionDigits:d,minimumFractionDigits:d});
   const won=v=>v==null||!Number.isFinite(v)?'–':'₩'+v.toLocaleString('ko-KR',{maximumFractionDigits:0});
   const pct=(v,d=0)=>v==null||!Number.isFinite(v)?'–':n(v,d)+'%';
   const copy=o=>JSON.parse(JSON.stringify(o));
   let db={plan:E.plan(),saved:[],benchmarks:[]}, selected=-1, page='compose', filter='', brand='', mediaFilter='', notice='', recoveryRaw=null;
-  let pasteText='', pasteDate='', pasteKind='실적', pasteIndustry='', pasteNotice='';
+  let pasteText='', pasteDate='', pasteKind='실적', pasteIndustry='', pasteNotice='', pasteGoal='구매',pasteUnit='points',pasteCost='net';
+  let benchSelection=new Set();
   const PASTE_SAMPLE='매체\t캠페인\timps\tclick\tspending\tCTR\tCPC\tCPM\torder\trevenue\tCVR\tROAS\tAOV\n카카오비즈보드\t온라인_트래픽\t2064155\t33196\t2104344\t1.61%\t63\t1019\t61\t9001900\t0.18%\t427.78%\t147572';
   try {const raw=localStorage.getItem(key);if(raw){recoveryRaw=raw;db=E.validateBackup(JSON.parse(raw));recoveryRaw=null;}}catch(_){notice='기존 저장자료 형식 오류: JSON 백업 후 정상 백업을 복원하세요. 기존 원본은 유지됩니다.';}
   const p=()=>db.plan, root=()=>document.getElementById('page-tool-mediamix');
+  function initPlan(){
+    const date=new Date(),local=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if(!p().date)p().date=local(date);
+    if(!p().start)p().start=local(date);
+    if(!p().end){date.setDate(date.getDate()+29);p().end=local(date);}
+    if(!p().autoSettings)p().autoSettings={...A.defaults(),...(db.preferences||{})};
+    if(p().autoEnabled==null)p().autoEnabled=!!db.preferences?.industry&&!p().rows.length;
+  }
+  initPlan();
   function save(){if(recoveryRaw!=null)return;try{localStorage.setItem(key,JSON.stringify(db));notice='이 브라우저에 저장됨';}catch(_){notice='저장 실패: JSON 백업을 내려받으세요.';}}
   const quantity=r=>r.model==='CPV'?['조회',r.views]:r.model==='CPI'?['설치',r.installs]:r.model==='SEND'?['발송',r.sends]:['클릭',r.clicks];
-  function publicBench() {
-    const map={Search:'google-search',Shopping:'google-shopping',Display:'google-display',YouTube_Instream:'google-video',YouTube_Shorts:'google-video',App_Android:'google-app',App_iOS:'google-app',Traffic:'meta-traffic',Catalog:'meta-catalog',Leads:'meta-leads',Awareness:'meta-awareness',Reach:'meta-awareness',VideoViews:'meta-video',AppInstalls:'meta-app'};
-    return Object.values(window.MM_DATA||{}).flatMap(ds=>ds.rows.filter(r=>map[r[2]]).map((r,i)=>{
-      const id=map[r[2]], prod=E.products.find(x=>x.id===id),model=prod.model;
-      return {id:'public-'+ds.id+'-'+i,brand:'공통 참고',industry:r[0],device:r[1]==="통합"?"전체":r[1],product:id,media:ds.label,campaign:r[2],model,rate:model==='CPC'?r[3]:model==='CPM'?r[5]:model==='CPV'?r[6]:r[8],ctr:r[4],vtr:r[7],source:'기존 간편 플래너 2024~2025 (원시 집행데이터 미검증)',sourceDate:'',sourceKind:'참고값',note:'익명화·변형된 과거 참고값. 최신 보장 단가가 아닙니다.'};
-    }));
-  }
-  const allBench=()=>db.benchmarks.concat(publicBench());
+  const rawBench=()=>db.benchmarks.concat(A.publicBench(window.MM_DATA));
+  const allBench=()=>A.catalogue(rawBench(),p().date);
+  const industries=()=>[...new Set(rawBench().map(b=>A.industry(b.industry)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
 
   // ── 폼 조각 (허브 .field / .input 규격) ────────────────────
   const fid=(scope,k)=>'mixf-'+scope+'-'+k;
@@ -64,6 +69,7 @@
   // 셸
   // ============================================================
   function render() {
+    initPlan();
     const el=root();if(!el)return;
     const res=E.compute(p());
     const tabs=[['compose','📝 계획 편집'],['library','📚 벤치마크'],['preview','📄 제출본 검수']];
@@ -71,8 +77,6 @@
       <div class="tool-hero mix-noprint">
         <div class="eyebrow">🧰 실무 도구</div>
         <h1>미디어믹스</h1>
-        <p>매체·캠페인을 골라 예산을 배분하고, 예상 노출·클릭·전환·매출을 산출해 <b>광고주 제출용 미디어믹스</b>를 만듭니다.
-        검수를 통과하면 <b>수식이 살아 있는 XLSX</b>로 내려받을 수 있습니다.</p>
       </div>
 
       <div class="mix-bar mix-noprint">
@@ -81,14 +85,14 @@
         <span class="mix-status" id="mix-save" role="status">${esc(notice||'브라우저 전용 저장 · 서버 전송 없음')}</span>
       </div>
 
-      <div class="panel mix-noprint" style="margin-bottom:20px">
+      <details class="mix-storage mix-noprint"><summary>저장한 계획 · 자료 관리 <span>${db.saved.length}개 계획 / ${db.benchmarks.length}행 자료</span></summary>
         <div class="mix-bar">
           <div class="field mix-savedwrap"><label for="mix-saved">저장한 계획</label>
             <select class="input" id="mix-saved"><option value="">선택</option>${db.saved.map((s,i)=>`<option value="${i}">${esc(s.client+' · '+s.title)}</option>`).join('')}</select></div>
           <div class="btn-row">${button('save-plan','💾 계획 저장')}${button('duplicate','⧉ 복제')}${button('new','＋ 새 계획')}
             ${button('backup','📤 JSON 백업')}${button('import','📥 자료 가져오기')}${button('legacy','↩ 이전 입력')}</div>
         </div>
-      </div>
+      </details>
 
       <div id="mix-body">${page==='compose'?compose(res):page==='library'?library():preview(res)}</div>
       <input type="file" id="mix-file" accept=".json,.xlsx" hidden>
@@ -113,15 +117,15 @@
       return `<tr class="${i===selected?'mix-selected':''}">`+
         `<td><button type="button" class="mix-rowname" data-edit="${i}"><b>${esc(x.type)}</b><span>${esc(x.name)}</span></button></td>`+
         `<td>${esc(x.device)}</td><td>${esc(x.model)}</td>`+
-        `<td class="num">${won(x.amount)}</td><td class="num">${won(x.media)}</td>`+
-        `<td class="num">${n(qty)} <small>${unit}</small></td>`+
-        `<td class="num">${n(x.clicks)}</td>`+
-        `<td class="num">${n(x.conv,1)} <small>${esc(x.goal)}</small></td>`+
+        `<td class="num"><input class="input mix-cell-input" type="number" min="0" step="1" data-inline="${i}" value="${esc(x.amount)}" aria-label="${i+1}행 공급가 예산"></td><td class="num" data-live="${i}-media">${won(x.media)}</td>`+
+        `<td class="num" data-live="${i}-quantity">${n(qty)} <small>${unit}</small></td>`+
+        `<td class="num" data-live="${i}-clicks">${n(x.clicks)}</td>`+
+        `<td class="num" data-live="${i}-conv">${n(x.conv,1)} <small>${esc(x.goal)}</small></td>`+
         `<td class="num"><label class="mix-check mix-check-c"><input type="checkbox" data-approve="${i}" ${x.approved===true?'checked':''}>`+
           `<span class="${x.approved===true?'mix-ok-t':'mix-warn-t'}">${x.approved===true?'확인':'미확인'}</span></label></td>`+
         `<td class="num"><button type="button" class="mix-del" data-remove="${i}" title="캠페인 삭제" aria-label="${i+1}행 삭제">✕</button></td></tr>`;
     }).join('')||'<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:22px">선택된 캠페인이 없습니다 — 위에서 추가하거나 [벤치마크]에서 불러오세요</td></tr>';
-    const foot=`<tr class="total"><td colspan="3">합계</td><td class="num">${won(res.totals.amount)}</td>`+
+  const foot=`<tr class="total"><td colspan="3">합계</td><td class="num">${won(res.totals.amount)}</td>`+
       `<td class="num">${won(res.totals.media)}</td><td class="num"><small>단위별 구분</small></td>`+
       `<td class="num">${n(res.totals.clicks)}</td><td class="num">${n(res.totals.conv,1)}</td><td colspan="2"></td></tr>`;
     return `<div class="table-scroll" id="mix-campaign-table"><table class="t-table"><thead>${head}</thead><tbody>${body}${foot}</tbody></table></div>`;
@@ -129,18 +133,26 @@
 
   function compose(res) {
     const r=p().rows[selected];
-    const info=panel('📋','제안 정보','광고주 제출본 상단에 그대로 인쇄됩니다',
+    const s=p().autoSettings||A.defaults();
+    const quick=panel('','업종별 자동 구성','',
+      `<div class="field-row c3">${select('industry','업종',[['','선택'],...industries()],s,'auto')}${select('objective','캠페인 목표',A.objectives,s,'auto')}${select('device','디바이스',['MO','PC','전체','Android','iOS'],s,'auto')}</div>
+       <div class="field-row">${field('budget','총 예산','number',p(),'plan','','원')}${select('vatMode','예산 기준',[['ex','VAT 별도'],['in','VAT 포함']])}</div>
+       <div class="mix-bar"><div class="btn-row">${button('auto-generate',p().rows.length?'업종 기준으로 다시 구성':'미디어믹스 만들기','btn-primary')}${button('go-preview','제출본 검수')}</div>${check('autoEnabled','예산 변경 시 자동 재배분',p(),'plan')}</div>
+       <details class="mix-options"><summary>자동 구성 조건</summary><div class="mix-checkrow">${check('feed','상품 피드 준비됨',s,'auto')}${check('audience','리타겟팅 모수 확보됨',s,'auto')}${check('allowReference','과거 제안·참고값 허용',s,'auto')}</div>
+       <div class="field-row">${field('minDaily','캠페인당 권장 일예산 (공급가)','number',s,'auto','','원')}${field('maxChannels','최대 캠페인 수','number',s,'auto')}</div>
+       <div class="field-row">${field('markup','기본 마크업','number',s,'auto','','%')}${field('tax','광고주 청구 VAT','number',p(),'plan','','%')}</div></details>
+       <div id="mix-auto-status">${autoStatus()}</div>`,'mix-quick');
+    const info=`<details class="mix-options mix-proposal" ${!p().client?'open':''}><summary>제안 정보 · 집행 기간</summary>`+panel('','제안 정보','',
       `<div class="field-row">${field('client','광고주')}${field('title','제안명')}</div>
        <div class="field-row">${field('agency','작성 주체')}${field('date','작성일','date')}</div>
-       <div class="field-row">${field('start','집행 시작일','date')}${field('end','집행 종료일','date')}</div>`);
+       <div class="field-row">${field('start','집행 시작일','date')}${field('end','집행 종료일','date')}</div>`)+`</details>`;
 
     const money=panel('💰','예산 · 가정','단가는 수수료·VAT 제외 실매체비 기준, 행 예산은 수수료 포함·VAT 별도 공급가',
-      `<div class="field-row">${field('budget','총 예산','number',p(),'plan','','원')}${select('vatMode','예산 기준',[['ex','VAT 별도'],['in','VAT 포함']])}</div>
-       <div class="field-row">${field('tax','광고주 청구 VAT','number',p(),'plan','','%')}${select('scenario','매체 단가 시나리오',[[100,'기준'],[120,'단가 +20%'],[80,'단가 -20%']])}</div>
+      `<div class="field-row">${select('scenario','매체 단가 시나리오',[[100,'기준'],[120,'단가 +20%'],[80,'단가 -20%']])}</div>
        <div class="field-row">${field('margin','마진율','number',p(),'plan','넣으면 본전선과 비교합니다','%')}${field('otherCost','건당 기타 변동비','number',p(),'plan','배송·수수료 등','원')}</div>
        <div class="btn-row">${button('allocate','⚖️ 잔여 예산 자동 배분','btn-primary')}</div>`);
 
-    const rows=panel('🧩',`캠페인 구성 <span class="mix-count">${p().rows.length}</span>`,'행을 누르면 아래에서 상세를 편집합니다',
+    const rows=panel('🧩',`캠페인 구성 <span class="mix-count" id="mix-row-count">${p().rows.length}</span>`,'',
       `<div class="mix-bar" style="margin-bottom:12px">
          <div class="field" style="margin:0;flex:1;min-width:200px"><label for="mix-product">추가할 매체 · 캠페인</label>
            <select class="input" id="mix-product">${E.products.map(x=>`<option value="${x.id}">${esc(x.media)} · ${esc(x.campaign)}</option>`).join('')}</select></div>
@@ -159,8 +171,11 @@
        <div class="mix-checkrow">${check('locked','예산 고정 (자동 배분에서 제외)',r)}${check('approved','단가·전환 정의·출처 검토 확인',r)}
          <div class="btn-row" style="margin:0">${button('clone-row','⧉ 행 복제')}</div></div>`,'mix-editor'):'';
 
-    return info+money+rows+editor+`<div id="mix-check">${checks(res)}</div>`;
+    return quick+`<div id="mix-live-summary">${liveSummary(res)}</div>`+rows+editor+info+`<details class="mix-options"><summary>단가 시나리오 · 손익분기</summary>${money}</details>`+`<div id="mix-check">${checks(res)}</div>`;
   }
+
+  function autoStatus(){return p().autoSummary?`<p class="mix-policy">${esc(p().autoSummary)}</p><details class="mix-options"><summary>자동 구성 제외 내역 ${(p().autoExcluded||[]).length}개</summary><ul class="mix-list">${(p().autoExcluded||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></details>`:'<p class="mix-policy">등록된 업종 자료만 적용 · 전환율·객단가 근거가 없으면 미산출 · 기본 기간은 오늘부터 30일</p>';}
+  function liveSummary(res){return `<div class="mix-summary result-grid c3">${metric('공급가 배분',won(res.totals.amount),'청구 총액 '+won(res.totals.gross))}${metric('예상 클릭',n(res.totals.clicks),'예산 잔액 '+won(res.expected-(res.totals.amount||0)))}${metric('예상 전환',n(res.totals.conv,1),res.rows.some(r=>r.conv==null)?'전환 근거 미입력 포함':'동일 전환 정의만 합산')}</div>`;}
 
   // ── 손익분기 판정 — 계산은 MixEngine.breakEven 한 곳에서만 ──
   function beBlock(res){
@@ -205,16 +220,18 @@
   // 벤치마크
   // ============================================================
   function library() {
-    const all=allBench(),brands=[...new Set(all.map(b=>b.brand))];
-    const list=all.filter(b=>(!brand||b.brand===brand)&&(!mediaFilter||b.product===mediaFilter)&&(!filter||[b.brand,b.campaign,b.device,b.industry,b.source].join(' ').toLowerCase().includes(filter.toLowerCase())));
+    const all=allBench(),brands=industries();
+    const list=all.filter(b=>(!brand||b.industry===brand)&&(!mediaFilter||b.product===mediaFilter)&&(!filter||[b.campaign,b.device,b.industry,b.source].join(' ').toLowerCase().includes(filter.toLowerCase())));
 
     const paste=panel('📥','성과 리포트 붙여넣기','지난 캠페인 리포트 표를 헤더째 복사해 붙이면 매체를 알아보고 단가를 뽑습니다',
       `<div class="field-row c3">
-         <div class="field"><label for="mix-paste-brand">브랜드</label><input class="input" id="mix-paste-brand" value="${esc(brand||p().client||'')}" placeholder="예: 뉴발란스" autocomplete="off"></div>
+         <div class="field"><label for="mix-paste-industry">업종</label><select class="input" id="mix-paste-industry"><option value="">선택</option>${industries().map(v=>`<option ${v===pasteIndustry?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
          <div class="field"><label for="mix-paste-date">근거 기준일</label><input class="input" id="mix-paste-date" type="date" value="${esc(pasteDate)}"></div>
          <div class="field"><label for="mix-paste-kind">근거 성격</label><select class="input" id="mix-paste-kind">${['실적','과거 제안','참고값','가정'].map(k=>`<option ${k===pasteKind?'selected':''}>${k}</option>`).join('')}</select></div>
        </div>
-       <div class="field"><label for="mix-paste-industry">업종 <span class="opt">선택</span></label><input class="input" id="mix-paste-industry" value="${esc(pasteIndustry)}" placeholder="예: 패션" autocomplete="off"></div>
+       <div class="field-row c3"><div class="field"><label for="mix-paste-goal">전환 정의</label><select class="input" id="mix-paste-goal">${['구매','리드','설치','기타'].map(v=>`<option ${v===pasteGoal?'selected':''}>${v}</option>`).join('')}</select></div>
+       <div class="field"><label for="mix-paste-unit">% 없는 비율 값</label><select class="input" id="mix-paste-unit"><option value="points" ${pasteUnit==='points'?'selected':''}>1.5 = 1.5%</option><option value="fraction" ${pasteUnit==='fraction'?'selected':''}>0.015 = 1.5%</option></select></div>
+       <div class="field"><label for="mix-paste-cost">입력 비용 기준</label><select class="input" id="mix-paste-cost"><option value="net" ${pasteCost==='net'?'selected':''}>VAT·수수료 제외 실매체비</option><option value="vat" ${pasteCost==='vat'?'selected':''}>VAT 10% 포함·수수료 제외</option></select></div></div>
        <div class="field"><label for="mix-paste-text">리포트 표</label>
          <textarea class="input mix-paste-text" id="mix-paste-text" rows="5" spellcheck="false" placeholder="${esc(PASTE_SAMPLE)}">${esc(pasteText)}</textarea>
          <div class="field-hint">imps·click·spending 만 있어도 CTR·CPC·CPM 을 역산하고, order·revenue 가 있으면 CVR·객단가까지 만듭니다. 읽은 자료는 중복·충돌 확인을 거쳐 이 브라우저에만 저장됩니다.</div></div>
@@ -223,29 +240,30 @@
 
     const rows=list.slice(0,150).map(b=>{
       const prod=E.products.find(x=>x.id===b.product);
-      return `<tr><td><b style="color:var(--text-primary)">${esc(b.brand)}</b><div class="mix-sub">${esc(b.campaign||prod.campaign)}${b.industry?' · '+esc(b.industry):''}</div></td>`+
+      return `<tr><td><label class="mix-check"><input type="checkbox" data-bench-select="${esc(b.id)}" ${benchSelection.has(b.id)?'checked':''} aria-label="${esc(b.industry+' '+prod.media+' '+prod.campaign+' '+b.device+' 선택')}"><b>${esc(b.industry)}</b></label><div class="mix-sub">${esc(b.campaign||prod.campaign)} · ${b.sampleCount}행${b.goal?' / '+esc(b.goal):''}</div></td>`+
         `<td>${esc(b.media||prod.media)}<div class="mix-sub">${esc(b.device||'전체')}</div></td>`+
         `<td>${esc(b.model)}</td><td class="num">${n(E.num(b.rate),0)}</td>`+
         `<td class="num">${n(E.num(b.ctr),2)}</td><td class="num">${n(E.num(b.cvr),2)}</td>`+
-        `<td title="${esc(b.source)}">${esc(b.sourceKind)}<div class="mix-sub">${esc(b.sourceDate||'기준일 확인 필요')}</div></td>`+
+        `<td title="${esc(b.source)}">${esc(b.sourceKind)}<div class="mix-sub">${esc(b.sourceDate||'기준일 확인 필요')}</div>${b.costBasis!=='media-net'?`<button class="btn btn-sm btn-ghost" data-cost-review="${esc(b.id)}">비용 기준 확인</button>`:''}</td>`+
         `<td class="num"><button type="button" class="btn btn-sm btn-ghost" data-bench="${esc(b.id)}">계획에 추가</button></td></tr>`;
     }).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:22px">일치하는 자료가 없습니다</td></tr>';
 
     const lib=panel('📚',`벤치마크 자료 <span class="mix-count">${list.length}</span>`,
       `등록 ${db.benchmarks.length}건 · 공통 참고값은 2024~2025 과거값 · 가져온 자료는 이 브라우저에만 저장`,
       `<div class="field-row c3">
-         <div class="field"><label for="mix-brand">브랜드</label><select class="input" id="mix-brand"><option value="">전체</option>${brands.map(v=>`<option ${v===brand?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
+         <div class="field"><label for="mix-industry">업종</label><select class="input" id="mix-industry"><option value="">전체</option>${brands.map(v=>`<option ${v===brand?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
          <div class="field"><label for="mix-media-filter">매체 · 캠페인</label><select class="input" id="mix-media-filter"><option value="">전체</option>${E.products.map(v=>`<option value="${v.id}" ${v.id===mediaFilter?'selected':''}>${esc(v.media)} · ${esc(v.campaign)}</option>`).join('')}</select></div>
          <div class="field"><label for="mix-filter">검색</label><input class="input" id="mix-filter" value="${esc(filter)}" placeholder="캠페인·업종·기기·출처" autocomplete="off"></div>
        </div>
        <div class="table-scroll"><table class="t-table"><thead><tr>
-         <th style="min-width:150px">브랜드 · 캠페인</th><th>매체 · 기기</th><th>기준</th>
+         <th style="min-width:150px">업종 · 캠페인</th><th>매체 · 기기</th><th>기준</th>
          <th class="num">단가(원)</th><th class="num">CTR(%)</th><th class="num">CVR(%)</th><th>근거</th><th class="num"></th>
        </tr></thead><tbody>${rows}</tbody></table></div>
        ${list.length>150?'<div class="field-hint">최대 150건까지 표시합니다. 검색 조건을 좁히면 나머지도 볼 수 있습니다.</div>':''}
-       <div class="btn-row">${button('import','📥 JSON / XLSX 가져오기')}${button('template','📄 엑셀 입력 양식')}</div>`);
+       <div class="btn-row">${button('add-selected','선택 자료 일괄 추가','btn-primary')}${button('import','📥 JSON / XLSX 가져오기')}${button('template','📄 엑셀 입력 양식')}</div>`);
 
-    return paste+lib;
+    const unclassified=db.benchmarks.filter(b=>!b.industry?.trim()).length;
+    return (unclassified?`<div class="callout warn">업종 미분류 ${unclassified}행은 자동 구성에서 제외됩니다. 원본은 백업에 보존됩니다.<div class="field"><label for="mix-classify">미분류 자료 업종</label><select class="input" id="mix-classify"><option value="">선택</option>${industries().map(v=>`<option>${esc(v)}</option>`).join('')}</select></div>${button('classify','미분류 자료에 업종 지정')}</div>`:'')+lib+`<details class="mix-options"><summary>성과 리포트 붙여넣기</summary>${paste}</details>`;
   }
 
   // ============================================================
@@ -284,6 +302,8 @@
 
       <div class="mm-vat"><span>공급가 ${won(res.totals.amount)}</span><span>부가세 ${won(res.totals.tax)}</span>
         <b>청구 총액 ${won(res.totals.gross)}</b></div>
+      ${p().autoSummary?`<p class="mix-policy">${esc(p().autoSummary)}</p>`:''}
+      ${res.warnings.length?`<div class="mm-notice"><b>산출 제한 및 확인 사항</b><ul>${res.warnings.map(w=>`<li>${esc(w)}</li>`).join('')}</ul></div>`:''}
 
       <div class="mix-evidence-wrap"><div class="mm-notice-t">산출 근거 및 운영 조건</div>
         <ul class="mix-evidence">${res.rows.map(r=>`<li><b>${esc(r.type)}</b> <span class="mix-sub">${esc(r.name)}</span><br>`+
@@ -307,10 +327,10 @@
   // ============================================================
   // 동작 (로직 변경 없음)
   // ============================================================
-  function addBench(id) {
+  function addBench(id,quiet=false) {
     const b=allBench().find(x=>x.id===id);if(!b)return;
     const defaults=E.row(b.product), model=b.model||defaults.model;
-    p().rows.push({...defaults,...copy(b),model,goal:b.goal||defaults.goal,device:b.device||defaults.device,sourceKind:b.sourceKind||'참고값',markup:b.markup==null||b.markup===''?0:b.markup,approved:false,locked:model==='FIXED',amount:b.amount||0,weight:b.amount||1,source:b.source,rate:b.rate??'',ctr:b.ctr??'',cvr:b.cvr??'',aov:b.aov??''});selected=p().rows.length-1;page='compose';save();render();
+    p().rows.push({...defaults,...copy(b),model,goal:b.goal||defaults.goal,device:b.device||defaults.device,sourceKind:b.sourceKind||'참고값',markup:b.markup==null||b.markup===''?0:b.markup,approved:false,locked:model==='FIXED',amount:b.amount||0,weight:b.amount||1,source:b.source,rate:b.rate??'',ctr:b.ctr??'',cvr:b.cvr??'',aov:b.aov??''});selected=p().rows.length-1;page='compose';p().autoEnabled=false;if(!quiet){save();render();}
   }
   function download(data,name,type){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([data],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);}
   let pending=null;
@@ -336,6 +356,22 @@
   }
   async function act(action) {
     try {
+      if(action==='go-preview'){page='preview';render();return;}
+      if(action==='auto-generate'){
+        const next=A.generate(p(),rawBench(),p().autoSettings);
+        if(p().rows.length){if(!confirm('현재 계획을 보관하고 업종 기준으로 다시 구성할까요?'))return;db.saved.push(copy(p()));}
+        db.plan=next;db.preferences=copy(next.autoSettings);selected=-1;page='compose';
+      }
+      if(action==='classify'){
+        const value=document.getElementById('mix-classify').value;if(!value)throw Error('업종을 선택하세요.');
+        if(!confirm('미분류 자료 전체에 '+value+' 업종을 지정할까요? 서로 다른 업종의 자료라면 취소하고 입력 양식에서 개별 분류하세요.'))return;
+        download(JSON.stringify({kind:'mix-backup',db},null,2),'미디어믹스_업종지정전백업.json','application/json');
+        db.benchmarks.filter(b=>!b.industry?.trim()).forEach(b=>b.industry=value);
+      }
+      if(action==='add-selected'){
+        if(!benchSelection.size)throw Error('추가할 자료를 선택하세요.');
+        for(const id of benchSelection)addBench(id,true);benchSelection.clear();
+      }
       if(action==='library'){page='library';render();return;}
       if(action==='import'){document.getElementById('mix-file').click();return;}
       if(action==='paste-clear'){pasteText='';pasteNotice='';render();return;}
@@ -343,11 +379,11 @@
         const g=id=>{const el=document.getElementById(id);return el?el.value:'';};
         pasteText=g('mix-paste-text');pasteDate=g('mix-paste-date');
         pasteKind=g('mix-paste-kind')||'실적';pasteIndustry=g('mix-paste-industry');
-        const bname=g('mix-paste-brand').trim();
-        const r=E.parseReport(pasteText,{brand:bname,sourceDate:pasteDate,sourceKind:pasteKind,industry:pasteIndustry,source:'성과 리포트'});
+        pasteGoal=g('mix-paste-goal');pasteUnit=g('mix-paste-unit');pasteCost=g('mix-paste-cost');
+        const r=E.parseReport(pasteText,{sourceDate:pasteDate,sourceKind:pasteKind,industry:pasteIndustry,source:'성과 리포트',goal:pasteGoal,percentUnit:pasteUnit,costFactor:pasteCost==='vat'?1.1:1});
         if(r.error){pasteNotice=r.error+(r.skipped&&r.skipped.length?' / 인식 못한 행: '+r.skipped.join(', '):'');render();return;}
         pasteNotice=r.pack.benchmarks.length+'건을 읽었습니다.'+(r.skipped.length?' 인식 못한 행: '+r.skipped.join(', '):'');
-        if(bname)brand=bname;
+        brand=pasteIndustry;
         // render() 가 dialog 를 포함한 DOM 을 갈아끼우므로, 다시 그린 뒤에 모달을 연다.
         render();pending=r.pack;reviewPending();return;
       }
@@ -359,11 +395,11 @@
         pending=null;page='library';selected=-1;
       }
       if(action==='backup'){download(recoveryRaw??JSON.stringify({kind:'mix-backup',db},null,2),'미디어믹스_백업.json','application/json');return;}
-      if(action==='new'){if(!confirm('현재 계획은 저장한 계획에 보관하고 새 계획을 열까요?'))return;if(p().rows.length)db.saved.push(copy(p()));db.plan=E.plan();selected=-1;page='compose';}
+      if(action==='new'){if(!confirm('현재 계획은 저장한 계획에 보관하고 새 계획을 열까요?'))return;if(p().rows.length)db.saved.push(copy(p()));db.plan=E.plan();initPlan();selected=-1;page='compose';}
       if(action==='save-plan'){db.saved.push(copy(p()));}
       if(action==='duplicate'){db.saved.push(copy(p()));db.plan=copy(p());p().title+=' (복제)';p().rows.forEach(r=>r.approved=false);}
-      if(action==='add'){p().rows.push(E.row(document.getElementById('mix-product').value));selected=p().rows.length-1;}
-      if(action==='clone-row'&&selected>=0){p().rows.push({...copy(p().rows[selected]),approved:false});selected=p().rows.length-1;}
+      if(action==='add'){p().rows.push(E.row(document.getElementById('mix-product').value));selected=p().rows.length-1;p().autoEnabled=false;}
+      if(action==='clone-row'&&selected>=0){p().rows.push({...copy(p().rows[selected]),approved:false});selected=p().rows.length-1;p().autoEnabled=false;}
       if(action==='allocate'){E.allocate(p());p().rows.forEach(r=>r.approved=false);}
       if(action==='legacy'){
         const old=loadToolState('mediamix');if(!old?.rows?.length)throw Error('이전 입력이 없습니다.');
@@ -378,14 +414,26 @@
   }
   function bindRows(){
     root().querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{selected=+b.dataset.edit;render();root().querySelector('.mix-editor')?.scrollIntoView({block:'nearest'});});
-    root().querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{if(confirm('이 캠페인을 계획에서 제거할까요?')){p().rows.splice(+b.dataset.remove,1);selected=-1;save();render();}});
+    root().querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{if(confirm('이 캠페인을 계획에서 제거할까요?')){p().rows.splice(+b.dataset.remove,1);p().autoEnabled=false;selected=-1;save();render();}});
+    root().querySelectorAll('[data-inline]').forEach(el=>{el.oninput=()=>{const r=p().rows[+el.dataset.inline];r.amount=el.value;r.approved=false;p().autoEnabled=false;save();refreshComputed();};el.onblur=()=>setTimeout(()=>{if(document.activeElement?.dataset.inline==null)refreshComputed();},0);});
     // 표에서 바로 검토 확인 — 행을 열지 않고 한 번에 체크할 수 있게
     root().querySelectorAll('[data-approve]').forEach(b=>b.onchange=()=>{const r=p().rows[+b.dataset.approve];if(!r)return;r.approved=b.checked;save();refreshComputed();});
   }
   // Keep active inputs in place while recalculating, so blur never swallows a click.
   function refreshComputed(){
     const res=E.compute(p()),table=root().querySelector('#mix-campaign-table');
-    if(table){const fragment=document.createElement('template');fragment.innerHTML=campaignTable(res);const left=table.scrollLeft;table.innerHTML=fragment.content.querySelector('#mix-campaign-table').innerHTML;table.scrollLeft=left;bindRows();}
+    if(selected<0)root().querySelector('.mix-editor')?.remove();
+    const count=root().querySelector('#mix-row-count');if(count)count.textContent=p().rows.length;
+    if(table&&document.activeElement?.dataset.inline==null){const fragment=document.createElement('template');fragment.innerHTML=campaignTable(res);const left=table.scrollLeft;table.innerHTML=fragment.content.querySelector('#mix-campaign-table').innerHTML;table.scrollLeft=left;bindRows();}
+    else if(table){
+      const fragment=document.createElement('template');fragment.innerHTML=campaignTable(res);
+      for(const cell of table.querySelectorAll('[data-live]'))cell.innerHTML=fragment.content.querySelector(`[data-live="${cell.dataset.live}"]`).innerHTML;
+      table.querySelector('.total').innerHTML=fragment.content.querySelector('.total').innerHTML;
+      table.querySelectorAll('[data-approve]').forEach(el=>{el.checked=p().rows[+el.dataset.approve].approved===true;el.nextElementSibling.textContent=el.checked?'확인':'미확인';el.nextElementSibling.className=el.checked?'mix-ok-t':'mix-warn-t';});
+    }
+    const summary=root().querySelector('#mix-live-summary');if(summary)summary.innerHTML=liveSummary(res);
+    const status=root().querySelector('#mix-auto-status');if(status)status.innerHTML=autoStatus();
+    const autoCheck=root().querySelector('[data-field="autoEnabled"]');if(autoCheck)autoCheck.checked=p().autoEnabled===true;
     const check=root().querySelector('#mix-check');if(check)check.innerHTML=checks(res);
     const st=root().querySelector('#mix-save');if(st)st.textContent=notice;
     const approved=root().querySelector('.mix-editor [data-field="approved"]');if(approved)approved.checked=p().rows[selected]?.approved===true;
@@ -397,24 +445,44 @@
     root().querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{page=b.dataset.view;render();});
     bindRows();
     root().querySelectorAll('[data-bench]').forEach(b=>b.onclick=()=>addBench(b.dataset.bench));
+    root().querySelectorAll('[data-bench-select]').forEach(b=>b.onchange=()=>{if(b.checked)benchSelection.add(b.dataset.benchSelect);else benchSelection.delete(b.dataset.benchSelect);});
+    root().querySelectorAll('[data-cost-review]').forEach(b=>b.onclick=()=>{
+      const record=allBench().find(x=>x.id===b.dataset.costReview);if(!record)return;
+      if(!confirm(record.sampleCount+'행의 단가가 VAT·수수료 제외 실매체비 기준임을 확인하셨습니까? 이 작업은 금액을 자동 보정하지 않습니다.'))return;
+      download(JSON.stringify({kind:'mix-backup',db},null,2),'미디어믹스_비용확인전백업.json','application/json');
+      db.benchmarks.filter(x=>record.benchmarkIds.includes(x.id)).forEach(x=>x.costBasis='media-net');save();render();
+    });
     root().querySelectorAll('[data-field]').forEach(el=>{
-      const update=()=>{const obj=el.dataset.scope==='row'?p().rows[selected]:p();obj[el.dataset.field]=el.type==='checkbox'?el.checked:el.value;if(el.dataset.scope==='row'&&el.dataset.field!=='approved')obj.approved=false;if(el.dataset.scope==='plan')p().rows.forEach(r=>r.approved=false);save();if(el.dataset.field==='model')render();else refreshComputed();};
+      const update=()=>{
+        const scope=el.dataset.scope,k=el.dataset.field,obj=scope==='row'?p().rows[selected]:scope==='auto'?p().autoSettings:p();
+        obj[k]=el.type==='checkbox'?el.checked:el.value;
+        if(scope==='row'&&k!=='approved'){obj.approved=false;p().autoEnabled=false;}
+        if(scope==='auto'){p().autoEnabled=false;p().autoSummary='';p().autoExcluded=[];p().rows.forEach(r=>r.approved=false);}
+        if(scope==='plan'){
+          p().rows.forEach(r=>r.approved=false);
+          if(p().autoEnabled&&['budget','vatMode','tax','start','end','autoEnabled'].includes(k)){
+            try{db.plan=A.generate(p(),rawBench(),p().autoSettings);selected=-1;}
+            catch(e){notice=e.message;save();notice=e.message;refreshComputed();return;}
+          }
+        }
+        save();if(k==='model')render();else refreshComputed();
+      };
       if(el.tagName==='INPUT'&&el.type!=='checkbox')el.oninput=update;else el.onchange=update;
     });
     document.getElementById('mix-file').onchange=e=>importFile(e.target.files[0]);
-    document.getElementById('mix-saved').onchange=e=>{if(e.target.value!==''&&confirm('현재 계획을 보관하고 선택한 계획을 열까요?')){const next=copy(db.saved[+e.target.value]);if(p().rows.length)db.saved.push(copy(p()));db.plan=next;selected=-1;save();render();}};
-    for(const [id,set]of [['mix-brand',v=>brand=v],['mix-media-filter',v=>mediaFilter=v],['mix-filter',v=>filter=v]]){const e=document.getElementById(id);if(e)e.onchange=()=>{set(e.value);render();};}
+    document.getElementById('mix-saved').onchange=e=>{if(e.target.value!==''&&confirm('현재 계획을 보관하고 선택한 계획을 열까요?')){const next=copy(db.saved[+e.target.value]);if(p().rows.length)db.saved.push(copy(p()));db.plan=next;initPlan();selected=-1;save();render();}};
+    for(const [id,set]of [['mix-industry',v=>brand=v],['mix-media-filter',v=>mediaFilter=v],['mix-filter',v=>filter=v]]){const e=document.getElementById(id);if(e)e.onchange=()=>{set(e.value);render();};}
   }
   window.renderMediamixTool=render;
-  window.mediamixPrefill=function(o){filter=o?.industry||'';page='library';render();if(typeof showPage==='function')showPage('tool-mediamix');};
+  window.mediamixPrefill=function(o){brand=A.industry(o?.industry||'');filter='';mediaFilter='';page='library';render();if(typeof showPage==='function')showPage('tool-mediamix');};
   const oldLookup=window.mmRenderLookup;
   window.mmRenderLookup=function(el){
     oldLookup(el);
     const block=document.createElement('div');
     block.innerHTML=`<div class="panel"><div class="panel-head"><span class="ico">🏷️</span><div>`+
-      `<div class="panel-title">브랜드별 캠페인 벤치마크</div>`+
+      `<div class="panel-title">업종별 캠페인 벤치마크</div>`+
       `<div class="panel-sub">이 브라우저에 등록된 자료 ${db.benchmarks.length}건 — 우리 계정 실적을 넣어두는 곳</div>`+
-      `</div></div><div class="btn-row"><button type="button" class="btn btn-sm btn-primary" id="mix-open-library">📚 브랜드 · 캠페인 자료 열기</button></div></div>`;
+      `</div></div><div class="btn-row"><button type="button" class="btn btn-sm btn-primary" id="mix-open-library">업종 · 캠페인 자료 열기</button></div></div>`;
     el.before(block);
     block.querySelector('button').onclick=()=>{page='library';render();showPage('tool-mediamix');};
   };

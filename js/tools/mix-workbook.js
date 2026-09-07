@@ -1,8 +1,8 @@
 (function(){
   'use strict';
   let loading;
-  function excel(){if(window.ExcelJS)return Promise.resolve(window.ExcelJS);if(!loading)loading=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='js/vendor/exceljs.min.js?v=28';s.onload=()=>resolve(window.ExcelJS);s.onerror=()=>{loading=null;reject(Error('엑셀 모듈을 불러오지 못했습니다. 연결을 확인하세요.'));};document.head.append(s);});return loading;}
-  const headers=['id','brand','product','media','campaign','device','model','rate','ctr','cvr','aov','markup','amount','fixedImpr','fixedClicks','source','sourceDate','sourceKind','note','vtr','goal'];
+  function excel(){if(window.ExcelJS)return Promise.resolve(window.ExcelJS);if(!loading)loading=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='js/vendor/exceljs.min.js?v=32';s.onload=()=>resolve(window.ExcelJS);s.onerror=()=>{loading=null;reject(Error('엑셀 모듈을 불러오지 못했습니다. 연결을 확인하세요.'));};document.head.append(s);});return loading;}
+  const headers=['id','brand','product','media','campaign','device','model','rate','ctr','cvr','aov','markup','amount','fixedImpr','fixedClicks','source','sourceDate','sourceKind','note','vtr','goal','industry','costBasis'];
   function style(ws,head=1){ws.views=[{state:'frozen',ySplit:head}];ws.eachRow((row,i)=>{row.eachCell(c=>{c.font={name:'맑은 고딕',size:10,color:{argb:'FF24282B'}};c.alignment={vertical:'middle',wrapText:true};c.border={bottom:{style:'hair',color:{argb:'FFDDE2E5'}}};if(typeof c.value==='number'||c.value?.formula)c.numFmt='#,##0.00;[Red](#,##0.00);0';});row.height=i===head?32:28;});const h=ws.getRow(head);h.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF184C46'}};c.font={name:'맑은 고딕',size:10,bold:true,color:{argb:'FFFFFFFF'}};});ws.pageSetup={paperSize:8,orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,printTitlesRow:`${head}:${head}`,margins:{left:.25,right:.25,top:.4,bottom:.4,header:.1,footer:.1}};ws.headerFooter={oddFooter:'&L미디어믹스 제안 · 예상치&R&P / &N'};}
   async function output(wb,name){wb.calcProperties.fullCalcOnLoad=true;const b=await wb.xlsx.writeBuffer();const a=document.createElement('a'),u=URL.createObjectURL(new Blob([b],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),3000);}
   async function exportPlan(p,result,draft){
@@ -50,6 +50,9 @@
       separate.forEach(({r,k})=>{const [unit,col,value]=r.model==='CPV'?['조회','Z',r.views]:r.model==='CPI'?['설치','AA',r.installs]:['발송','AB',r.sends];const line=front.addRow([r.name,r.type,unit,value]);if(value!=null)line.getCell(4).value={formula:`'계산 상세'!${col}${k}`,result:value};});
     }
     overview.addRow(['수정 및 검수 기준','검수 결과는 브라우저 내보내기 시점 기준입니다. 단가·예산·캠페인 변경 후에는 브라우저에서 다시 검수·출력하세요.']);
+    if(p.autoSummary&&p.autoSettings){overview.addRow(['업종 / 목표',p.autoSettings.industry+' / '+p.autoSettings.objective]);}
+    if(p.autoSummary)overview.addRow(['자동 구성 기준',p.autoSummary]);
+    if(p.autoExcluded?.length)overview.addRow(['자동 구성 제외',p.autoExcluded.join('\n')]);
     // Size wrapped source notes and show identity on separately printed worksheets.
     wb.eachSheet(sheet=>{
       sheet.headerFooter.oddHeader='&L'+String(p.client||'광고주 미입력').replace(/&/g,'&&')+' · '+String(p.title||'미디어믹스').replace(/&/g,'&&')+'&R'+(draft?'검토용 초안':'예상안');
@@ -58,12 +61,19 @@
     });
     await output(wb,`${draft?'검토용_':''}${(p.client||'미디어믹스').replace(/[\\/:*?"<>|]/g,'_')}_${(p.date||'날짜미입력')}_미디어믹스.xlsx`);
   }
-  async function template(){const X=await excel(),wb=new X.Workbook(),ws=wb.addWorksheet('벤치마크');ws.addRow(headers);ws.addRow(['sample','예시 브랜드','naver-search','네이버','파워링크','MO','CPC',500,2,1,50000,0,1000000,'','','사용자 입력 예시','','가정','예시값 삭제 후 입력']);ws.columns=headers.map(()=>({width:20}));style(ws);const note=wb.addWorksheet('입력 기준');note.addRows([['필드','기준'],['비율','CTR/CVR 1.5는 1.5%. 0.015가 아님.'],['단가','rate는 실매체비 기준. VAT·수수료 제외.'],['자료 구분','실적 / 과거 제안 / 참고값 / 가정'],['공급가','amount는 수수료 포함, VAT 별도.'],['브랜드검색','FIXED 사용. fixedImpr/fixedClicks는 독립 예상 물량.'],['제품 ID',window.MixEngine.products.map(x=>x.id+' = '+x.media+' '+x.campaign).join('\n')]]);note.columns=[{width:20},{width:100}];style(note);note.getRow(7).height=400;await output(wb,'벤치마크_입력양식.xlsx');}
+  async function template(){
+    const X=await excel(),wb=new X.Workbook(),ws=wb.addWorksheet('벤치마크');ws.addRow(headers);
+    ws.columns=headers.map(()=>({width:20}));style(ws);
+    const note=wb.addWorksheet('입력 기준');note.addRows([['필드','기준'],['필수 항목','id / industry(업종) / product / source. brand는 비공개 원본 식별용 선택 항목.'],['비율','CTR/CVR 1.5는 1.5%. Excel 백분율 셀도 지원.'],['단가','rate는 실매체비 기준. VAT·수수료 제외.'],['자료 구분','실적 / 과거 제안 / 참고값 / 가정. sourceDate: YYYY-MM-DD'],['전환 정의','goal: 구매 / 리드 / 설치 / 기타. CVR은 클릭 기준. 정의가 없으면 자동 전환율 적용 불가.'],['업종','industry는 플래너 업종명 사용. 같은 업종만 자동 구성.'],['브랜드검색','FIXED는 광고주별 견적·물량이 달라 자동 구성 제외.'],['제품 ID',window.MixEngine.products.map(x=>x.id+' = '+x.media+' '+x.campaign).join('\n')]]);
+    note.addRow(['비용 기준 확인','costBasis: media-net = VAT·수수료 제외 단가 확인됨 / review-required 또는 공란 = 자동 구성 제외, 원본 보존']);
+    note.columns=[{width:20},{width:100}];style(note);note.getRow(9).height=400;await output(wb,'벤치마크_입력양식.xlsx');
+  }
   async function importBench(buf,name){
     const X=await excel(),wb=new X.Workbook();await wb.xlsx.load(buf);const ws=wb.getWorksheet('벤치마크');
     if(!ws)throw Error('벤치마크 시트가 없습니다. 입력 양식 또는 제공된 JSON 자료팩을 사용하세요.');
     const cols={};ws.getRow(1).eachCell((c,i)=>{const h=String(c.value).trim();if(cols[h])throw Error('중복 열: '+h);cols[h]=i;});
-    for(const h of ['id','brand','product','source'])if(!cols[h])throw Error('필수 열 누락: '+h);
+    for(const h of ['id','product','source'])if(!cols[h])throw Error('필수 열 누락: '+h);
+    if(!cols.industry&&!cols.brand)throw Error('업종(industry) 열이 필요합니다.');
     const benchmarks=[];ws.eachRow((row,i)=>{
       if(i===1||!row.getCell(cols.id).value)return;const b={};
       headers.forEach(h=>{const cell=cols[h]?row.getCell(cols[h]):null;let v=cell?.value;

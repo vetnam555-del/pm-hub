@@ -35,7 +35,7 @@ jobs:
           node-version: 22
 
       - name: Verify media mix calculations
-        run: node --test tests/mix-engine.test.cjs
+        run: node --test tests/mix-engine.test.cjs tests/mix-additions.test.cjs tests/mix-autoplan.test.cjs
 
       - name: Push main to gh-pages
         run: git push origin HEAD:gh-pages --force
