@@ -1,59 +1,102 @@
-.mix-studio {background:#f5f7f6;color:#202a28;padding:26px;min-height:100vh;letter-spacing:0;font-size:13px;line-height:1.6}
-.mix-studio * {letter-spacing:0}
-.mix-studio h1 {font-size:26px;color:#173e35;margin:0}
-.mix-studio h2 {font-size:17px;margin:0 0 12px;color:#202a28}
-.mix-studio small {font-size:11px;font-weight:400;color:#5b6b66;display:inline-block;margin-left:5px}
-.mix-heading,.mix-toolbar,.mix-section-head,.mix-projects,.mix-actions,.mix-checks {display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.mix-heading,.mix-toolbar,.mix-section-head {justify-content:space-between}
-.mix-heading {padding-bottom:22px}
-.mix-heading span,.mix-caption {color:#53625d}
-.mix-toolbar {border-top:1px solid #cdd6d1;border-bottom:1px solid #cdd6d1;padding:10px 0}
-.mix-toolbar nav {display:flex;gap:6px;flex-wrap:wrap}
-.mix-studio button {font:inherit;border:1px solid #adbcb5;background:#fff;color:#23473c;border-radius:4px;padding:7px 12px;cursor:pointer;line-height:1.4;min-height:34px;white-space:normal}
-.mix-studio button:hover {background:#e4efe9;border-color:#476e5f}
-.mix-studio button[aria-pressed=true],.mix-studio .mix-primary {background:#20614d;color:white;border-color:#20614d}
-.mix-studio .mix-primary:hover {background:#174a3b;color:white}
-.mix-studio button:focus-visible,.mix-studio input:focus-visible,.mix-studio select:focus-visible {outline:3px solid #bc771c;outline-offset:2px}
-.mix-section {padding:22px 0;border-bottom:1px solid #cdd6d1}
-.mix-projects {padding:14px 0;border-bottom:1px solid #cdd6d1}
-.mix-projects label {min-width:220px;max-width:420px}
-.mix-fields {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 18px;margin:10px 0 18px}
-.mix-studio label {display:flex;flex-direction:column;gap:4px;font-weight:600;color:#394c44;min-width:0}
-.mix-studio input,.mix-studio select {font:inherit;color:#202a28;background:#fff;border:1px solid #a9b8b0;border-radius:4px;padding:8px 10px;min-height:38px;max-width:100%;width:100%}
-.mix-studio .mix-actions select {width:auto;max-width:300px}
-.mix-studio .mix-actions span {color:#576960;font-size:12px}
-.mix-checks label {flex-direction:row;align-items:center}.mix-studio input[type=checkbox] {width:16px;min-height:16px;accent-color:#20614d}
-.mix-scroll {overflow:auto;max-width:100%;border:1px solid #cdd6d1;background:white}
-.mix-studio table {border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
-.mix-studio th,.mix-studio td {padding:9px 10px;border-bottom:1px solid #dde4df;text-align:right;vertical-align:middle}
-.mix-studio td:first-child,.mix-studio th:first-child {text-align:left;white-space:normal;min-width:130px}
-.mix-studio th {color:#fff;background:#345b4c;font-weight:600}
-.mix-studio td button {border:0;padding:4px;background:none;text-align:left}
-.mix-studio td small {display:block}.mix-studio tr.selected {background:#edf4d8}
-.mix-studio tfoot {background:#edf1ee;font-weight:bold}
-.mix-editor {border-left:4px solid #20614d;padding-left:16px}
-.mix-totals {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:16px 0}
-.mix-totals div {border-left:2px solid #9ab5aa;padding-left:12px;color:#576960}
-.mix-totals strong {display:block;font-size:18px;color:#1d4133;overflow-wrap:anywhere}
-.mix-errors {color:#9d2929;margin:12px 0 12px 20px}.mix-ok {color:#1c5b3d}
-.mix-studio details ul {margin:12px 0 0 22px}.mix-studio details {color:#715718}
-.mix-paper {background:#fff;color:#222;padding:28px;margin:20px 0;border:1px solid #bfc9c3}
-.mix-paper h3 {margin:24px 0 10px}.mix-paper p {margin:12px 0}.mix-paper li {margin-left:20px}
-.mix-evidence li {margin-bottom:10px;overflow-wrap:anywhere;break-inside:avoid}
-.mix-studio dialog {margin:auto;max-width:min(560px,90vw);padding:28px;border:1px solid #a9b8b0;border-radius:6px;color:#202a28;background:white}
-.mix-studio dialog .mix-actions {margin-top:20px}.mix-studio dialog::backdrop {background:#0006}
-@media(max-width:900px){.mix-studio{padding:18px 14px}.mix-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.mix-totals{grid-template-columns:repeat(2,minmax(0,1fr))}.mix-projects label{max-width:100%}}
-@media(max-width:480px){.mix-fields{grid-template-columns:1fr}.mix-heading h1{font-size:23px}.mix-totals strong{font-size:16px}.mix-paper{padding:12px}.mix-toolbar nav{width:100%}}
-@media print {body.mix-print{display:block;background:white}body.mix-print>*:not(main){display:none!important}body.mix-print main{margin:0!important;padding:0!important;width:100%!important;max-width:none!important}body.mix-print .page:not(.active){display:none!important}body.mix-print .mix-studio{padding:0;background:white}body.mix-print .mix-studio>*:not(#mix-body),body.mix-print #mix-body>*:not(.mix-paper){display:none!important}body.mix-print .mix-paper{border:0;margin:0;padding:0}body.mix-print .mix-scroll{overflow:visible;border:0}body.mix-print table{white-space:normal;font-size:9px}body.mix-print th,body.mix-print td{padding:5px}body.mix-print .mix-paper h2{font-size:20px}@page{size:A3 landscape;margin:12mm}}
+/* ============================================================
+   mix-studio.css — 미디어믹스 화면에서 '허브 공용 시스템에 없는 것'만.
+   레이아웃·색·폼·표·버튼은 전부 css/tools.css 의 컴포넌트를 쓴다.
+   (예전 버전은 여기서 라이트 테마를 통째로 덮어써서 허브 안에서 다른 앱처럼 보였다)
+   ============================================================ */
 
-/* 손익분기 검증 블록 */
-.mix-studio .mix-section.mix-be-ok { border-color: rgba(104,211,145,.4); background: rgba(104,211,145,.06); }
-.mix-studio .mix-section.mix-be-bad { border-color: rgba(252,129,129,.4); background: rgba(252,129,129,.06); }
+/* 탭 줄 · 툴바 — 좌우 정렬용 유틸 */
+.mix-bar {
+  display: flex; flex-wrap: wrap; gap: 12px;
+  align-items: center; justify-content: space-between;
+}
+.mix-status { font-size: 11.5px; color: var(--text-muted); }
+.mix-savedwrap { margin: 0; min-width: 220px; flex: 1; }
+.mix-count {
+  display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; color: var(--primary);
+  background: var(--primary-soft); border: 1px solid rgba(var(--primary-rgb), .25);
+}
+
+/* 캠페인 표 — 행 이름 버튼 / 삭제 / 선택 표시 */
+.mix-rowname {
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; text-align: left; color: var(--text-secondary);
+}
+.mix-rowname b { display: block; color: var(--text-primary); font-size: 13px; }
+.mix-rowname span, .mix-sub { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.mix-rowname:hover b { color: var(--primary); }
+.t-table tr.mix-selected td { background: var(--primary-soft) !important; }
+.mix-del {
+  background: transparent; border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text-muted); cursor: pointer; font-size: 12px; line-height: 1;
+  padding: 6px 8px; font-family: inherit; transition: var(--transition);
+}
+.mix-del:hover { color: var(--danger); border-color: var(--danger); }
+
+/* 체크박스 (검토 확인 · 예산 고정) */
+.mix-check {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer;
+}
+.mix-check input { width: 15px; height: 15px; accent-color: var(--primary); cursor: pointer; }
+.mix-check-c { justify-content: flex-end; }
+.mix-ok-t { color: var(--ok); font-weight: 700; }
+.mix-warn-t { color: var(--warn); font-weight: 700; }
+.mix-checkrow {
+  display: flex; flex-wrap: wrap; gap: 18px; align-items: center;
+  margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border);
+}
+.mix-editor { border-left: 3px solid var(--primary); }
+
+/* 검수 목록 */
+.mix-list { margin: 8px 0 0; padding-left: 18px; }
+.mix-list li { margin-bottom: 4px; line-height: 1.6; }
 
 /* 성과 리포트 붙여넣기 */
-.mix-studio .mix-paste textarea {
-  width: 100%; min-height: 116px; margin-top: 10px; padding: 10px 12px;
-  font-family: 'JetBrains Mono', 'Inter', monospace; font-size: 11.5px; line-height: 1.55;
-  white-space: pre; overflow-x: auto; resize: vertical;
+textarea.mix-paste-text {
+  min-height: 118px; resize: vertical;
+  font-family: 'JetBrains Mono', 'Inter', monospace;
+  font-size: 11.5px; line-height: 1.55; white-space: pre; overflow-x: auto;
 }
-.mix-studio .mix-paste-notice { margin-top: 8px; font-size: 12px; font-weight: 600; }
+
+/* 제출본 */
+.mix-paper { margin-top: 16px; }
+.mix-evidence-wrap {
+  margin-top: 16px; padding: 14px 16px; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); background: rgba(0, 0, 0, .18);
+}
+.mix-evidence { margin: 8px 0 0; padding-left: 18px; }
+.mix-evidence li {
+  font-size: 11.5px; line-height: 1.7; color: var(--text-muted);
+  margin-bottom: 10px; overflow-wrap: anywhere; break-inside: avoid;
+}
+.mix-evidence b { color: var(--text-secondary); }
+
+/* 가져오기 검토 모달 */
+dialog.mix-dialog {
+  margin: auto; max-width: min(560px, 92vw); padding: 24px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: linear-gradient(145deg, #141929, #0F1422); color: var(--text-primary);
+  box-shadow: var(--shadow-lg);
+}
+dialog.mix-dialog::backdrop { background: rgba(0, 0, 0, .6); backdrop-filter: blur(3px); }
+.mix-dialog-body { font-size: 12.5px; line-height: 1.7; color: var(--text-secondary); margin-bottom: 18px; }
+
+/* 인쇄 — 제출본만 남긴다 */
+@media print {
+  .mix-noprint { display: none !important; }
+  body.mix-print .sidebar,
+  body.mix-print .mobile-topbar,
+  body.mix-print .sidebar-scrim { display: none !important; }
+  body.mix-print main { margin: 0 !important; padding: 0 !important; max-width: none !important; }
+  body.mix-print .page:not(.active) { display: none !important; }
+  /* 제출본 영역 밖(탭·툴바·검수 패널)은 인쇄에서 제외 */
+  body.mix-print .mix-studio > *:not(#mix-body),
+  body.mix-print #mix-body > *:not(.mix-preview) { display: none !important; }
+  body.mix-print .mix-preview { border: 0 !important; padding: 0 !important; }
+  body.mix-print .mix-preview > .panel-head { display: none !important; }
+  body.mix-print .table-scroll { overflow: visible !important; border: 0 !important; }
+  body.mix-print .t-table { font-size: 9px !important; white-space: normal; }
+  body.mix-print .t-table th, body.mix-print .t-table td { padding: 5px 6px !important; }
+  @page { size: A3 landscape; margin: 12mm; }
+}

@@ -1,9 +1,22 @@
 /* Local-only planning workspace. No client records are sent to the server. */
+// ============================================================
+// mix-studio.js — 미디어믹스 화면 (계획 편집 / 벤치마크 / 제출본 검수)
+// 진입점: window.renderMediamixTool()  (컨테이너 id="page-tool-mediamix")
+// 계산·검증·XLSX 는 건드리지 않는다 — mix-engine.js / mix-workbook.js 담당.
+// 이 파일은 화면만 그린다.
+//
+// 디자인: 허브 공용 디자인 시스템(css/tools.css)만 쓴다.
+//   .tool-wrap/.tool-hero/.panel/.field/.input/.seg/.btn/.t-table/.metric/.callout
+//   예전엔 이 도구만 자체 라이트 테마(mix-studio.css)를 써서 허브 안에서 다른 앱처럼 보였다.
+//   새 색·간격이 필요하면 base.css 변수를 쓰고, 정말 없는 것만 mix-studio.css 에 둔다.
+// ============================================================
 (function () {
   'use strict';
   const E=window.MixEngine, key='pm_mix_studio_v1';
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const n=(v,d=0)=>v==null||!Number.isFinite(v)?'—':v.toLocaleString('ko-KR',{maximumFractionDigits:d,minimumFractionDigits:d});
+  const n=(v,d=0)=>v==null||!Number.isFinite(v)?'–':v.toLocaleString('ko-KR',{maximumFractionDigits:d,minimumFractionDigits:d});
+  const won=v=>v==null||!Number.isFinite(v)?'–':'₩'+v.toLocaleString('ko-KR',{maximumFractionDigits:0});
+  const pct=(v,d=0)=>v==null||!Number.isFinite(v)?'–':n(v,d)+'%';
   const copy=o=>JSON.parse(JSON.stringify(o));
   let db={plan:E.plan(),saved:[],benchmarks:[]}, selected=-1, page='compose', filter='', brand='', mediaFilter='', notice='', recoveryRaw=null;
   let pasteText='', pasteDate='', pasteKind='실적', pasteIndustry='', pasteNotice='';
@@ -20,36 +33,139 @@
     }));
   }
   const allBench=()=>db.benchmarks.concat(publicBench());
-  function field(k,label,type='text',obj=p(),scope='plan') {return `<label>${label}<input data-scope="${scope}" data-field="${k}" type="${type}" value="${esc(obj[k])}" ${type==='number'?'step="any" min="0"':''}></label>`;}
-  function select(k,label,opts,obj=p(),scope='plan') {return `<label>${label}<select data-scope="${scope}" data-field="${k}">${opts.map(o=>{const [v,l]=Array.isArray(o)?o:[o,o];return `<option value="${esc(v)}" ${String(obj[k])===String(v)?'selected':''}>${esc(l)}</option>`;}).join('')}</select></label>`;}
-  const button=(action,text,cls='')=>`<button type="button" class="${cls}" data-action="${action}">${text}</button>`;
+
+  // ── 폼 조각 (허브 .field / .input 규격) ────────────────────
+  const fid=(scope,k)=>'mixf-'+scope+'-'+k;
+  function field(k,label,type='text',obj=p(),scope='plan',hint='',unit='') {
+    const id=fid(scope,k);
+    const inp=`<input class="input" id="${id}" data-scope="${scope}" data-field="${k}" type="${type}" value="${esc(obj[k])}" ${type==='number'?'step="any" min="0" inputmode="decimal"':'autocomplete="off"'}>`;
+    return `<div class="field"><label for="${id}">${label}</label>`+
+      (unit?`<div class="input-affix">${inp}<span class="affix">${unit}</span></div>`:inp)+
+      (hint?`<div class="field-hint">${hint}</div>`:'')+`</div>`;
+  }
+  function select(k,label,opts,obj=p(),scope='plan',hint='') {
+    const id=fid(scope,k);
+    return `<div class="field"><label for="${id}">${label}</label><select class="input" id="${id}" data-scope="${scope}" data-field="${k}">`+
+      opts.map(o=>{const [v,l]=Array.isArray(o)?o:[o,o];return `<option value="${esc(v)}" ${String(obj[k])===String(v)?'selected':''}>${esc(l)}</option>`;}).join('')+
+      `</select>`+(hint?`<div class="field-hint">${hint}</div>`:'')+`</div>`;
+  }
+  function check(k,label,obj,scope='row') {
+    const id=fid(scope,k);
+    return `<label class="mix-check" for="${id}"><input type="checkbox" id="${id}" data-scope="${scope}" data-field="${k}" ${obj[k]?'checked':''}><span>${label}</span></label>`;
+  }
+  const button=(action,text,cls='btn-ghost')=>`<button type="button" class="btn btn-sm ${cls}" data-action="${action}">${text}</button>`;
+  const panel=(ico,title,sub,body,extra='')=>`<div class="panel${extra?' '+extra:''}">`+
+    `<div class="panel-head"><span class="ico">${ico}</span><div><div class="panel-title">${title}</div>`+
+    (sub?`<div class="panel-sub">${sub}</div>`:'')+`</div></div>${body}</div>`;
+  const metric=(label,value,sub,cls='')=>`<div class="metric${cls?' '+cls:''}"><div class="m-label">${label}</div>`+
+    `<div class="m-value">${value}</div>${sub?`<div class="m-sub">${sub}</div>`:''}</div>`;
+
+  // ============================================================
+  // 셸
+  // ============================================================
   function render() {
     const el=root();if(!el)return;
     const res=E.compute(p());
-    el.innerHTML=`<div class="mix-studio">
-      <header class="mix-heading"><div><h1>미디어믹스</h1><span>계획 / 벤치마크 / 제출본</span></div><div class="mix-actions">${button('backup','JSON 백업')}${button('import','자료 가져오기')}${button('new','새 계획')}</div></header>
-      <div class="mix-toolbar"><nav aria-label="미디어믹스 화면">${[['compose','계획 편집'],['library','벤치마크'],['preview','제출본 검수']].map(([v,l])=>`<button data-view="${v}" aria-pressed="${page===v}">${l}</button>`).join('')}</nav><span id="mix-save" role="status">${esc(notice||'브라우저 전용 저장 · 서버 전송 없음')}</span></div>
-      <div class="mix-projects"><label>저장한 계획<select id="mix-saved"><option value="">선택</option>${db.saved.map((s,i)=>`<option value="${i}">${esc(s.client+' · '+s.title)}</option>`).join('')}</select></label>${button('save-plan','계획 저장')}${button('duplicate','계획 복제')}${button('legacy','이전 플래너 입력 가져오기')}</div>
+    const tabs=[['compose','📝 계획 편집'],['library','📚 벤치마크'],['preview','📄 제출본 검수']];
+    el.innerHTML=`<div class="tool-wrap mix-studio">
+      <div class="tool-hero mix-noprint">
+        <div class="eyebrow">🧰 실무 도구</div>
+        <h1>미디어믹스</h1>
+        <p>매체·캠페인을 골라 예산을 배분하고, 예상 노출·클릭·전환·매출을 산출해 <b>광고주 제출용 미디어믹스</b>를 만듭니다.
+        검수를 통과하면 <b>수식이 살아 있는 XLSX</b>로 내려받을 수 있습니다.</p>
+      </div>
+
+      <div class="mix-bar mix-noprint">
+        <div class="seg" id="mix-tabs" role="tablist">${tabs.map(([v,l])=>
+          `<button type="button" class="seg-btn${page===v?' on':''}" data-view="${v}" aria-pressed="${page===v}">${l}</button>`).join('')}</div>
+        <span class="mix-status" id="mix-save" role="status">${esc(notice||'브라우저 전용 저장 · 서버 전송 없음')}</span>
+      </div>
+
+      <div class="panel mix-noprint" style="margin-bottom:20px">
+        <div class="mix-bar">
+          <div class="field mix-savedwrap"><label for="mix-saved">저장한 계획</label>
+            <select class="input" id="mix-saved"><option value="">선택</option>${db.saved.map((s,i)=>`<option value="${i}">${esc(s.client+' · '+s.title)}</option>`).join('')}</select></div>
+          <div class="btn-row">${button('save-plan','💾 계획 저장')}${button('duplicate','⧉ 복제')}${button('new','＋ 새 계획')}
+            ${button('backup','📤 JSON 백업')}${button('import','📥 자료 가져오기')}${button('legacy','↩ 이전 입력')}</div>
+        </div>
+      </div>
+
       <div id="mix-body">${page==='compose'?compose(res):page==='library'?library():preview(res)}</div>
       <input type="file" id="mix-file" accept=".json,.xlsx" hidden>
-      <dialog id="mix-import-dialog"><h2>가져오기 검토</h2><div id="mix-import-summary"></div><div class="mix-actions">${button('cancel-import','취소')}${button('commit-import','추가')}</div></dialog>
+      <dialog id="mix-import-dialog" class="mix-dialog">
+        <div class="panel-title" style="margin-bottom:10px">가져오기 검토</div>
+        <div id="mix-import-summary" class="mix-dialog-body"></div>
+        <div class="btn-row">${button('cancel-import','취소')}${button('commit-import','추가','btn-primary')}</div>
+      </dialog>
     </div>`;
     bind();
   }
+
+  // ============================================================
+  // 계획 편집
+  // ============================================================
+  function campaignTable(res) {
+    const head=`<tr><th style="min-width:160px">매체 · 캠페인</th><th>기기</th><th>기준</th>`+
+      `<th class="num">공급가 예산</th><th class="num">실매체비</th><th class="num">예상 물량</th>`+
+      `<th class="num">예상 클릭</th><th class="num">예상 전환</th><th class="num">검토</th><th class="num"></th></tr>`;
+    const body=res.rows.map((x,i)=>{
+      const [unit,qty]=quantity(x);
+      return `<tr class="${i===selected?'mix-selected':''}">`+
+        `<td><button type="button" class="mix-rowname" data-edit="${i}"><b>${esc(x.type)}</b><span>${esc(x.name)}</span></button></td>`+
+        `<td>${esc(x.device)}</td><td>${esc(x.model)}</td>`+
+        `<td class="num">${won(x.amount)}</td><td class="num">${won(x.media)}</td>`+
+        `<td class="num">${n(qty)} <small>${unit}</small></td>`+
+        `<td class="num">${n(x.clicks)}</td>`+
+        `<td class="num">${n(x.conv,1)} <small>${esc(x.goal)}</small></td>`+
+        `<td class="num"><label class="mix-check mix-check-c"><input type="checkbox" data-approve="${i}" ${x.approved===true?'checked':''}>`+
+          `<span class="${x.approved===true?'mix-ok-t':'mix-warn-t'}">${x.approved===true?'확인':'미확인'}</span></label></td>`+
+        `<td class="num"><button type="button" class="mix-del" data-remove="${i}" title="캠페인 삭제" aria-label="${i+1}행 삭제">✕</button></td></tr>`;
+    }).join('')||'<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:22px">선택된 캠페인이 없습니다 — 위에서 추가하거나 [벤치마크]에서 불러오세요</td></tr>';
+    const foot=`<tr class="total"><td colspan="3">합계</td><td class="num">${won(res.totals.amount)}</td>`+
+      `<td class="num">${won(res.totals.media)}</td><td class="num"><small>단위별 구분</small></td>`+
+      `<td class="num">${n(res.totals.clicks)}</td><td class="num">${n(res.totals.conv,1)}</td><td colspan="2"></td></tr>`;
+    return `<div class="table-scroll" id="mix-campaign-table"><table class="t-table"><thead>${head}</thead><tbody>${body}${foot}</tbody></table></div>`;
+  }
+
   function compose(res) {
     const r=p().rows[selected];
-    return `<section class="mix-section"><h2>제안 정보</h2><div class="mix-fields">${field('client','광고주')}${field('title','제안명')}${field('agency','작성 주체')}${field('date','작성일','date')}${field('start','시작일','date')}${field('end','종료일','date')}</div></section>
-      <section class="mix-section"><div class="mix-fields">${field('budget','총 예산 (원)','number')}${select('vatMode','예산 기준',[['ex','VAT 별도'],['in','VAT 포함']])}${field('tax','광고주 청구 VAT (%)','number')}${select('scenario','매체 단가 시나리오',[[100,'기준'],[120,'단가 +20%'],[80,'단가 -20%']])}</div><div class="mix-fields">${field('margin','마진율 (%) · 손익분기 검증','number')}${field('otherCost','건당 기타 변동비 (원)','number')}</div><div class="mix-actions">${button('allocate','잔여 예산 자동 배분','mix-primary')}<span>행 예산: 수수료 포함·VAT 별도 / 단가: 수수료·VAT 제외 실매체비 기준. 마진율을 넣으면 본전선과 비교합니다.</span></div></section>
-      <section class="mix-section"><div class="mix-section-head"><h2>캠페인 구성 <small>${p().rows.length}</small></h2><div class="mix-actions"><select id="mix-product" aria-label="추가할 매체 캠페인">${E.products.map(x=>`<option value="${x.id}">${x.media} · ${x.campaign}</option>`).join('')}</select>${button('add','캠페인 추가')}${button('library','벤치마크 선택')}</div></div>
-      <div class="mix-scroll" id="mix-campaign-table"><table><thead><tr><th>매체 / 캠페인</th><th>기기</th><th>기준</th><th>공급가 예산</th><th>실매체비</th><th>예상 물량</th><th>예상 클릭</th><th>예상 전환</th><th>검토</th><th></th></tr></thead><tbody>${res.rows.map((x,i)=>`<tr class="${i===selected?'selected':''}"><td><button data-edit="${i}">${esc(x.name)}<br><strong>${esc(x.type)}</strong></button></td><td>${esc(x.device)}</td><td>${esc(x.model)}</td><td>${n(x.amount)}</td><td>${n(x.media)}</td><td>${n(quantity(x)[1])} ${quantity(x)[0]}</td><td>${n(x.clicks)}</td><td>${n(x.conv,1)} <small>${esc(x.goal)}</small></td><td>${x.approved===true?'확인':'미확인'}</td><td><button data-remove="${i}" title="캠페인 삭제" aria-label="${i+1}행 삭제">×</button></td></tr>`).join('')||'<tr><td colspan="10">선택된 캠페인 없음</td></tr>'}</tbody><tfoot><tr><th colspan="3">합계</th><td>${n(res.totals.amount)}</td><td>${n(res.totals.media)}</td><td>단위별 구분</td><td>${n(res.totals.clicks)}</td><td>${n(res.totals.conv,1)}</td><td colspan="2"></td></tr></tfoot></table></div></section>
-      ${r?`<section class="mix-section mix-editor"><div class="mix-section-head"><h2>${selected+1}행 설정</h2>${button('clone-row','행 복제')}</div><div class="mix-fields">${field('media','매체명','text',r,'row')}${field('campaign','캠페인명','text',r,'row')}${select('device','디바이스',['전체','PC','MO','Android','iOS'],r,'row')}${select('goal','전환 정의',['구매','리드','설치','기타'],r,'row')}${select('model','물량 계산 기준',['CPC','CPM','CPV','CPI','SEND','FIXED'],r,'row')}${field('amount','공급가 예산 (원)','number',r,'row')}${field('weight','잔여 예산 배분 가중치','number',r,'row')}${field('markup','실매체비 가산 마크업 (%)','number',r,'row')}${field('rate','기준 단가 (원)','number',r,'row')}${field('ctr','CTR (%)','number',r,'row')}${field('cvr','클릭 기준 CVR (%)','number',r,'row')}${field('aov','구매 객단가 (원)','number',r,'row')}${r.model==='CPV'?field('vtr','조회 / 노출 VTR (%)','number',r,'row'):''}${r.model==='FIXED'?field('fixedImpr','정액 예상 노출','number',r,'row')+field('fixedClicks','정액 예상 클릭','number',r,'row'):''}${field('start','행 시작일 (빈칸=전체)','date',r,'row')}${field('end','행 종료일 (빈칸=전체)','date',r,'row')}${field('target','타기팅','text',r,'row')}${field('source','산출 근거','text',r,'row')}${field('sourceDate','근거 기준일','date',r,'row')}${select('sourceKind','근거 성격',['실적','과거 제안','참고값','가정'],r,'row')}${field('note','비고','text',r,'row')}</div><div class="mix-checks"><label><input type="checkbox" data-scope="row" data-field="locked" ${r.locked?'checked':''}>예산 고정</label><label><input type="checkbox" data-scope="row" data-field="approved" ${r.approved?'checked':''}>단가·전환 정의·출처 검토 확인</label></div></section>`:''}
-      <div id="mix-check">${checks(res)}</div>`;
+    const info=panel('📋','제안 정보','광고주 제출본 상단에 그대로 인쇄됩니다',
+      `<div class="field-row">${field('client','광고주')}${field('title','제안명')}</div>
+       <div class="field-row">${field('agency','작성 주체')}${field('date','작성일','date')}</div>
+       <div class="field-row">${field('start','집행 시작일','date')}${field('end','집행 종료일','date')}</div>`);
+
+    const money=panel('💰','예산 · 가정','단가는 수수료·VAT 제외 실매체비 기준, 행 예산은 수수료 포함·VAT 별도 공급가',
+      `<div class="field-row">${field('budget','총 예산','number',p(),'plan','','원')}${select('vatMode','예산 기준',[['ex','VAT 별도'],['in','VAT 포함']])}</div>
+       <div class="field-row">${field('tax','광고주 청구 VAT','number',p(),'plan','','%')}${select('scenario','매체 단가 시나리오',[[100,'기준'],[120,'단가 +20%'],[80,'단가 -20%']])}</div>
+       <div class="field-row">${field('margin','마진율','number',p(),'plan','넣으면 본전선과 비교합니다','%')}${field('otherCost','건당 기타 변동비','number',p(),'plan','배송·수수료 등','원')}</div>
+       <div class="btn-row">${button('allocate','⚖️ 잔여 예산 자동 배분','btn-primary')}</div>`);
+
+    const rows=panel('🧩',`캠페인 구성 <span class="mix-count">${p().rows.length}</span>`,'행을 누르면 아래에서 상세를 편집합니다',
+      `<div class="mix-bar" style="margin-bottom:12px">
+         <div class="field" style="margin:0;flex:1;min-width:200px"><label for="mix-product">추가할 매체 · 캠페인</label>
+           <select class="input" id="mix-product">${E.products.map(x=>`<option value="${x.id}">${esc(x.media)} · ${esc(x.campaign)}</option>`).join('')}</select></div>
+         <div class="btn-row">${button('add','＋ 캠페인 추가')}${button('library','📚 벤치마크에서 고르기')}</div>
+       </div>${campaignTable(res)}`);
+
+    const editor=r?panel('✏️',`${selected+1}행 설정 — ${esc(r.media||E.products.find(x=>x.id===r.product).media)}`,'값을 고치면 검토 확인이 자동으로 해제됩니다',
+      `<div class="field-row">${field('media','매체명','text',r,'row')}${field('campaign','캠페인명','text',r,'row')}</div>
+       <div class="field-row c3">${select('device','디바이스',['전체','PC','MO','Android','iOS'],r,'row')}${select('goal','전환 정의',['구매','리드','설치','기타'],r,'row')}${select('model','물량 계산 기준',['CPC','CPM','CPV','CPI','SEND','FIXED'],r,'row')}</div>
+       <div class="field-row c3">${field('amount','공급가 예산','number',r,'row','','원')}${field('weight','배분 가중치','number',r,'row','잔여 예산을 이 비율로 나눕니다')}${field('markup','마크업','number',r,'row','실매체비 = 예산 ÷ (1+마크업)','%')}</div>
+       <div class="field-row c3">${field('rate','기준 단가','number',r,'row',r.model==='CPC'?'CPC':r.model==='CPM'?'CPM':r.model==='CPV'?'CPV':r.model==='CPI'?'CPI':r.model==='SEND'?'건당 발송 단가':'정액은 아래 물량 입력','원')}${field('ctr','CTR','number',r,'row','','%')}${field('cvr','클릭 기준 CVR','number',r,'row','','%')}</div>
+       <div class="field-row${r.model==='CPV'?' c3':''}">${field('aov','구매 객단가','number',r,'row','','원')}${r.model==='CPV'?field('vtr','조회/노출 VTR','number',r,'row','','%'):''}${r.model==='FIXED'?field('fixedImpr','정액 예상 노출','number',r,'row'):''}${r.model==='FIXED'?field('fixedClicks','정액 예상 클릭','number',r,'row'):''}</div>
+       <div class="field-row">${field('start','행 시작일','date',r,'row','비우면 전체 기간')}${field('end','행 종료일','date',r,'row','비우면 전체 기간')}</div>
+       <div class="field-row c3">${field('target','타기팅','text',r,'row')}${field('source','산출 근거','text',r,'row','제출본에 인쇄됩니다')}${field('sourceDate','근거 기준일','date',r,'row')}</div>
+       <div class="field-row">${select('sourceKind','근거 성격',['실적','과거 제안','참고값','가정'],r,'row')}${field('note','비고','text',r,'row')}</div>
+       <div class="mix-checkrow">${check('locked','예산 고정 (자동 배분에서 제외)',r)}${check('approved','단가·전환 정의·출처 검토 확인',r)}
+         <div class="btn-row" style="margin:0">${button('clone-row','⧉ 행 복제')}</div></div>`,'mix-editor'):'';
+
+    return info+money+rows+editor+`<div id="mix-check">${checks(res)}</div>`;
   }
-  // 손익분기 판정 — 계산은 MixEngine.breakEven 한 곳에서만 한다.
+
+  // ── 손익분기 판정 — 계산은 MixEngine.breakEven 한 곳에서만 ──
   function beBlock(res){
     const b=res.be; if(!b||!b.marginValid) return '';
-    const pct=(v,d=0)=>v==null?'—':n(v,d)+'%';
-    const tone=b.unreachable?'mix-be-bad':b.pass===true?'mix-be-ok':b.pass===false?'mix-be-bad':'';
+    const tone=b.unreachable||b.pass===false?'danger':b.pass===true?'ok':'warn';
     const msg=b.unreachable
       ? '건당 기타 변동비가 마진금액을 넘어섭니다. 광고비가 0이어도 적자라 본전 도달이 불가능한 조건입니다.'
       : b.pass===true
@@ -57,31 +173,140 @@
         : b.pass===false
           ? '예상 ROAS 가 손익분기선에 못 미칩니다. 단가가 낮은 캠페인으로 예산을 옮기거나 마진·객단가 가정을 재확인하세요.'
           : '예상 ROAS 를 산출할 수 없어 본전 여부를 판정하지 못했습니다.';
-    return `<section class="mix-section ${tone}"><h2>손익분기 검증 <small>마진율 ${n(b.margin)}%${b.hasOther?' · 기타 변동비 '+n(b.other)+'원/건':''}</small></h2>
-      <div class="mix-totals"><div>손익분기 ROAS<strong>${b.unreachable?'달성 불가':pct(b.beRoas)}</strong></div>
-      <div>손익분기 CPA<strong>${n(b.beCpa)}원</strong></div>
-      <div>예상 ROAS<strong>${pct(b.roas)}</strong></div>
-      <div>기준 객단가<strong>${n(b.aov)}원</strong></div></div>
-      <p>${esc(msg)}</p></section>`;
+    const ico=tone==='ok'?'✅':tone==='danger'?'⛔':'⚠️';
+    return panel('💹',`손익분기 검증`,`마진율 ${n(b.margin)}%${b.hasOther?' · 기타 변동비 '+won(b.other)+'/건':''} 기준`,
+      `<div class="result-grid c3">
+        ${metric('🎯 손익분기 ROAS',b.unreachable?'달성 불가':pct(b.beRoas),'이 수치를 넘어야 본전')}
+        ${metric('🧾 손익분기 CPA',won(b.beCpa),'건당 공헌이익 = 최대 허용 CPA')}
+        ${metric('📊 예상 ROAS',pct(b.roas),'이 계획의 산출값',b.pass===true?'good':b.pass===false?'bad':'')}
+        ${metric('🛒 기준 객단가',won(b.aov),'구매 행의 전환 가중 평균')}
+      </div><div class="callout ${tone}"><span class="c-ico">${ico}</span><div>${esc(msg)}</div></div>`);
   }
-  function checks(res){return beBlock(res)+`<section class="mix-section"><h2>검수 결과 <small>${res.errors.length}개 미완료</small></h2><div class="mix-totals"><div>공급가<strong>${n(res.totals.amount)}원</strong></div><div>청구 VAT<strong>${n(res.totals.tax)}원</strong></div><div>청구 총액<strong>${n(res.totals.gross)}원</strong></div><div>예산 잔액<strong>${n(res.expected-res.totals.amount)}원</strong></div></div>${res.errors.length?`<ul class="mix-errors">${res.errors.map(e=>`<li>${esc(e)}</li>`).join('')}</ul>`:'<p class="mix-ok">필수 입력 및 예산 검수 통과</p>'}${res.warnings.length?`<details><summary>주의사항 ${res.warnings.length}개</summary><ul>${res.warnings.map(e=>`<li>${esc(e)}</li>`).join('')}</ul></details>`:''}</section>`;}
+
+  function checks(res){
+    const gap=res.expected-res.totals.amount;
+    return beBlock(res)+panel('🔍','검수 결과',
+      res.errors.length?`제출 전 ${res.errors.length}건을 완료해야 합니다`:'제출 요건 충족',
+      `<div class="result-grid c3">
+        ${metric('공급가',won(res.totals.amount),'VAT 별도','primary')}
+        ${metric('청구 VAT',won(res.totals.tax),'')}
+        ${metric('청구 총액',won(res.totals.gross),'광고주 청구 기준')}
+        ${metric('예산 잔액',won(gap),Number.isFinite(gap)&&gap===0?'배분 완료':'배분이 남았습니다',
+          Number.isFinite(gap)&&gap===0?'good':'bad')}
+      </div>`+
+      (res.errors.length
+        ?`<div class="callout danger"><span class="c-ico">⛔</span><div><b>미완료 ${res.errors.length}건</b><ul class="mix-list">${res.errors.map(e=>`<li>${esc(e)}</li>`).join('')}</ul></div></div>`
+        :`<div class="callout ok"><span class="c-ico">✅</span><div>필수 입력 및 예산 검수를 통과했습니다. 제출용 XLSX 를 만들 수 있습니다.</div></div>`)+
+      (res.warnings.length
+        ?`<div class="callout warn"><span class="c-ico">⚠️</span><div><b>주의 ${res.warnings.length}건</b><ul class="mix-list">${res.warnings.map(e=>`<li>${esc(e)}</li>`).join('')}</ul></div></div>`:''));
+  }
+
+  // ============================================================
+  // 벤치마크
+  // ============================================================
   function library() {
     const all=allBench(),brands=[...new Set(all.map(b=>b.brand))];
     const list=all.filter(b=>(!brand||b.brand===brand)&&(!mediaFilter||b.product===mediaFilter)&&(!filter||[b.brand,b.campaign,b.device,b.industry,b.source].join(' ').toLowerCase().includes(filter.toLowerCase())));
-    return `<section class="mix-section mix-paste"><div class="mix-section-head"><h2>성과 리포트 붙여넣기</h2><div class="mix-actions">${button('paste-report','읽어들이기','mix-primary')}${button('paste-clear','비우기')}</div></div><p class="mix-caption">지난 캠페인 리포트 표를 헤더째 복사해 붙여넣으면 매체를 알아보고 단가를 뽑습니다. imps·click·spending 만 있어도 CTR·CPC·CPM 을 역산하고, order·revenue 가 있으면 CVR·객단가까지 만듭니다. 읽은 자료는 중복·충돌 확인을 거쳐 이 브라우저에만 저장됩니다.</p><div class="mix-fields"><label>브랜드<input id="mix-paste-brand" value="${esc(brand||p().client||'')}" placeholder="예: 뉴발란스"></label><label>근거 기준일<input id="mix-paste-date" type="date" value="${esc(pasteDate)}"></label><label>근거 성격<select id="mix-paste-kind">${['실적','과거 제안','참고값','가정'].map(k=>`<option ${k===pasteKind?'selected':''}>${k}</option>`).join('')}</select></label><label>업종<input id="mix-paste-industry" value="${esc(pasteIndustry)}" placeholder="예: 패션"></label></div><textarea id="mix-paste-text" rows="5" spellcheck="false" placeholder="${esc(PASTE_SAMPLE)}">${esc(pasteText)}</textarea>${pasteNotice?`<p class="mix-paste-notice">${esc(pasteNotice)}</p>`:''}</section><section class="mix-section"><div class="mix-section-head"><h2>벤치마크 자료 <small>${list.length}건</small></h2><div class="mix-actions">${button('import','JSON / XLSX 가져오기')}${button('template','엑셀 입력 양식')}</div></div><div class="mix-fields"><label>브랜드<select id="mix-brand"><option value="">전체</option>${brands.map(v=>`<option ${v===brand?'selected':''}>${esc(v)}</option>`).join('')}</select></label><label>매체 / 캠페인<select id="mix-media-filter"><option value="">전체</option>${E.products.map(v=>`<option value="${v.id}" ${v.id===mediaFilter?'selected':''}>${v.media} · ${v.campaign}</option>`).join('')}</select></label><label>검색<input id="mix-filter" value="${esc(filter)}" placeholder="캠페인·업종·기기·출처"></label></div><p class="mix-caption">등록 자료 ${db.benchmarks.length}건 · 공통 자료는 2024~2025 참고값 · 가져온 자료는 현재 브라우저에만 저장</p><div class="mix-scroll"><table><thead><tr><th>브랜드 / 캠페인</th><th>매체 · 기기</th><th>기준</th><th>단가(원)</th><th>CTR(%)</th><th>CVR(%)</th><th>근거</th><th></th></tr></thead><tbody>${list.slice(0,150).map(b=>`<tr><td>${esc(b.brand)}<br>${esc(b.campaign||E.products.find(x=>x.id===b.product).campaign)}<small>${esc(b.industry||'')}</small></td><td>${esc(b.media||E.products.find(x=>x.id===b.product).media)} · ${esc(b.device||'전체')}</td><td>${esc(b.model)}</td><td>${n(E.num(b.rate),2)}</td><td>${n(E.num(b.ctr),2)}</td><td>${n(E.num(b.cvr),2)}</td><td title="${esc(b.source)}">${esc(b.sourceKind)}<br>${esc(b.sourceDate||'기준일 확인 필요')}</td><td><button data-bench="${esc(b.id)}">계획에 추가</button></td></tr>`).join('')||'<tr><td colspan="8">일치하는 자료 없음</td></tr>'}</tbody></table></div>${list.length>150?'<p>검색 조건을 좁히면 나머지 자료도 표시됩니다. (최대 150건 표시)</p>':''}</section>`;
+
+    const paste=panel('📥','성과 리포트 붙여넣기','지난 캠페인 리포트 표를 헤더째 복사해 붙이면 매체를 알아보고 단가를 뽑습니다',
+      `<div class="field-row c3">
+         <div class="field"><label for="mix-paste-brand">브랜드</label><input class="input" id="mix-paste-brand" value="${esc(brand||p().client||'')}" placeholder="예: 뉴발란스" autocomplete="off"></div>
+         <div class="field"><label for="mix-paste-date">근거 기준일</label><input class="input" id="mix-paste-date" type="date" value="${esc(pasteDate)}"></div>
+         <div class="field"><label for="mix-paste-kind">근거 성격</label><select class="input" id="mix-paste-kind">${['실적','과거 제안','참고값','가정'].map(k=>`<option ${k===pasteKind?'selected':''}>${k}</option>`).join('')}</select></div>
+       </div>
+       <div class="field"><label for="mix-paste-industry">업종 <span class="opt">선택</span></label><input class="input" id="mix-paste-industry" value="${esc(pasteIndustry)}" placeholder="예: 패션" autocomplete="off"></div>
+       <div class="field"><label for="mix-paste-text">리포트 표</label>
+         <textarea class="input mix-paste-text" id="mix-paste-text" rows="5" spellcheck="false" placeholder="${esc(PASTE_SAMPLE)}">${esc(pasteText)}</textarea>
+         <div class="field-hint">imps·click·spending 만 있어도 CTR·CPC·CPM 을 역산하고, order·revenue 가 있으면 CVR·객단가까지 만듭니다. 읽은 자료는 중복·충돌 확인을 거쳐 이 브라우저에만 저장됩니다.</div></div>
+       ${pasteNotice?`<div class="callout info"><span class="c-ico">ℹ️</span><div>${esc(pasteNotice)}</div></div>`:''}
+       <div class="btn-row">${button('paste-report','🔍 읽어들이기','btn-primary')}${button('paste-clear','비우기')}</div>`);
+
+    const rows=list.slice(0,150).map(b=>{
+      const prod=E.products.find(x=>x.id===b.product);
+      return `<tr><td><b style="color:var(--text-primary)">${esc(b.brand)}</b><div class="mix-sub">${esc(b.campaign||prod.campaign)}${b.industry?' · '+esc(b.industry):''}</div></td>`+
+        `<td>${esc(b.media||prod.media)}<div class="mix-sub">${esc(b.device||'전체')}</div></td>`+
+        `<td>${esc(b.model)}</td><td class="num">${n(E.num(b.rate),0)}</td>`+
+        `<td class="num">${n(E.num(b.ctr),2)}</td><td class="num">${n(E.num(b.cvr),2)}</td>`+
+        `<td title="${esc(b.source)}">${esc(b.sourceKind)}<div class="mix-sub">${esc(b.sourceDate||'기준일 확인 필요')}</div></td>`+
+        `<td class="num"><button type="button" class="btn btn-sm btn-ghost" data-bench="${esc(b.id)}">계획에 추가</button></td></tr>`;
+    }).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:22px">일치하는 자료가 없습니다</td></tr>';
+
+    const lib=panel('📚',`벤치마크 자료 <span class="mix-count">${list.length}</span>`,
+      `등록 ${db.benchmarks.length}건 · 공통 참고값은 2024~2025 과거값 · 가져온 자료는 이 브라우저에만 저장`,
+      `<div class="field-row c3">
+         <div class="field"><label for="mix-brand">브랜드</label><select class="input" id="mix-brand"><option value="">전체</option>${brands.map(v=>`<option ${v===brand?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
+         <div class="field"><label for="mix-media-filter">매체 · 캠페인</label><select class="input" id="mix-media-filter"><option value="">전체</option>${E.products.map(v=>`<option value="${v.id}" ${v.id===mediaFilter?'selected':''}>${esc(v.media)} · ${esc(v.campaign)}</option>`).join('')}</select></div>
+         <div class="field"><label for="mix-filter">검색</label><input class="input" id="mix-filter" value="${esc(filter)}" placeholder="캠페인·업종·기기·출처" autocomplete="off"></div>
+       </div>
+       <div class="table-scroll"><table class="t-table"><thead><tr>
+         <th style="min-width:150px">브랜드 · 캠페인</th><th>매체 · 기기</th><th>기준</th>
+         <th class="num">단가(원)</th><th class="num">CTR(%)</th><th class="num">CVR(%)</th><th>근거</th><th class="num"></th>
+       </tr></thead><tbody>${rows}</tbody></table></div>
+       ${list.length>150?'<div class="field-hint">최대 150건까지 표시합니다. 검색 조건을 좁히면 나머지도 볼 수 있습니다.</div>':''}
+       <div class="btn-row">${button('import','📥 JSON / XLSX 가져오기')}${button('template','📄 엑셀 입력 양식')}</div>`);
+
+    return paste+lib;
   }
+
+  // ============================================================
+  // 제출본
+  // ============================================================
   function preview(res) {
-    const pct=(v,d)=>v==null?'—':n(v,d)+'%';
-    return checks(res)+`<div class="mix-actions mix-section">${button('xlsx','제출용 XLSX','mix-primary')}${button('draft','검토용 XLSX')}${button('print','인쇄 / PDF')}</div>
-      <article class="mix-paper"><h2>${esc(p().client||'광고주 미입력')} · ${esc(p().title)}</h2>
-      <p>${esc(p().start)} ~ ${esc(p().end)} / ${esc(p().agency)} / ${esc(p().date)}</p><h3>예상 미디어플랜</h3>
-      <div class="mix-scroll"><table><thead><tr><th>매체 / 캠페인</th><th>공급가</th><th>예상 물량</th><th>예상 노출</th><th>예상 클릭</th><th>CTR</th><th>예상 전환</th><th>예상 매출</th><th>ROAS</th></tr></thead><tbody>
-      ${res.rows.map(r=>`<tr><td>${esc(r.name)}<br>${esc(r.type)}</td><td>${n(r.amount)}</td><td>${n(quantity(r)[1])} ${quantity(r)[0]}</td><td>${n(r.impr)}</td><td>${n(r.clicks)}</td><td>${pct(r.ctr,2)}</td><td>${n(r.conv,1)} ${esc(r.goal)}</td><td>${n(r.revenue)}</td><td>${pct(r.roas,1)}</td></tr>`).join('')}</tbody></table></div>
-      <p>공급가 ${n(res.totals.amount)}원 + VAT ${n(res.totals.tax)}원 = 청구 총액 ${n(res.totals.gross)}원</p>
-      <p>예상치는 성과를 보장하지 않습니다. 단가·CTR·CVR은 계획 가정이며 예산, 기간, 소재, 타기팅에 따라 달라집니다. CPC·CPM은 실매체비 기준, CPA·ROAS는 수수료 포함 공급가 기준입니다. 미산출 항목은 —로 표시하며 구매·리드·설치는 합산하지 않습니다. 메시지 발송량은 클릭수에 합산하지 않습니다.</p>
-      <h3>산출 근거 및 운영 조건</h3><ul class="mix-evidence">${res.rows.map(r=>`<li><strong>${esc(r.name)} · ${esc(r.type)}</strong>: ${esc(r.source)} / ${esc(r.sourceKind)} / 기준일 ${esc(r.sourceDate||'미입력')}<br>기간 ${esc(r.start)} ~ ${esc(r.end)} / ${esc(r.device)} / ${esc(r.target||'타기팅 미입력')}${r.note?'<br>'+esc(r.note):''}</li>`).join('')}</ul>
-      ${res.errors.length?'<strong>검토용 초안 · 미완료 항목 존재</strong>':''}${res.warnings.length?`<ul>${res.warnings.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}</article>`;
+    const rows=res.rows.map(r=>{
+      const [unit,qty]=quantity(r);
+      return `<tr><td><b style="color:var(--text-primary)">${esc(r.type)}</b><div class="mix-sub">${esc(r.name)}${r.days?' · '+r.days+'일':''}</div></td>`+
+        `<td class="num">${won(r.amount)}</td><td class="num">${n(qty)} <small>${unit}</small></td>`+
+        `<td class="num">${n(r.impr)}</td><td class="num">${n(r.clicks)}</td><td class="num">${pct(r.ctr,2)}</td>`+
+        `<td class="num">${n(r.conv,1)} <small>${esc(r.goal)}</small></td>`+
+        `<td class="num">${won(r.revenue)}</td>`+
+        `<td class="num${res.be&&res.be.beRoas!=null&&r.roas!=null?(r.roas>=res.be.beRoas?' mm-pass':' mm-fail'):''}">${pct(r.roas,1)}</td></tr>`;
+    }).join('');
+
+    const doc=`<article class="mix-paper">
+      <div class="mm-doc">
+        <div class="mm-doc-top">
+          <div class="mm-doc-title">${esc(p().client||'(광고주 미입력)')} · ${esc(p().title)}</div>
+          <div class="mm-doc-sub">${esc(p().start)} ~ ${esc(p().end)}</div>
+        </div>
+        <div class="mm-doc-meta"><span>작성 ${esc(p().agency)}</span><span>작성일 ${esc(p().date||'미입력')}</span>
+          <span>캠페인 ${res.rows.length}개</span></div>
+      </div>
+
+      <div class="table-scroll" style="margin-top:16px"><table class="t-table"><thead><tr>
+        <th style="min-width:150px">매체 · 캠페인</th><th class="num">공급가</th><th class="num">예상 물량</th>
+        <th class="num">예상 노출</th><th class="num">예상 클릭</th><th class="num">CTR</th>
+        <th class="num">예상 전환</th><th class="num">예상 매출</th><th class="num">ROAS</th>
+      </tr></thead><tbody>${rows}
+        <tr class="total"><td>TOTAL</td><td class="num">${won(res.totals.amount)}</td><td class="num"><small>단위별 구분</small></td>
+        <td class="num">${n(res.totals.impr)}</td><td class="num">${n(res.totals.clicks)}</td><td class="num">${pct(res.totals.ctr,2)}</td>
+        <td class="num">${n(res.totals.conv,1)}</td><td class="num">${won(res.totals.revenue)}</td><td class="num">${pct(res.totals.roas,1)}</td></tr>
+      </tbody></table></div>
+
+      <div class="mm-vat"><span>공급가 ${won(res.totals.amount)}</span><span>부가세 ${won(res.totals.tax)}</span>
+        <b>청구 총액 ${won(res.totals.gross)}</b></div>
+
+      <div class="mix-evidence-wrap"><div class="mm-notice-t">산출 근거 및 운영 조건</div>
+        <ul class="mix-evidence">${res.rows.map(r=>`<li><b>${esc(r.type)}</b> <span class="mix-sub">${esc(r.name)}</span><br>`+
+          `${esc(r.source)} / ${esc(r.sourceKind)} / 기준일 ${esc(r.sourceDate||'미입력')}<br>`+
+          `기간 ${esc(r.start)} ~ ${esc(r.end)} · ${esc(r.device)} · ${esc(r.target||'타기팅 미입력')}`+
+          `${r.note?'<br>'+esc(r.note):''}</li>`).join('')}</ul></div>
+
+      <div class="mm-notice"><div class="mm-notice-t">NOTICE</div><ul>
+        <li>예상치는 성과를 보장하지 않습니다. 단가·CTR·CVR 은 계획 가정이며 예산·기간·소재·타기팅에 따라 달라집니다.</li>
+        <li>CPC·CPM 은 <b>실매체비</b> 기준, CPA·ROAS 는 <b>수수료 포함 공급가</b> 기준입니다.</li>
+        <li>미산출 항목은 <b>–</b> 로 표시하며, 구매·리드·설치는 합산하지 않습니다. 메시지 발송량은 클릭수에 합산하지 않습니다.</li>
+        <li>모든 금액은 VAT 별도 기준이며, 표 아래에 부가세 포함 청구 총액을 병기했습니다.</li>
+      </ul></div>
+      ${res.errors.length?`<div class="callout danger"><span class="c-ico">⛔</span><div><b>검토용 초안 · 미완료 항목 존재</b> — 이 상태로는 광고주에게 보내지 마세요.</div></div>`:''}
+    </article>`;
+
+    return checks(res)+panel('📄','제출본','검수를 통과해야 제출용 XLSX 를 만들 수 있습니다',
+      `<div class="btn-row mix-noprint">${button('xlsx','📊 제출용 XLSX','btn-primary')}${button('draft','📝 검토용 XLSX')}${button('print','🖨 인쇄 / PDF')}</div>${doc}`,'mix-preview');
   }
+
+  // ============================================================
+  // 동작 (로직 변경 없음)
+  // ============================================================
   function addBench(id) {
     const b=allBench().find(x=>x.id===id);if(!b)return;
     const defaults=E.row(b.product), model=b.model||defaults.model;
@@ -145,7 +370,7 @@
         if(p().rows.length)db.saved.push(copy(p()));db.plan=E.plan();Object.assign(p(),{client:old.client||'',title:old.campaign||'이전 미디어믹스',budget:E.num(old.budget)||0,vatMode:old.vatMode||'ex'});
         p().rows=old.rows.map(r=>({...E.row('custom'),media:r.media||old.platform,campaign:r.adType||r.channel,weight:E.num(r.ratio)||0,rate:r.cpc||'',ctr:r.ctr||'',cvr:r.cvr||old.cvr||'',aov:r.aov||old.aov||'',markup:E.num(r.markup)||E.num(old.markup)||0,source:'이전 플래너 입력 (단가 기준 재확인)',note:r.note||''}));E.allocate(p());page='compose';selected=0;
       }
-      if(action==='print'){if(E.compute(p()).errors.length)throw Error('제출본 필수 검수를 완료한 후 인쇄하세요.');document.body.classList.add('mix-print');window.print();document.body.classList.remove('mix-print');return;}
+      if(action==='print'){if(E.compute(p()).errors.length)throw Error('제출본 필수 검수를 완료한 후 인쇄하세요.');page='preview';render();document.body.classList.add('mix-print');window.print();document.body.classList.remove('mix-print');return;}
       if(action==='xlsx'||action==='draft'){const res=E.compute(p());if(action==='xlsx'&&res.errors.length)throw Error('필수 검수 '+res.errors.length+'개를 완료하세요. 초안은 검토용 XLSX로 받을 수 있습니다.');await window.MixWorkbook.exportPlan(p(),res,action==='draft');return;}
       if(action==='template'){await window.MixWorkbook.template();return;}
       save();render();
@@ -154,14 +379,16 @@
   function bindRows(){
     root().querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{selected=+b.dataset.edit;render();root().querySelector('.mix-editor')?.scrollIntoView({block:'nearest'});});
     root().querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{if(confirm('이 캠페인을 계획에서 제거할까요?')){p().rows.splice(+b.dataset.remove,1);selected=-1;save();render();}});
+    // 표에서 바로 검토 확인 — 행을 열지 않고 한 번에 체크할 수 있게
+    root().querySelectorAll('[data-approve]').forEach(b=>b.onchange=()=>{const r=p().rows[+b.dataset.approve];if(!r)return;r.approved=b.checked;save();refreshComputed();});
   }
   // Keep active inputs in place while recalculating, so blur never swallows a click.
   function refreshComputed(){
     const res=E.compute(p()),table=root().querySelector('#mix-campaign-table');
-    if(table){const fragment=document.createElement('template');fragment.innerHTML=compose(res);const left=table.scrollLeft;table.innerHTML=fragment.content.querySelector('#mix-campaign-table').innerHTML;table.scrollLeft=left;bindRows();}
+    if(table){const fragment=document.createElement('template');fragment.innerHTML=campaignTable(res);const left=table.scrollLeft;table.innerHTML=fragment.content.querySelector('#mix-campaign-table').innerHTML;table.scrollLeft=left;bindRows();}
     const check=root().querySelector('#mix-check');if(check)check.innerHTML=checks(res);
-    root().querySelector('#mix-save').textContent=notice;
-    const approved=root().querySelector('[data-field="approved"]');if(approved)approved.checked=p().rows[selected]?.approved===true;
+    const st=root().querySelector('#mix-save');if(st)st.textContent=notice;
+    const approved=root().querySelector('.mix-editor [data-field="approved"]');if(approved)approved.checked=p().rows[selected]?.approved===true;
   }
   function bind(){
     root().querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>act(b.dataset.action));
@@ -181,5 +408,14 @@
   window.renderMediamixTool=render;
   window.mediamixPrefill=function(o){filter=o?.industry||'';page='library';render();if(typeof showPage==='function')showPage('tool-mediamix');};
   const oldLookup=window.mmRenderLookup;
-  window.mmRenderLookup=function(el){oldLookup(el);const block=document.createElement('div');block.className='mix-studio';block.innerHTML=`<section class="mix-section"><h2>브랜드별 캠페인 벤치마크</h2><p>브라우저에 등록된 자료 ${db.benchmarks.length}건</p><button id="mix-open-library">브랜드 / 캠페인 자료 열기</button></section>`;el.before(block);block.querySelector('button').onclick=()=>{page='library';render();showPage('tool-mediamix');};};
+  window.mmRenderLookup=function(el){
+    oldLookup(el);
+    const block=document.createElement('div');
+    block.innerHTML=`<div class="panel"><div class="panel-head"><span class="ico">🏷️</span><div>`+
+      `<div class="panel-title">브랜드별 캠페인 벤치마크</div>`+
+      `<div class="panel-sub">이 브라우저에 등록된 자료 ${db.benchmarks.length}건 — 우리 계정 실적을 넣어두는 곳</div>`+
+      `</div></div><div class="btn-row"><button type="button" class="btn btn-sm btn-primary" id="mix-open-library">📚 브랜드 · 캠페인 자료 열기</button></div></div>`;
+    el.before(block);
+    block.querySelector('button').onclick=()=>{page='library';render();showPage('tool-mediamix');};
+  };
 })();
