@@ -19,7 +19,27 @@
   const day = s => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s||'')) return null; const t=Date.parse(s+'T00:00:00Z'); return Number.isFinite(t)&&new Date(t).toISOString().slice(0,10)===s?t:null; };
   const days = (a,b) => day(a)!=null && day(b)!=null && day(b)>=day(a) ? (day(b)-day(a))/86400000+1 : null;
   const row = (id='naver-search') => ({product:id,media:'',campaign:'',device:'전체',goal:id==='meta-leads'?'리드':id.endsWith('-app')?'설치':id==='kakao-message'?'기타':'구매',model:(products.find(p=>p.id===id)||products[1]).model,amount:0,weight:1,locked:false,markup:0,rate:'',ctr:'',cvr:'',aov:'',vtr:'',fixedImpr:'',fixedClicks:'',start:'',end:'',target:'',note:'',source:'직접 입력',sourceDate:'',sourceKind:'가정',approved:false});
-  const plan = () => ({version:1,client:'',title:'미디어믹스 제안',agency:'HLL중앙',date:'',start:'',end:'',budget:10000000,vatMode:'ex',tax:10,scenario:100,rows:[]});
+  const plan = () => ({version:1,client:'',title:'미디어믹스 제안',agency:'HLL중앙',date:'',start:'',end:'',budget:10000000,vatMode:'ex',tax:10,scenario:100,margin:'',otherCost:'',rows:[]});
+  // 손익분기 — 광고비를 빼고도 남는지 판정하는 기준선.
+  //   손익분기 CPA  = 객단가 × 마진율/100 − 건당 기타 변동비  (= 건당 공헌이익)
+  //   손익분기 ROAS = 기타 변동비 0 이면 100 ÷ (마진율/100), 아니면 객단가 ÷ 공헌이익 × 100
+  //   공헌이익 ≤ 0 이면 광고비가 0이어도 적자라 본전 자체가 불가능하다(unreachable).
+  // 이 프로젝트에서 손익분기 공식은 여기 한 곳에만 둔다(budget.js 가 이 함수를 호출한다).
+  function breakEven(aov, margin, other) {
+    const a=num(aov), m=num(margin), o=num(other)==null?0:num(other);
+    const marginValid = m!=null && m>0 && m<=100 && o>=0;
+    const beCpa = (a!=null && a>0 && marginValid) ? a*(m/100)-o : null;
+    const hasOther = o>0;
+    let beRoas=null, unreachable=false;
+    if (marginValid) {
+      if (hasOther) {
+        if (beCpa!=null && beCpa>0) beRoas=a/beCpa*100;
+        else if (beCpa!=null) unreachable=true;
+      } else if (a!=null && a>0) beRoas=100/(m/100);
+      else beRoas=100/(m/100);
+    }
+    return {marginValid,beCpa,beRoas,unreachable,other:o,hasOther,margin:m,aov:a};
+  }
   function allocate(p) {
     const budget=num(p.budget), tax=num(p.tax);
     if (!valid(budget) || !Number.isSafeInteger(budget) || !valid(tax,0,100) || !['in','ex'].includes(p.vatMode)) throw Error('예산·청구 VAT를 확인하세요.');
@@ -95,13 +115,30 @@
     totals.conv=new Set(rows.map(r=>r.goal)).size===1?complete('conv'):null;
     totals.cpa=div(amount,totals.conv);
     if(p.vatMode==='in'&&budget!=null&&totals.gross!=null&&totals.gross!==budget) warnings.push('원 단위 VAT 반올림으로 총액이 입력 예산과 '+(totals.gross-budget)+'원 다릅니다.');
-    return {rows,totals,expected,errors:[...new Set(errors)],warnings:[...new Set(warnings)]};
+    // 손익분기 — 마진율이 있을 때만 판정한다. 계획 전체를 대표할 객단가가 필요해
+    // 구매 목적 행들의 '전환 가중 평균 객단가'를 쓴다(행마다 객단가가 다를 수 있다).
+    let be=null;
+    if(present(p.margin)&&num(p.margin)>0){
+      if(!valid(p.margin,0,100)) errors.push('마진율은 0~100%여야 합니다.');
+      if(present(p.otherCost)&&!valid(p.otherCost)) errors.push('건당 기타 변동비를 확인하세요.');
+      const buy=rows.filter(r=>r.goal==='구매'&&num(r.aov)>0&&r.conv!=null&&r.conv>0);
+      const convSum=buy.reduce((a,r)=>a+r.conv,0);
+      const aovAvg=convSum>0?buy.reduce((a,r)=>a+num(r.aov)*r.conv,0)/convSum:null;
+      if(aovAvg!=null){
+        be=breakEven(aovAvg,p.margin,p.otherCost);
+        be.roas=totals.roas;
+        be.pass=(totals.roas!=null&&be.beRoas!=null)?totals.roas>=be.beRoas:null;
+        if(be.unreachable) warnings.push('기타 변동비가 마진금액을 넘어, 광고비가 0이어도 본전 도달이 불가능한 조건입니다.');
+        else if(be.pass===false) warnings.push('예상 ROAS가 손익분기 ROAS에 못 미칩니다.');
+      } else warnings.push('손익분기 판정에 필요한 구매 전환·객단가가 없어 판정을 생략했습니다.');
+    }
+    return {rows,totals,expected,be,errors:[...new Set(errors)],warnings:[...new Set(warnings)]};
   }
   function validatePlan(p) {
     if(!p||typeof p!=='object'||Array.isArray(p)||!Array.isArray(p.rows)||p.rows.length>300) throw Error('계획 구조 또는 캠페인 수(최대 300개) 오류');
     const text=(o,keys)=>keys.forEach(k=>{if(o[k]!=null&&(typeof o[k]!=='string'||o[k].length>20000))throw Error(k+' 텍스트 형식 오류');});
     text(p,['client','title','agency','date','start','end','vatMode']);
-    for(const k of ['budget','tax','scenario'])if(p[k]!=null&&!['string','number'].includes(typeof p[k]))throw Error(k+' 입력 형식 오류');
+    for(const k of ['budget','tax','scenario','margin','otherCost'])if(p[k]!=null&&!['string','number'].includes(typeof p[k]))throw Error(k+' 입력 형식 오류');
     const result={...plan(),...p};
     result.rows=p.rows.map(r=>{
       if(!r||typeof r!=='object'||Array.isArray(r)||!products.some(x=>x.id===r.product))throw Error('캠페인 구조 오류');
@@ -132,6 +169,89 @@
     if(new Set(pack.benchmarks.map(r=>r.id)).size!==pack.benchmarks.length) throw Error('중복 ID가 있습니다.');
     return pack;
   }
-  root.MixEngine={products,num,days,row,plan,allocate,compute,validatePack,validatePlan,validateBackup};
+  // ── 성과 리포트 붙여넣기 파서 ─────────────────────────────
+  // 매체 리포트 표(TSV/CSV)를 그대로 붙여넣으면 벤치마크 데이터팩으로 바꾼다.
+  // imps·click·spending 만 있어도 CTR·CPC·CPM 을 역산하고, order·revenue 가 있으면 CVR·AOV 까지 만든다.
+  const REPORT_ALIAS=[
+    [/비즈\s*보드|bizboard/i,'kakao-biz'],[/카카오.*(디스플레이|display)/i,'kakao-display'],
+    [/(채널\s*)?메시지|알림톡|친구톡/i,'kakao-message'],[/카카오.*검색/i,'kakao-search'],
+    [/카탈로그|catalog|dpa|다이내믹/i,'meta-catalog'],[/릴스|reels|동영상\s*조회/i,'meta-video'],
+    [/잠재고객|리드|lead/i,'meta-leads'],[/인지도|awareness|도달|reach/i,'meta-awareness'],
+    [/메타.*앱|meta.*app/i,'meta-app'],
+    [/브랜드\s*검색/i,'naver-brand'],[/쇼핑\s*검색/i,'naver-shopping'],
+    [/gfa.*카탈로그/i,'naver-gfa-catalog'],[/gfa.*트래픽/i,'naver-gfa-traffic'],[/gfa/i,'naver-gfa'],
+    [/파워링크|네이버\s*sa|naver\s*sa/i,'naver-search'],
+    [/크리테오.*cca|cca/i,'criteo-cca'],[/크리테오.*(lal|유사)/i,'criteo-lal'],[/크리테오|criteo/i,'criteo-lf'],
+    [/유튜브|youtube|쇼츠|shorts/i,'google-video'],[/pmax|퍼포먼스\s*맥스/i,'google-pmax'],
+    [/디맨드\s*젠|demand\s*gen/i,'google-demand'],[/구글.*쇼핑|google.*shopping/i,'google-shopping'],
+    [/gdn|구글.*디스플레이/i,'google-display'],[/구글.*앱|google.*app/i,'google-app'],
+    [/구글|google/i,'google-search'],
+    [/틱톡|tiktok/i,'tiktok'],[/당근/i,'daangn'],[/토스/i,'toss'],
+    [/메타|meta|페이스북|facebook|인스타|instagram/i,'meta-traffic'],
+    [/카카오|kakao/i,'kakao-biz'],[/네이버|naver/i,'naver-search']
+  ];
+  const REPORT_KEYS={
+    media:/^(매체|media|채널|플랫폼)$/i, campaign:/^(캠페인|campaign|그룹|group|광고그룹)$/i,
+    imps:/^(imps|impressions?|노출|노출수)$/i, clicks:/^(clicks?|클릭|클릭수)$/i,
+    cost:/^(spending|spend|cost|비용|광고비|소진|소진액|집행비)$/i,
+    ctr:/^ctr$/i, cpc:/^cpc$/i, cpm:/^cpm$/i, cvr:/^cvr$/i, aov:/^aov$/i,
+    conv:/^(oder|orders?|conversions?|전환|전환수|주문|주문수)$/i, revenue:/^(revenue|매출|매출액)$/i
+  };
+  function matchProduct(text){const t=String(text||'');for(const [re,id] of REPORT_ALIAS)if(re.test(t))return id;return null;}
+  function parseReport(text,opt){
+    opt=opt||{};
+    const lines=String(text||'').split(/\r?\n/).filter(l=>l.trim()!=='');
+    if(lines.length<2) return {error:'표를 2줄 이상 붙여넣으세요(헤더 + 데이터).'};
+    const sep=lines[0].includes('\t')?'\t':',';
+    const cut=l=>l.split(sep).map(c=>c.trim().replace(/^"|"$/g,''));
+    let head=-1,cols=null;
+    for(let i=0;i<Math.min(lines.length,12);i++){
+      const cells=cut(lines[i]),map={};let hits=0;
+      cells.forEach((c,ci)=>{for(const k of Object.keys(REPORT_KEYS))if(map[k]==null&&REPORT_KEYS[k].test(c)){map[k]=ci;hits++;}});
+      if(hits>=3){head=i;cols=map;break;}
+    }
+    if(head<0) return {error:'헤더를 찾지 못했습니다. 매체·imps·click·spending 같은 컬럼명이 있어야 합니다.'};
+    const brand=(opt.brand||'').trim();
+    if(!brand) return {error:'브랜드명을 입력하세요. 저장된 자료를 브랜드로 구분합니다.'};
+    const benchmarks=[],skipped=[];
+    for(let r=head+1;r<lines.length;r++){
+      const c=cut(lines[r]);
+      const get=k=>cols[k]!=null?num(c[cols[k]]):null;
+      // 비율은 "1.61%"(퍼센트)와 0.0161(소수)이 섞여 들어온다. 값 크기로 판단하면
+      // CVR 0.18% 같은 작은 퍼센트를 18% 로 부풀린다 → 원본의 '%' 유무로 구분한다.
+      const pctOf=k=>{if(cols[k]==null)return null;const raw=c[cols[k]],v=num(String(raw).replace(/%/g,''));
+        if(v==null)return null;return String(raw).includes('%')?v:(v>0&&v<=1?v*100:v);};
+      const rawMedia=cols.media!=null?c[cols.media]:'',rawCamp=cols.campaign!=null?c[cols.campaign]:'';
+      const label=String(rawMedia||rawCamp||'').trim();
+      if(!label||/^(합계|total|계)$/i.test(label))continue;
+      const id=matchProduct(rawMedia+' '+rawCamp);
+      if(!id){skipped.push(label);continue;}
+      const prod=products.find(x=>x.id===id);
+      const imps=get('imps'),clicks=get('clicks'),cost=get('cost'),conv=get('conv'),revenue=get('revenue');
+      let ctr=pctOf('ctr'),cvr=pctOf('cvr'),cpc=get('cpc'),cpm=get('cpm'),aov=get('aov');
+      if(ctr==null&&imps>0&&clicks!=null)ctr=clicks/imps*100;
+      if(cpc==null&&clicks>0&&cost!=null)cpc=cost/clicks;
+      if(cpm==null&&imps>0&&cost!=null)cpm=cost/imps*1000;
+      if(cvr==null&&clicks>0&&conv!=null)cvr=conv/clicks*100;
+      if(aov==null&&conv>0&&revenue!=null)aov=revenue/conv;
+      // rate 는 상품의 과금 기준에 맞춰 담는다(CPC 상품이면 CPC, CPM 상품이면 CPM …)
+      const rate=prod.model==='CPM'?cpm:prod.model==='CPC'?cpc:null;
+      if(rate==null||!(rate>0)){skipped.push(label+'(단가 없음)');continue;}
+      const round=(v,d)=>v==null||!Number.isFinite(v)?'':Math.round(v*10**d)/10**d;
+      benchmarks.push({
+        id:'ref-'+id+'-'+brand.replace(/\s+/g,'_')+'-'+(benchmarks.length+1),
+        brand,industry:opt.industry||'',device:opt.device||'전체',product:id,
+        media:prod.media,campaign:(rawCamp||prod.campaign).slice(0,120),model:prod.model,
+        rate:round(rate,0),ctr:round(ctr,2),cvr:round(cvr,4),aov:round(aov,0),vtr:'',
+        goal:prod.model==='CPI'?'설치':'구매',
+        source:(opt.source||'성과 리포트 붙여넣기')+' / '+label,
+        sourceDate:opt.sourceDate||'',sourceKind:opt.sourceKind||'실적',note:''
+      });
+    }
+    if(!benchmarks.length) return {error:'매체를 알아보지 못했습니다. 매체 칸에 "카카오 비즈보드", "메타", "네이버 GFA" 처럼 매체명이 들어가야 합니다.',skipped};
+    return {pack:{version:1,benchmarks},skipped};
+  }
+
+  root.MixEngine={products,num,days,row,plan,allocate,compute,validatePack,validatePlan,validateBackup,breakEven,parseReport,matchProduct};
   if(typeof module!=='undefined')module.exports=root.MixEngine;
 })(typeof window!=='undefined'?window:globalThis);

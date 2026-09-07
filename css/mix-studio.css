@@ -45,3 +45,15 @@
 @media(max-width:900px){.mix-studio{padding:18px 14px}.mix-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.mix-totals{grid-template-columns:repeat(2,minmax(0,1fr))}.mix-projects label{max-width:100%}}
 @media(max-width:480px){.mix-fields{grid-template-columns:1fr}.mix-heading h1{font-size:23px}.mix-totals strong{font-size:16px}.mix-paper{padding:12px}.mix-toolbar nav{width:100%}}
 @media print {body.mix-print{display:block;background:white}body.mix-print>*:not(main){display:none!important}body.mix-print main{margin:0!important;padding:0!important;width:100%!important;max-width:none!important}body.mix-print .page:not(.active){display:none!important}body.mix-print .mix-studio{padding:0;background:white}body.mix-print .mix-studio>*:not(#mix-body),body.mix-print #mix-body>*:not(.mix-paper){display:none!important}body.mix-print .mix-paper{border:0;margin:0;padding:0}body.mix-print .mix-scroll{overflow:visible;border:0}body.mix-print table{white-space:normal;font-size:9px}body.mix-print th,body.mix-print td{padding:5px}body.mix-print .mix-paper h2{font-size:20px}@page{size:A3 landscape;margin:12mm}}
+
+/* 손익분기 검증 블록 */
+.mix-studio .mix-section.mix-be-ok { border-color: rgba(104,211,145,.4); background: rgba(104,211,145,.06); }
+.mix-studio .mix-section.mix-be-bad { border-color: rgba(252,129,129,.4); background: rgba(252,129,129,.06); }
+
+/* 성과 리포트 붙여넣기 */
+.mix-studio .mix-paste textarea {
+  width: 100%; min-height: 116px; margin-top: 10px; padding: 10px 12px;
+  font-family: 'JetBrains Mono', 'Inter', monospace; font-size: 11.5px; line-height: 1.55;
+  white-space: pre; overflow-x: auto; resize: vertical;
+}
+.mix-studio .mix-paste-notice { margin-top: 8px; font-size: 12px; font-weight: 600; }

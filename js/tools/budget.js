@@ -312,30 +312,15 @@
     budgetCalcBE(body);
   }
 
-  // ── 손익분기 순수 계산 ──────────────────────────────────
-  // 손익분기 CPA = AOV × 마진율/100 − 기타변동비  (= 건당 공헌이익)
-  // 손익분기 ROAS = 기타변동비 0 이면 100 ÷ (마진율/100),
-  //                아니면 AOV ÷ 공헌이익 × 100 (공헌이익 ≤ 0 이면 달성 불가)
-  // ※ 미디어믹스 플래너가 window.budgetBreakEven 으로 이 함수를 호출한다.
-  //    손익분기 정의를 두 곳에서 따로 구현하지 않기 위해 여기 한 곳에만 둔다.
+  // ── 손익분기 ─────────────────────────────────────────────
+  // 실제 계산은 js/tools/mix-engine.js 의 MixEngine.breakEven 한 곳에만 있다.
+  // 엔진은 DOM 을 쓰지 않는 순수 모듈이라 단위 테스트로 검증된다(tests/mix-additions.test.cjs).
+  // 여기서 같은 공식을 다시 구현하면 언젠가 두 값이 갈라지므로 위임만 한다.
   function budgetComputeBE(aov, margin, other) {
-    if (other == null || !(other >= 0)) other = 0;
-    var marginValid = (margin != null && margin > 0 && margin <= 100);
-    var beCpa = (aov != null && marginValid) ? (aov * (margin / 100) - other) : null;
-    var hasOther = (other > 0);
-    var beRoas = null, unreachable = false;
-    if (marginValid) {
-      if (hasOther) {
-        if (aov != null && beCpa != null && beCpa > 0) beRoas = aov / beCpa * 100;
-        else if (aov != null && beCpa != null && beCpa <= 0) unreachable = true;
-      } else {
-        beRoas = 100 / (margin / 100);
-      }
+    if (!window.MixEngine || typeof window.MixEngine.breakEven !== 'function') {
+      return { marginValid: false, beCpa: null, beRoas: null, unreachable: false, other: 0, hasOther: false };
     }
-    return {
-      marginValid: marginValid, beCpa: beCpa, beRoas: beRoas,
-      unreachable: unreachable, other: other, hasOther: hasOther
-    };
+    return window.MixEngine.breakEven(aov, margin, other);
   }
   window.budgetBreakEven = budgetComputeBE;
 
