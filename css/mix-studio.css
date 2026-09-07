@@ -139,3 +139,11 @@ dialog.mix-dialog::backdrop { background: rgba(0, 0, 0, .6); backdrop-filter: bl
   body.mix-print .mix-policy { font-size: 10px; line-height: 1.4; margin: 8px 0; }
   @page { size: A3 landscape; margin: 12mm; }
 }
+/* Explain unavailable cohorts before the user attempts generation. */
+.mix-availability { padding:12px 0; border-top:1px solid var(--border); }
+.mix-availability > b,.mix-availability > span { display:block; }
+.mix-availability > span { color:var(--text-muted); font-size:12px; margin-top:4px; }
+.mix-availability .mix-list { margin:8px 0; }
+.mix-availability .btn-row { flex-wrap:wrap; }
+.mix-quick .mix-checkrow { margin-bottom:16px; }
+.mix-studio button:disabled { cursor:not-allowed; opacity:.5; }

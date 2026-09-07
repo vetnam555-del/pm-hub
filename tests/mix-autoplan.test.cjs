@@ -112,3 +112,41 @@ test('negative or nonnumeric margin and other cost cannot silently pass',()=>{
  for(const margin of [-1,'NaN',101])assert.ok(E.compute({...plan(),margin}).errors.some(x=>x.includes('마진율')));
  assert.ok(E.compute({...plan(),otherCost:-1}).errors.some(x=>x.includes('변동비')));
 });
+test('all devices includes PC and MO without blending their unit costs',()=>{
+ const rows=[b({device:'PC',rate:800}),b({id:'mobile',device:'MO',rate:300})];
+ const p=A.generate(plan(),rows,settings({device:'전체'}));
+ assert.deepEqual(Object.fromEntries(p.rows.map(r=>[r.device,r.rate])),{PC:800,MO:300});
+ assert.equal(p.rows.reduce((sum,r)=>sum+r.amount,0),1e7);
+});
+test('a valid combined device population does not double-count device splits',()=>{
+ const rows=[b({device:'전체'}),b({id:'pc',device:'PC',rate:800}),b({id:'mobile',device:'MO',rate:300})];
+ const p=A.generate(plan(),rows,settings({device:'전체'}));assert.equal(p.rows.length,1);assert.equal(p.rows[0].device,'전체');
+});
+test('older combined reference does not displace newer actual device evidence',()=>{
+ const rows=[b({device:'전체',sourceKind:'참고값',sourceDate:'2024-01-01'}),b({id:'pc',device:'PC',rate:800})];
+ assert.equal(A.generate(plan(),rows,settings({device:'전체'})).rows[0].device,'PC');
+});
+test('mobile app setup includes Android and iOS but preserves platform populations',()=>{
+ const rows=[b({product:'google-app',model:'CPI',goal:'설치',device:'Android',rate:2000}),b({id:'ios',product:'google-app',model:'CPI',goal:'설치',device:'iOS',rate:3000})];
+ const p=A.generate(plan(),rows,settings({objective:'설치',device:'MO'}));assert.equal(p.rows.length,2);
+ assert.deepEqual(new Set(p.rows.map(r=>r.device)),new Set(['Android','iOS']));
+});
+test('empty states identify missing industry, cost and reference policy separately',()=>{
+ assert.equal(A.availability([],A.defaults(),date).issues[0].code,'industry');
+ assert.ok(A.availability([b({costBasis:''})],settings(),date).issues.some(x=>x.code==='cost'));
+ assert.ok(A.availability([b({sourceKind:'참고값'})],settings({allowReference:false}),date).issues.some(x=>x.code==='reference'));
+ assert.ok(A.availability([b({device:'PC'})],settings(),date).issues.some(x=>x.code==='device'));
+ assert.ok(A.availability([b({goal:'리드'})],settings(),date).issues.some(x=>x.code==='goal'));
+ assert.equal(A.availability([b({industry:''})],settings(),date).unclassified,1);
+});
+test('structured no-source diagnostics do not weaken source validation',()=>{
+ let failure;try{A.generate(plan(),[b({costBasis:''})],settings({device:'전체'}));}catch(e){failure=e;}
+ assert.equal(failure.code,'BENCHMARK_UNAVAILABLE');assert.ok(failure.diagnostics.issues.some(x=>x.code==='cost'));
+ assert.equal(failure.diagnostics.rows.length,0);assert.equal(A.availability([b()],settings(),'').issues[0].code,'date');
+});
+test('all-device common-source industry sweep supports every traffic-capable industry',()=>{
+ let checked=0;for(const sector of [...new Set(common.map(b=>A.industry(b.industry)))]){
+  const s=settings({industry:sector,objective:'트래픽'}),mobile=A.availability(common,s,date),pc=A.availability(common,{...s,device:'PC'},date);
+  if(mobile.rows.length||pc.rows.length){assert.ok(A.availability(common,{...s,device:'전체'},date).rows.length,sector);checked++;}
+ }assert.ok(checked>20);
+});

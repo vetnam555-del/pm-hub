@@ -61,22 +61,48 @@
   };
   const feeds=new Set(['naver-shopping','google-shopping','meta-catalog','naver-gfa-catalog','criteo-lf','criteo-cca','criteo-lal']);
   const audiences=new Set(['criteo-lf','meta-catalog','naver-gfa-catalog']);
-  function candidates(raw,settings,asOf){
-    const s={...defaults(),...settings},goal=['구매','리드','설치'].includes(s.objective)?s.objective:'기타';
-    if(!s.industry||!objectives.includes(s.objective))throw Error('업종과 캠페인 목표를 선택하세요.');
-    const all=catalogue(raw.filter(b=>b.costBasis==='media-net'),asOf),chosen=[],excluded=[];
-    for(const product of order[s.objective]){
+  const deviceMatches=(b,s)=>s.device==='전체'||b.device===s.device||b.device==='전체'||(s.device==='MO'&&b.model==='CPI'&&['Android','iOS'].includes(b.device));
+  function availability(raw,settings,asOf){
+    const s={...defaults(),...settings},sector=industry(s.industry),goal=['구매','리드','설치'].includes(s.objective)?s.objective:'기타';
+    const result={rows:[],excluded:[],issues:[],sector,unclassified:raw.filter(b=>!industry(b.industry)).length,sourceCount:raw.filter(b=>industry(b.industry)===sector).length};
+    if(!sector){result.issues.push({code:'industry',message:'먼저 업종을 선택하세요.'});return result;}
+    if(!objectives.includes(s.objective)){result.issues.push({code:'objective',message:'캠페인 목표를 선택하세요.'});return result;}
+    if(!Number.isFinite(Date.parse(asOf))){result.issues.push({code:'date',message:'제안 정보의 작성일을 확인하세요.'});return result;}
+    const all=catalogue(raw,asOf).filter(b=>b.industry===sector),issue=(product,code,message)=>{
       const prod=E.products.find(x=>x.id===product),name=prod.media+' '+prod.campaign;
-      if(feeds.has(product)&&!s.feed){excluded.push(name+': 상품 피드 미확인');continue;}
-      if(audiences.has(product)&&!s.audience){excluded.push(name+': 리타겟팅 모수 미확인');continue;}
-      let options=all.filter(b=>E.num(b.rate)>0&&b.industry===industry(s.industry)&&b.product===product&&(b.device===s.device||b.device==='전체')&&(!b.goal||b.goal===goal||goal==='기타'));
+      result.issues.push({product,code,message:name+': '+message});result.excluded.push(name+': '+message);
+    };
+    const rank=(a,b)=>a.benchmarkTier-b.benchmarkTier||b.sourceDate.localeCompare(a.sourceDate)||(a.device===s.device?-1:1)-(b.device===s.device?-1:1)||(a.goal===goal?-1:1)-(b.goal===goal?-1:1)||a.id.localeCompare(b.id);
+    for(const product of order[s.objective]){
+      const population=all.filter(b=>b.product===product);
+      if(!population.length){issue(product,'source','이 업종의 기준일 이전 자료 없음');continue;}
+      let options=population.filter(b=>deviceMatches(b,s));
+      if(!options.length){issue(product,'device','선택 기기 자료 없음 (등록: '+[...new Set(population.map(b=>b.device))].join(', ')+')');continue;}
+      options=options.filter(b=>!b.goal||b.goal===goal||goal==='기타');
+      if(!options.length){issue(product,'goal','전환 정의가 선택 목표와 다름');continue;}
+      options=options.filter(b=>b.costBasis==='media-net');
+      if(!options.length){issue(product,'cost','VAT·수수료 제외 단가 확인 필요');continue;}
+      options=options.filter(b=>E.num(b.rate)>0);
+      if(!options.length){issue(product,'rate','유효한 단가 없음');continue;}
       if(!s.allowReference)options=options.filter(b=>b.sourceKind==='실적'&&b.benchmarkTier===0);
-      options.sort((a,b)=>a.benchmarkTier-b.benchmarkTier||b.sourceDate.localeCompare(a.sourceDate)||(a.device===s.device?-1:1)-(b.device===s.device?-1:1)||(a.goal===goal?-1:1)-(b.goal===goal?-1:1)||a.id.localeCompare(b.id));
-      const b=options[0];if(!b){excluded.push(name+': 동일 업종·기기·목표·비용 기준의 유효 근거 없음');continue;}
-      const row={...b,goal};if(b.goal!==goal){row.cvr='';row.aov='';}
-      chosen.push(row);
+      if(!options.length){issue(product,'reference','최근 180일 실적 없음; 과거 제안·참고값 허용 필요');continue;}
+      if(feeds.has(product)&&!s.feed){issue(product,'feed','상품 피드 미확인');continue;}
+      if(audiences.has(product)&&!s.audience){issue(product,'audience','리타겟팅 모수 미확인');continue;}
+      options.sort(rank);
+      // A combined-device population and its device splits must not both enter one plan.
+      const combined=options.find(b=>b.device==='전체');
+      const multi=s.device==='전체'||s.device==='MO'&&options[0].model==='CPI';
+      const preferCombined=combined&&combined.benchmarkTier===options[0].benchmarkTier&&combined.sourceDate>=options[0].sourceDate;
+      const pool=multi?(preferCombined?[combined]:options.filter(b=>b.device!=='전체')):options;
+      const selected=multi?[...new Set(pool.map(b=>b.device))].map(device=>pool.find(b=>b.device===device)):[pool[0]];
+      for(const b of selected){const row={...b,goal};if(b.goal!==goal){row.cvr='';row.aov='';}result.rows.push(row);}
     }
-    return {rows:chosen,excluded};
+    return result;
+  }
+  function candidates(raw,settings,asOf){
+    const s={...defaults(),...settings};
+    if(!s.industry||!objectives.includes(s.objective))throw Error('업종과 캠페인 목표를 선택하세요.');
+    return availability(raw,s,asOf);
   }
   function generate(p,raw,settings){
     const s={...defaults(),...settings},days=E.days(p.start,p.end);
@@ -86,7 +112,7 @@
     const budget=E.num(p.budget),tax=E.num(p.tax);
     if(!(budget>0)||!Number.isSafeInteger(budget)||tax==null||tax<0||tax>100)throw Error('예산과 청구 VAT를 확인하세요.');
     const supply=Math.round(p.vatMode==='in'?budget/(1+tax/100):budget),found=candidates(raw,s,p.date);
-    if(!found.rows.length)throw Error('선택 조건에 맞는 벤치마크가 없습니다. 업종별 자료를 등록하거나 참고값 허용 조건을 확인하세요.');
+    if(!found.rows.length){const error=Error('선택 조건에 맞는 벤치마크가 없습니다. '+found.issues.map(x=>x.message).join(' / '));error.code='BENCHMARK_UNAVAILABLE';error.diagnostics=found;throw error;}
     const cap=Math.max(1,Math.min(E.num(s.maxChannels),Math.floor(supply/days/E.num(s.minDaily)))),rows=found.rows.slice(0,cap);
     const weights=[40,30,20,10,8,6,4,2];
     rows.forEach((r,i)=>{r.weight=weights[i];r.markup=E.num(s.markup);r.amount=0;r.locked=false;r.approved=false;r.note+=' 배분: 목표별 역할 우선순위·가중치 '+weights[i]+' (성과 최적화 결과 아님).';});
@@ -94,6 +120,6 @@
     const note=`${s.industry} · ${s.objective} · ${s.device}. ${days}일 / 최대 ${s.maxChannels}개 / 캠페인당 일 공급가 ${Number(s.minDaily).toLocaleString('ko-KR')}원 이상 권장(내부 분산 방지 기준, 매체 최소 집행액 아님). 가용 ${found.rows.length}개 중 ${rows.length}개를 목표별 역할 순서로 선택, 가중 배분. 마크업 ${s.markup}%. 매출·전환 근거가 없는 값은 미산출.`;
     next.autoSummary=note;next.autoExcluded=found.excluded;return next;
   }
-  root.MixAuto={defaults,objectives,industry,publicBench,catalogue,candidates,generate};
+  root.MixAuto={defaults,objectives,industry,publicBench,catalogue,availability,candidates,generate};
   if(typeof module!=='undefined')module.exports=root.MixAuto;
 })(typeof window!=='undefined'?window:globalThis);

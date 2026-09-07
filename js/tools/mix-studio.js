@@ -21,6 +21,7 @@
   let db={plan:E.plan(),saved:[],benchmarks:[]}, selected=-1, page='compose', filter='', brand='', mediaFilter='', notice='', recoveryRaw=null;
   let pasteText='', pasteDate='', pasteKind='실적', pasteIndustry='', pasteNotice='', pasteGoal='구매',pasteUnit='points',pasteCost='net';
   let benchSelection=new Set();
+  let autoProblem='';
   const PASTE_SAMPLE='매체\t캠페인\timps\tclick\tspending\tCTR\tCPC\tCPM\torder\trevenue\tCVR\tROAS\tAOV\n카카오비즈보드\t온라인_트래픽\t2064155\t33196\t2104344\t1.61%\t63\t1019\t61\t9001900\t0.18%\t427.78%\t147572';
   try {const raw=localStorage.getItem(key);if(raw){recoveryRaw=raw;db=E.validateBackup(JSON.parse(raw));recoveryRaw=null;}}catch(_){notice='기존 저장자료 형식 오류: JSON 백업 후 정상 백업을 복원하세요. 기존 원본은 유지됩니다.';}
   const p=()=>db.plan, root=()=>document.getElementById('page-tool-mediamix');
@@ -174,7 +175,30 @@
     return quick+`<div id="mix-live-summary">${liveSummary(res)}</div>`+rows+editor+info+`<details class="mix-options"><summary>단가 시나리오 · 손익분기</summary>${money}</details>`+`<div id="mix-check">${checks(res)}</div>`;
   }
 
-  function autoStatus(){return p().autoSummary?`<p class="mix-policy">${esc(p().autoSummary)}</p><details class="mix-options"><summary>자동 구성 제외 내역 ${(p().autoExcluded||[]).length}개</summary><ul class="mix-list">${(p().autoExcluded||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></details>`:'<p class="mix-policy">등록된 업종 자료만 적용 · 전환율·객단가 근거가 없으면 미산출 · 기본 기간은 오늘부터 30일</p>';}
+  function autoStatus(){
+    const s=p().autoSettings,found=A.availability(rawBench(),s,p().date),empty=!found.rows.length;
+    const recover=(action,label)=>`<button type="button" class="btn btn-sm btn-ghost" data-recovery="${action}">${esc(label)}</button>`;
+    const reasons=found.issues.filter(x=>!['source'].includes(x.code));
+    const deviceAlternative=empty&&s.industry&&s.device!=='전체'&&A.availability(rawBench(),{...s,device:'전체'},p().date).rows.length>0;
+    const title=!s.industry?'업종 선택 필요':empty?'현재 조건에서 자동 구성 가능한 자료 0개':`자동 구성 가능한 자료 ${found.rows.length}개`;
+    const localMessage=!db.benchmarks.length?'이 브라우저에는 가져온 자료가 없습니다. 다른 브라우저에서 등록한 자료는 백업 JSON을 가져와야 합니다.':found.unclassified?`기존 자료 ${found.unclassified}행은 업종 미분류로 제외됩니다.`:'';
+    const details=(reasons.length?reasons:found.issues).map(x=>`<li>${esc(x.message)}</li>`).join('');
+    return `<div class="mix-availability" role="status"><b>${esc(title)}</b>${s.industry?`<span>${esc(A.industry(s.industry))} · ${esc(s.objective)} · ${esc(s.device)} · 업종 자료 ${found.sourceCount}행</span>`:''}
+      ${autoProblem?`<p class="mix-warn-t">${esc(autoProblem)}</p>`:empty&&p().rows.length?'<p class="mix-warn-t">하단 수치는 기존 계획입니다. 현재 선택 조건으로 새로 생성된 결과가 아닙니다.</p>':''}
+      ${empty&&s.industry?`<ul class="mix-list">${details}</ul><div class="btn-row">
+        ${found.issues.some(x=>x.code==='reference')?recover('allow-reference','과거 제안·참고값 허용'):''}
+        ${deviceAlternative?recover('all-devices','기기 전체로 조회'):''}
+        ${found.issues.some(x=>['feed','audience'].includes(x.code))?recover('conditions','피드·모수 조건 확인'):''}
+        ${recover('source-library','업종 자료 확인')}${recover('import','자료 가져오기')}</div>`:''}
+      ${localMessage?`<p class="mix-policy">${esc(localMessage)}</p>`:''}</div>
+      ${p().autoSummary?`<p class="mix-policy">${esc(p().autoSummary)}</p>`:''}
+      ${!empty&&found.excluded.length?`<details class="mix-options"><summary>조건별 제외 사유 ${found.excluded.length}개</summary><ul class="mix-list">${found.excluded.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></details>`:''}`;
+  }
+  function bindAutoActions(){
+    root().querySelectorAll('[data-recovery]').forEach(b=>b.onclick=()=>act(b.dataset.recovery));
+    const generate=root().querySelector('[data-action="auto-generate"]');
+    if(generate)generate.disabled=!A.availability(rawBench(),p().autoSettings,p().date).rows.length;
+  }
   function liveSummary(res){return `<div class="mix-summary result-grid c3">${metric('공급가 배분',won(res.totals.amount),'청구 총액 '+won(res.totals.gross))}${metric('예상 클릭',n(res.totals.clicks),'예산 잔액 '+won(res.expected-(res.totals.amount||0)))}${metric('예상 전환',n(res.totals.conv,1),res.rows.some(r=>r.conv==null)?'전환 근거 미입력 포함':'동일 전환 정의만 합산')}</div>`;}
 
   // ── 손익분기 판정 — 계산은 MixEngine.breakEven 한 곳에서만 ──
@@ -356,11 +380,18 @@
   }
   async function act(action) {
     try {
+      if(action==='source-library'){brand=A.industry(p().autoSettings.industry);page='library';render();return;}
+      if(action==='conditions'){root().querySelector('.mix-quick .mix-options').open=true;return;}
+      if(action==='allow-reference'||action==='all-devices'){
+        const s=p().autoSettings;
+        if(action==='allow-reference')s.allowReference=true;else s.device='전체';
+        p().autoEnabled=false;p().autoSummary='';autoProblem='';p().rows.forEach(r=>r.approved=false);save();render();return;
+      }
       if(action==='go-preview'){page='preview';render();return;}
       if(action==='auto-generate'){
         const next=A.generate(p(),rawBench(),p().autoSettings);
         if(p().rows.length){if(!confirm('현재 계획을 보관하고 업종 기준으로 다시 구성할까요?'))return;db.saved.push(copy(p()));}
-        db.plan=next;db.preferences=copy(next.autoSettings);selected=-1;page='compose';
+        db.plan=next;db.preferences=copy(next.autoSettings);selected=-1;page='compose';autoProblem='';
       }
       if(action==='classify'){
         const value=document.getElementById('mix-classify').value;if(!value)throw Error('업종을 선택하세요.');
@@ -410,7 +441,7 @@
       if(action==='xlsx'||action==='draft'){const res=E.compute(p());if(action==='xlsx'&&res.errors.length)throw Error('필수 검수 '+res.errors.length+'개를 완료하세요. 초안은 검토용 XLSX로 받을 수 있습니다.');await window.MixWorkbook.exportPlan(p(),res,action==='draft');return;}
       if(action==='template'){await window.MixWorkbook.template();return;}
       save();render();
-    }catch(e){alert(e.message);}
+    }catch(e){if(e.code==='BENCHMARK_UNAVAILABLE'){autoProblem='조건별 제외 사유를 확인하세요. 기존 계획은 유지됩니다.';refreshComputed();}else alert(e.message);}
   }
   function bindRows(){
     root().querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{selected=+b.dataset.edit;render();root().querySelector('.mix-editor')?.scrollIntoView({block:'nearest'});});
@@ -432,7 +463,7 @@
       table.querySelectorAll('[data-approve]').forEach(el=>{el.checked=p().rows[+el.dataset.approve].approved===true;el.nextElementSibling.textContent=el.checked?'확인':'미확인';el.nextElementSibling.className=el.checked?'mix-ok-t':'mix-warn-t';});
     }
     const summary=root().querySelector('#mix-live-summary');if(summary)summary.innerHTML=liveSummary(res);
-    const status=root().querySelector('#mix-auto-status');if(status)status.innerHTML=autoStatus();
+    const status=root().querySelector('#mix-auto-status');if(status){status.innerHTML=autoStatus();bindAutoActions();}
     const autoCheck=root().querySelector('[data-field="autoEnabled"]');if(autoCheck)autoCheck.checked=p().autoEnabled===true;
     const check=root().querySelector('#mix-check');if(check)check.innerHTML=checks(res);
     const st=root().querySelector('#mix-save');if(st)st.textContent=notice;
@@ -440,6 +471,7 @@
   }
   function bind(){
     root().querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>act(b.dataset.action));
+    bindAutoActions();
     const pt=document.getElementById('mix-paste-text');
     if(pt){pt.value=pasteText;pt.oninput=()=>{pasteText=pt.value;};}
     root().querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{page=b.dataset.view;render();});
@@ -457,12 +489,13 @@
         const scope=el.dataset.scope,k=el.dataset.field,obj=scope==='row'?p().rows[selected]:scope==='auto'?p().autoSettings:p();
         obj[k]=el.type==='checkbox'?el.checked:el.value;
         if(scope==='row'&&k!=='approved'){obj.approved=false;p().autoEnabled=false;}
+        autoProblem='';
         if(scope==='auto'){p().autoEnabled=false;p().autoSummary='';p().autoExcluded=[];p().rows.forEach(r=>r.approved=false);}
         if(scope==='plan'){
           p().rows.forEach(r=>r.approved=false);
-          if(p().autoEnabled&&['budget','vatMode','tax','start','end','autoEnabled'].includes(k)){
+          if(p().autoEnabled&&['budget','vatMode','tax','start','end','date','autoEnabled'].includes(k)){
             try{db.plan=A.generate(p(),rawBench(),p().autoSettings);selected=-1;}
-            catch(e){notice=e.message;save();notice=e.message;refreshComputed();return;}
+            catch(e){autoProblem=e.code==='BENCHMARK_UNAVAILABLE'?'조건 변경으로 자동 재계산되지 않았습니다. 기존 행은 유지되며 다시 검토해야 합니다.':e.message;save();refreshComputed();return;}
           }
         }
         save();if(k==='model')render();else refreshComputed();

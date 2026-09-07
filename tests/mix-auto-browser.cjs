@@ -16,7 +16,29 @@ const server=http.createServer((req,res)=>{
   const errors=[],alerts=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',async d=>{alerts.push(d.message());await d.accept();});
   await page.addInitScript(()=>localStorage.setItem('pm_welcomed','1'));
   const base=process.env.LIVE_URL||`http://127.0.0.1:${server.address().port}/`;
-  await page.goto(base+'#tool-mediamix');
+  await page.goto(base+'#tool-mediamix',{waitUntil:'domcontentloaded',timeout:60000});
+  await page.locator('#mixf-auto-industry').waitFor();
+  assert.equal(await page.locator('[data-action="auto-generate"]').isEnabled(),false);
+  assert.ok((await page.locator('#mix-auto-status').innerText()).includes('업종 선택 필요'));
+  await page.locator('#mixf-auto-industry').selectOption('가전·디바이스');
+  await page.locator('#mixf-auto-device').selectOption('전체');
+  assert.equal(await page.locator('[data-action="auto-generate"]').isEnabled(),true,'all devices can use PC and MO evidence');
+  await page.locator('[data-action="auto-generate"]').click();
+  const allDeviceRows=await page.evaluate(()=>JSON.parse(localStorage.getItem('pm_mix_studio_v1')).plan.rows);
+  assert.ok(allDeviceRows.some(r=>r.device==='PC'));assert.ok(allDeviceRows.some(r=>r.device==='MO'));
+  await page.locator('.mix-quick > .mix-options > summary').click();
+  await page.locator('#mixf-auto-allowReference').uncheck();
+  assert.equal(await page.locator('[data-action="auto-generate"]').isEnabled(),false);
+  assert.ok((await page.locator('#mix-auto-status').innerText()).includes('최근 180일 실적 없음'));
+  await page.screenshot({path:path.join(out,'unavailable-diagnosis-desktop.png'),fullPage:true});
+  await page.setViewportSize({width:390,height:900});
+  await page.screenshot({path:path.join(out,'unavailable-diagnosis-mobile.png'),fullPage:true});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  await page.setViewportSize({width:1440,height:1000});
+  await page.locator('[data-recovery="allow-reference"]').click();
+  assert.equal(await page.locator('[data-action="auto-generate"]').isEnabled(),true);
+  assert.equal(await page.locator('#mixf-auto-allowReference').isChecked(),true);
+  await page.locator('#mixf-auto-device').selectOption('MO');
   await page.locator('#mixf-auto-industry').selectOption('교육·커리어');await page.locator('#mixf-auto-objective').selectOption('리드');
   await page.locator('[data-action="auto-generate"]').click();
   const state=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('pm_mix_studio_v1')));
@@ -40,7 +62,7 @@ const server=http.createServer((req,res)=>{
   assert.ok((await page.locator('.mix-paper').innerText()).includes('산출 제한 및 확인 사항'));
   await page.evaluate(()=>document.body.classList.add('mix-print'));await page.pdf({path:path.join(out,'industry-auto.pdf'),preferCSSPageSize:true,printBackground:true});await page.evaluate(()=>document.body.classList.remove('mix-print'));
   await page.screenshot({path:path.join(out,'auto-preview-desktop.png'),fullPage:true});
-  await page.reload();assert.equal(await page.locator('#mixf-auto-industry').inputValue(),'교육·커리어');
+  await page.reload({waitUntil:'domcontentloaded',timeout:60000});assert.equal(await page.locator('#mixf-auto-industry').inputValue(),'교육·커리어');
   for(const width of [390,768,1440]){
    await page.setViewportSize({width,height:900});await page.screenshot({path:path.join(out,`auto-width-${width}.png`),fullPage:true});
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`page overflow ${width}`);
@@ -66,7 +88,7 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('#mixf-auto-industry').inputValue(),'교육·커리어');
   await page.locator('#mixf-plan-budget').fill('500000');assert.equal((await state()).plan.rows.length,1,'saved setup supports budget-only entry on next plan');
   assert.deepEqual(errors,[]);
-  const result={budgetOnlyRegeneration:true,nextPlanBudgetOnly:true,vatInclusive:6600000,sourceIsolation:true,privateLabelsHidden:true,views:[390,768,1440],xlsx:true,pdf:true,parserUI:true,pageErrors:errors,live:!!process.env.LIVE_URL};
+  const result={allDeviceCoverage:true,emptyStateDiagnostics:true,referenceRecovery:true,budgetOnlyRegeneration:true,nextPlanBudgetOnly:true,vatInclusive:6600000,sourceIsolation:true,privateLabelsHidden:true,views:[390,768,1440],xlsx:true,pdf:true,parserUI:true,pageErrors:errors,live:!!process.env.LIVE_URL};
   fs.writeFileSync(path.join(out,'auto-browser-results.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exitCode=1;});
