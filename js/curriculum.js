@@ -1588,10 +1588,12 @@ function renderBenchmark() {
       </div>
     </div>`;
 
-  // ② 업종별 참고 벤치마크 — js/tools/mediamix.js 의 렌더러를 재사용(데이터 단일 출처 유지)
-  if (typeof window.mmRenderLookup === 'function') {
-    window.mmRenderLookup(document.getElementById('benchLookupMount'));
-  }
+  // ② 업종별 참고 벤치마크 — js/tools/benchmark-lookup.js 가 그린다
+  // 업종 참고표(benchmark-lookup.js) → 브랜드 자료 안내(mix-studio.js) 순서로 붙인다.
+  // 두 함수는 서로를 모르며, 없으면 그 부분만 빠진다(로드 순서에 기대지 않는다).
+  var mount = document.getElementById('benchLookupMount');
+  if (mount && typeof window.mmRenderLookup === 'function') window.mmRenderLookup(mount);
+  if (mount && typeof window.mmRenderStudioLink === 'function') window.mmRenderStudioLink(mount);
 }
 
 // ─── UTM·캠페인 네이밍 규칙 (참고) ───

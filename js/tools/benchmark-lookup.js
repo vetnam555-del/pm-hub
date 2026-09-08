@@ -1,11 +1,11 @@
 // ============================================================
-// mediamix.js — 매체 벤치마크 페이지의 '업종별 참고표'
+// benchmark-lookup.js — 매체 벤치마크 페이지의 '업종별 참고표'
 // 진입점: window.mmRenderLookup(el)
 //
-// ※ 미디어믹스 도구 화면은 js/tools/mix-studio.js 가 그린다.
-//   mix-studio 가 window.renderMediamixTool 을 덮어쓰기 때문에, 예전에 이 파일이 갖고 있던
-//   플래너 UI(약 1,000줄)는 로드만 되고 실행되지 않는 죽은 코드였다. 그 부분을 걷어냈다.
-//   (mix-studio 는 window.mmRenderLookup 을 감싸 '브랜드별 캠페인 벤치마크' 안내를 덧붙인다)
+// 미디어믹스 도구 화면과는 별개다. 도구는 js/tools/mix-studio.js 가 그린다.
+// 이 파일은 벤치마크 페이지에서 구글·Meta 업종 참고값을 표로 보여주는 역할만 한다.
+// (같은 자리에 mix-studio.js 가 '브랜드 자료' 안내를 덧붙인다 — window.mmRenderStudioLink.
+//  두 함수는 서로를 모르고, curriculum.js 가 순서대로 부른다)
 //
 // 데이터: js/data/mediamix-data.js 의 window.MM_DATA (구글·Meta 업종 참고값)
 // 통합 계약: ES모듈 금지 / 외부 라이브러리·CDN·네트워크 금지 / 현재시각 API 금지

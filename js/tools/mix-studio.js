@@ -36,7 +36,8 @@
   initPlan();
   function save(){if(recoveryRaw!=null)return;try{localStorage.setItem(key,JSON.stringify(db));notice='이 브라우저에 저장됨';}catch(_){notice='저장 실패: JSON 백업을 내려받으세요.';}}
   const quantity=r=>r.model==='CPV'?['조회',r.views]:r.model==='CPI'?['설치',r.installs]:r.model==='SEND'?['발송',r.sends]:['클릭',r.clicks];
-  const rawBench=()=>db.benchmarks.concat(A.publicBench(window.MM_DATA));
+  // 등록 자료 + 구글·Meta 업종 참고값 + 국내 매체 참고 단가
+  const rawBench=()=>db.benchmarks.concat(A.publicBench(window.MM_DATA),window.MM_KR_BENCH||[]);
   const allBench=()=>A.catalogue(rawBench(),p().date);
   const industries=()=>[...new Set(rawBench().map(b=>A.industry(b.industry)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
 
@@ -184,6 +185,7 @@
     const localMessage=!db.benchmarks.length?'이 브라우저에는 가져온 자료가 없습니다. 다른 브라우저에서 등록한 자료는 백업 JSON을 가져와야 합니다.':found.unclassified?`기존 자료 ${found.unclassified}행은 업종 미분류로 제외됩니다.`:'';
     const details=(reasons.length?reasons:found.issues).map(x=>`<li>${esc(x.message)}</li>`).join('');
     return `<div class="mix-availability" role="status"><b>${esc(title)}</b>${s.industry?`<span>${esc(A.industry(s.industry))} · ${esc(s.objective)} · ${esc(s.device)} · 업종 자료 ${found.sourceCount}행</span>`:''}
+      ${(found.substituted||[]).length?`<p class="mix-warn-t">${esc(A.industry(s.industry))} 업종 자료가 없는 ${found.substituted.length}개 상품은 <b>전 업종(통합)</b> 값으로 대체했습니다. 업종 특성이 반영되지 않았으니 확정 전 실적으로 보정하세요.</p>`:''}
       ${autoProblem?`<p class="mix-warn-t">${esc(autoProblem)}</p>`:empty&&p().rows.length?'<p class="mix-warn-t">하단 수치는 기존 계획입니다. 현재 선택 조건으로 새로 생성된 결과가 아닙니다.</p>':''}
       ${empty&&s.industry?`<ul class="mix-list">${details}</ul><div class="btn-row">
         ${found.issues.some(x=>x.code==='reference')?recover('allow-reference','과거 제안·참고값 허용'):''}
@@ -508,9 +510,10 @@
   }
   window.renderMediamixTool=render;
   window.mediamixPrefill=function(o){brand=A.industry(o?.industry||'');filter='';mediaFilter='';page='library';render();if(typeof showPage==='function')showPage('tool-mediamix');};
-  const oldLookup=window.mmRenderLookup;
-  window.mmRenderLookup=function(el){
-    oldLookup(el);
+  // 벤치마크 페이지에 붙는 '브랜드 자료' 안내. 예전에는 window.mmRenderLookup 을 가로채
+  // 원본을 호출하는 몽키패치였는데, 스크립트 로드 순서가 바뀌면 원본이 undefined 라 페이지가 죽었다.
+  // 이제 각자 자기 함수만 노출하고, curriculum.js 가 둘을 순서대로 부른다.
+  window.mmRenderStudioLink=function(el){
     const block=document.createElement('div');
     block.innerHTML=`<div class="panel"><div class="panel-head"><span class="ico">🏷️</span><div>`+
       `<div class="panel-title">업종별 캠페인 벤치마크</div>`+

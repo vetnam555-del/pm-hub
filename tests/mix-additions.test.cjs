@@ -138,3 +138,61 @@ test('parseReport: id 가 중복되지 않는다', () => {
   const ids = r.pack.benchmarks.map(b => b.id);
   assert.equal(new Set(ids).size, ids.length);
 });
+
+// ── 업종 통합 · 전 업종 대체 ────────────────────────────
+const A = require('../js/tools/mix-autoplan.js');
+// mediamix-data.js 는 window 에 붙는 브라우저 스크립트라 샌드박스로 읽는다
+const vm = require('node:vm'), fsx = require('node:fs');
+const dataset = { window: {} };
+vm.runInNewContext(fsx.readFileSync(require.resolve('../js/data/mediamix-data.js'), 'utf8'), dataset);
+const MM = dataset.window.MM_DATA;
+
+test('업종: Meta 체계가 통합(구글 기준) 이름으로 접힌다', () => {
+  assert.equal(A.industry('이커머스'), '리테일(종합몰)');
+  assert.equal(A.industry('유통·리테일'), '리테일(종합몰)');
+  assert.equal(A.industry('게임·엔터'), '게임·e스포츠');
+  assert.equal(A.industry('여행·레저'), '트래블');
+  assert.equal(A.industry('모빌리티·자동차'), '오토(자동차)');
+  assert.equal(A.industry('통신·IT'), 'IT·통신');
+  assert.equal(A.industry('교육·학습'), '교육·커리어');
+});
+test('업종: 카테고리를 단정할 수 없는 Meta 업종은 뷰티·패션으로 넘기지 않는다', () => {
+  // '일반 소비재'를 뷰티나 패션으로 밀면 근거 없는 업종 수치가 만들어진다.
+  assert.equal(A.industry('일반 소비재'), '기타(일반)');
+  assert.equal(A.industry('프로서비스(국내)'), '기타(일반)');
+  assert.notEqual(A.industry('일반 소비재'), '뷰티(화장품)');
+  assert.notEqual(A.industry('일반 소비재'), '패션·잡화');
+});
+test('업종: 통합 후 분류 수가 줄고 양 플랫폼이 함께 잡히는 업종이 늘어난다', () => {
+  const cat = A.catalogue(A.publicBench(MM), '2026-09-08');
+  const by = {};
+  cat.forEach(c => { const p = c.product.startsWith('google') ? 'g' : 'm'; (by[c.industry] = by[c.industry] || new Set()).add(p); });
+  const sectors = Object.keys(by);
+  assert.ok(sectors.length <= 20, '통합 전 33개에서 줄어야 한다');
+  assert.ok(sectors.filter(i => by[i].size > 1).length >= 10, '양 플랫폼이 함께 잡히는 업종이 10개 이상');
+});
+test('업종: 원 자료 업종명이 다르면 무엇을 묶었는지 밝힌다', () => {
+  const cat = A.catalogue(A.publicBench(MM), '2026-09-08');
+  const mapped = cat.find(c => c.sectorMapped);
+  assert.ok(mapped, '통합된 항목이 있어야 한다');
+  assert.ok(mapped.note.includes(mapped.sectorMapped));
+  assert.ok(mapped.note.includes('묶었습니다'));
+});
+test('대체: 업종 자료가 없는 상품은 전 업종(통합) 값으로 채우고 사실을 밝힌다', () => {
+  const raw = A.publicBench(MM);
+  // 패션·잡화는 Meta 자료가 없다 → meta 상품이 전 업종 대체로 들어와야 한다
+  const av = A.availability(raw, { ...A.defaults(), industry: '패션·잡화', objective: '트래픽', device: 'MO' }, '2026-09-08');
+  const meta = av.rows.filter(r => r.product.startsWith('meta'));
+  assert.ok(meta.length, '패션·잡화에도 Meta 상품이 들어와야 한다');
+  assert.ok(meta.every(r => r.sectorFallback === true));
+  assert.ok(meta.every(r => r.source.includes('전 업종 대체')));
+  assert.ok(meta.every(r => r.note.includes('업종 특성은 반영되지 않았습니다')));
+  assert.ok((av.substituted || []).length, '대체한 상품 목록을 남겨야 한다');
+});
+test('대체: 업종 자료가 있으면 대체본을 쓰지 않는다', () => {
+  const raw = A.publicBench(MM);
+  const av = A.availability(raw, { ...A.defaults(), industry: '리테일(종합몰)', objective: '트래픽', device: 'MO' }, '2026-09-08');
+  const google = av.rows.filter(r => r.product.startsWith('google'));
+  assert.ok(google.length);
+  assert.ok(google.every(r => !r.sectorFallback), '해당 업종 자료가 있으면 그것을 쓴다');
+});

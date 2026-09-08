@@ -3,7 +3,21 @@
   'use strict';
   const E=root.MixEngine||(typeof require==='function'?require('./mix-engine.js'):null);
   const objectives=['트래픽','구매','리드','인지도','설치'];
-  const aliases={'패션':'패션·잡화','스포츠':'패션·잡화','주얼리':'패션·잡화','교육':'교육·커리어','교육·학습':'교육·커리어','뷰티':'뷰티(화장품)','식음료':'식음료(F&B)','전체':'전 업종(통합)'};
+  const SECTOR_ALL='전 업종(통합)';
+  const aliases={
+    // 자유 입력 동의어
+    '패션':'패션·잡화','스포츠':'패션·잡화','주얼리':'패션·잡화','의류':'패션·잡화','신발':'패션·잡화',
+    '뷰티':'뷰티(화장품)','화장품':'뷰티(화장품)','식음료':'식음료(F&B)','교육':'교육·커리어',
+    '전체':SECTOR_ALL,'통합':SECTOR_ALL,
+    // Meta 업종 → 통합(구글 기준) 업종. 등가가 확실한 것만.
+    '교육·학습':'교육·커리어','게임·엔터':'게임·e스포츠','엔터·미디어':'콘텐츠·엔터',
+    '여행·레저':'트래블','모빌리티·자동차':'오토(자동차)','공공·단체':'공공·비영리',
+    '통신·IT':'IT·통신','테크(국내)':'IT·통신','테크(글로벌)':'IT·통신',
+    '유통·리테일':'리테일(종합몰)','이커머스':'리테일(종합몰)',
+    // 특정 카테고리로 단정할 수 없는 것은 '기타(일반)'로 둔다(뷰티·패션으로 넘기지 않는다)
+    '일반 소비재':'기타(일반)','광고·마케팅':'기타(일반)',
+    '프로서비스(국내)':'기타(일반)','프로서비스(글로벌)':'기타(일반)'
+  };
   const industry=s=>aliases[String(s||'').trim()]||String(s||'').trim();
   const defaults=()=>({industry:'',objective:'트래픽',device:'MO',feed:false,audience:false,allowReference:true,minDaily:30000,maxChannels:4,markup:0});
   const med=arr=>{const a=arr.filter(Number.isFinite).sort((a,b)=>a-b),i=Math.floor(a.length/2);return a.length?(a.length%2?a[i]:(a[i-1]+a[i])/2):null;};
@@ -23,6 +37,7 @@
       if(!prod||!sector)continue;
       const model=b.model||prod.model,goal=b.goal|| (model==='CPI'?'설치':b.product==='meta-leads'?'리드':'');
       // Same evidence under different IDs must not increase the apparent sample size.
+      const rawSector=String(b.industry||'').trim();
       const fingerprint=JSON.stringify([b.source,b.sourceDate,b.sourceKind,sector,b.product,b.device,goal,model,b.rate,b.ctr,b.cvr,b.aov,b.costBasis]);
       if(seen.has(fingerprint))continue;seen.add(fingerprint);
       const date=Date.parse(b.sourceDate),age=(now-date)/86400000;
@@ -30,7 +45,7 @@
       const kind=b.sourceKind||'참고값',tier=kind==='실적'?(age>=0&&age<=180?0:1):kind==='과거 제안'?2:kind==='참고값'?3:4;
       const key=JSON.stringify([sector,b.product,b.device||'전체',goal,model,b.costBasis==='media-net'?'media-net':'review-required',(b.sourceDate||'').slice(0,7)]);
       if(!grouped.has(key))grouped.set(key,[]);
-      grouped.get(key).push({...b,goal,model,industry:sector,tier});
+      grouped.get(key).push({...b,goal,model,industry:sector,rawSector,tier});
     }
     return [...grouped.entries()].map(([key,rows])=>{
       const tier=Math.min(...rows.map(r=>r.tier)),pool=rows.filter(r=>r.tier===tier),b=pool[0],prod=E.products.find(p=>p.id===b.product);
@@ -40,6 +55,8 @@
         source:`${b.industry} / ${b.publicReference?'간편 플래너 2024~2025 참고':'등록 '+(b.sourceKind||'참고값')} ${pool.length}행`,
         note:`동일 업종·상품·기기·전환 정의의 ${pool.length===1?'단일 자료':'항목별 중앙값'}. 업종 대표 실적 아님. ${dates.length?'근거 기간 '+dates[0]+' ~ '+dates[dates.length-1]:'기준일 미확인'}.`,
         benchmarkIds:pool.map(r=>r.id),benchmarkTier:tier,costBasis:pool.every(r=>r.costBasis==='media-net')?'media-net':'review-required'};
+      const rawNames=[...new Set(pool.map(r=>r.rawSector).filter(x=>x&&x!==b.industry))];
+      if(rawNames.length){out.sectorMapped=rawNames.join(', ');out.note+=' 원 자료 업종 '+out.sectorMapped+'을(를) '+b.industry+'로 묶었습니다.';}
       if(out.costBasis!=='media-net')out.note+=' 단가의 VAT·수수료 기준 확인 필요. 자동 구성 제외.';
       // Conversion assumptions with a different or missing definition are never blended.
       for(const k of ['rate','ctr','vtr','cvr','aov'])out[k]=pool.every(r=>E.num(r[k])!=null)?med(pool.map(r=>E.num(r[k]))):'';
@@ -68,14 +85,25 @@
     if(!sector){result.issues.push({code:'industry',message:'먼저 업종을 선택하세요.'});return result;}
     if(!objectives.includes(s.objective)){result.issues.push({code:'objective',message:'캠페인 목표를 선택하세요.'});return result;}
     if(!Number.isFinite(Date.parse(asOf))){result.issues.push({code:'date',message:'제안 정보의 작성일을 확인하세요.'});return result;}
-    const all=catalogue(raw,asOf).filter(b=>b.industry===sector),issue=(product,code,message)=>{
+    const cat=catalogue(raw,asOf);
+    const exact=cat.filter(b=>b.industry===sector);
+    const substitutes=sector===SECTOR_ALL?[]:cat.filter(b=>b.industry===SECTOR_ALL).map(b=>({...b,
+      sectorFallback:true,
+      source:b.source+' / '+sector+' 자료 없어 전 업종 대체',
+      note:b.note+' '+sector+' 업종 자료가 없어 전 업종(통합) 값으로 대체했습니다. 업종 특성은 반영되지 않았습니다.'}));
+    const all=exact.concat(substitutes),issue=(product,code,message)=>{
       const prod=E.products.find(x=>x.id===product),name=prod.media+' '+prod.campaign;
       result.issues.push({product,code,message:name+': '+message});result.excluded.push(name+': '+message);
     };
     const rank=(a,b)=>a.benchmarkTier-b.benchmarkTier||b.sourceDate.localeCompare(a.sourceDate)||(a.device===s.device?-1:1)-(b.device===s.device?-1:1)||(a.goal===goal?-1:1)-(b.goal===goal?-1:1)||a.id.localeCompare(b.id);
     for(const product of order[s.objective]){
-      const population=all.filter(b=>b.product===product);
-      if(!population.length){issue(product,'source','이 업종의 기준일 이전 자료 없음');continue;}
+      // 해당 업종 자료를 먼저 쓰고, 없을 때만 전 업종(통합) 대체본을 쓴다.
+      let population=all.filter(b=>b.product===product&&!b.sectorFallback);
+      if(!population.length){
+        population=all.filter(b=>b.product===product&&b.sectorFallback);
+        if(population.length)result.substituted=(result.substituted||[]).concat(product);
+      }
+      if(!population.length){issue(product,'source','이 업종·전 업종 모두 기준일 이전 자료 없음');continue;}
       let options=population.filter(b=>deviceMatches(b,s));
       if(!options.length){issue(product,'device','선택 기기 자료 없음 (등록: '+[...new Set(population.map(b=>b.device))].join(', ')+')');continue;}
       options=options.filter(b=>!b.goal||b.goal===goal||goal==='기타');

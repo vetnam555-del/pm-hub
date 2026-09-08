@@ -148,5 +148,9 @@ test('all-device common-source industry sweep supports every traffic-capable ind
  let checked=0;for(const sector of [...new Set(common.map(b=>A.industry(b.industry)))]){
   const s=settings({industry:sector,objective:'트래픽'}),mobile=A.availability(common,s,date),pc=A.availability(common,{...s,device:'PC'},date);
   if(mobile.rows.length||pc.rows.length){assert.ok(A.availability(common,{...s,device:'전체'},date).rows.length,sector);checked++;}
- }assert.ok(checked>20);
+ }
+ // 업종 통합(구글·Meta 체계 합치기) + 전 업종 대체 이후에는
+ // '자료가 있는 모든 업종'이 전체 기기 믹스를 만들 수 있어야 한다. 고정 개수 대신 전수를 검사한다.
+ assert.equal(checked,[...new Set(common.map(b=>A.industry(b.industry)))].length);
+ assert.ok(checked>=15,'통합 업종이 15개 미만이면 매핑이 과하게 뭉친 것');
 });
