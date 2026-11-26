@@ -28,7 +28,7 @@ const server=http.createServer((req,res)=>{const p=path.resolve(dir,'.'+decodeUR
  await page.screenshot({path:path.join(out,'mobile-viewport.png'),animations:'disabled'});
  await page.screenshot({path:path.join(out,'compose-mobile.png'),fullPage:true,animations:'disabled'});
  await page.locator('[data-view="library"]').click();await page.locator('#mix-industry').selectOption('교육·커리어');await page.locator('#mix-media-filter').selectOption('meta-leads');await page.locator('[data-bench]').first().click();assert.ok((await page.locator('.mix-editor').innerText()).includes('전환 정의'));assert.equal(await page.locator('[data-field="goal"]').inputValue(),'리드');
- const routes=['home','tool-kpi','tool-utm','tool-budget','tool-report','tool-diagnose','tool-abtest','tool-bid','tool-pacing','utm-learn','benchmark','media','glossary','specs','faq','naming','sources','qa',...Array.from({length:12},(_,i)=>'week'+(i+1))];
+ const routes=['home','tool-kpi','tool-utm','tool-budget','tool-report','tool-diagnose','tool-abtest','tool-bid','tool-pacing','utm-learn','app-learn','benchmark','media','glossary','specs','faq','naming','sources','qa',...Array.from({length:12},(_,i)=>'week'+(i+1))];
  await page.setViewportSize({width:1440,height:1000});
  for(const route of routes){await page.goto(base+'/#'+route);await page.locator('#page-'+route+'.active').waitFor();assert.ok((await page.locator('#page-'+route).innerText()).trim().length>20,route);}
  await page.goto(base+'/#benchmark');await page.locator('#mix-open-library').click();await page.locator('#mix-industry').waitFor();

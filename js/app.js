@@ -19,6 +19,7 @@ const _renderers = {
   'tool-bid':      () => window.renderBidTool && renderBidTool(),
   'tool-pacing':   () => window.renderPacingTool && renderPacingTool(),
   'utm-learn':     () => window.renderUtmLearn && renderUtmLearn(),
+  'app-learn':     () => window.renderAppLearn && renderAppLearn(),
   'benchmark':     () => window.renderBenchmark && renderBenchmark(),
   // 참고자료 4종 — 예전엔 curriculum.js 로드 시점에 즉시 렌더했다(홈만 보는 사용자도 비용 부담).
   'media':         () => window.renderMedia && renderMedia(),
@@ -37,7 +38,7 @@ const PAGE_TITLES = {
   'tool-kpi': '📊 KPI 계산기', 'tool-utm': '🔗 UTM 빌더', 'tool-budget': '💰 손익분기·예산',
   'tool-mediamix': '🧩 미디어믹스 플래너', 'tool-report': '📝 주간 리포트', 'tool-diagnose': '🩺 트러블슈팅 진단', 'tool-abtest': '🧪 A/B 유의성',
   'tool-bid': '📈 적정 입찰가', 'tool-pacing': '⏱️ 예산 페이싱',
-  'utm-learn': '🎯 UTM 완전정복', 'media': '📡 매체 가이드', 'glossary': '📖 광고 용어 사전',
+  'utm-learn': '🎯 UTM 완전정복', 'app-learn': '📱 앱 마케팅 완전정복', 'media': '📡 매체 가이드', 'glossary': '📖 광고 용어 사전',
   'specs': '📐 소재 규격표', 'faq': '❓ 자주 묻는 질문', 'benchmark': '📊 매체 벤치마크', 'naming': '🏷️ 네이밍 규칙',
   'sources': '📰 인사이트 소스', 'qa': '💬 현직자 Q&A',
 };
@@ -409,6 +410,7 @@ function paintSel() {
 const SEARCH_INTENTS = [
   { kw:['급등','올랐','올라','떨어','하락','안나와','안 나와','미집계','집계','문제','왜','진단','이상','튀','폭등'], go:'tool-diagnose', label:'🩺 트러블슈팅 진단기 — 증상으로 원인·액션 찾기' },
   { kw:['계산','얼마','지표','roas','cpa','cpc','ctr','cvr','cpm','전환율','클릭률'], go:'tool-kpi', label:'📊 KPI 계산기 — 지표 자동 계산·역산' },
+  { kw:['앱 마케팅','앱마케팅','앱 설치','설치','mmp','앱스플라이어','appsflyer','어트리뷰션','attribution','룩백','포스트백','postback','srn','san','딥링크','원링크','onelink','리인게이지먼트','리어트리뷰션','리텐션'], go:'app-learn', label:'📱 앱 마케팅 완전정복 — 설치 측정·기여 판정·딥링크' },
   { kw:['utm','링크','추적','파라미터','소스','source','medium'], go:'tool-utm', label:'🔗 UTM 빌더 — 추적 링크 생성' },
   { kw:['규격','사이즈','크기','소재','배너','픽셀','해상도','비율'], go:'specs', label:'📐 소재 규격표 — 매체별 이미지·영상 규격' },
   { kw:['예산','손익','마진','본전','분기','얼마 써','배분'], go:'tool-budget', label:'💰 손익분기·예산 시뮬레이터' },
