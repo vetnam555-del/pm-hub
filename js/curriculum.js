@@ -493,7 +493,8 @@ const dayData = {
     items: [
         "웹 픽셀 vs 앱 SDK 차이점",
         "어트리뷰션 윈도우(클릭 후 7일, 1일 등) 개념",
-        "오가닉(Organic) vs 논오가닉(Non-Organic) 분류"
+        "오가닉(Organic) vs 논오가닉(Non-Organic) 분류",
+        "<a href=\"#app-learn\" onclick=\"closeModal()\" style=\"color:var(--primary);text-decoration:underline;font-weight:bold\">[앱 마케팅 완전정복] 학습 페이지로 흐름·기여 판정·딥링크 익히기</a>"
     ],
     tips: [
         "MMP는 파고들수록 복잡하므로, 우선 '어디서 설치를 잡아주는지' 흐름만 이해해도 충분합니다."
@@ -1383,7 +1384,12 @@ const glossaryData = [
   { term:'통계적 유의성', en:'Statistical Significance', cat:'개념', catColor:'yellow', desc:'A/B 테스트 결과의 차이가 우연이 아니라고 볼 수 있는 신뢰 수준. 표본이 적으면 차이가 커 보여도 우연일 수 있어 충분한 데이터 확보 후 판단.', formula:null },
   { term:'코호트', en:'Cohort', cat:'개념', catColor:'yellow', desc:'가입일·첫 구매일 등 같은 시점·조건을 공유하는 사용자 집단. 시간 경과에 따른 재방문·잔존·구매 추이를 집단별로 비교 분석할 때 사용.', formula:null },
   { term:'논오가닉', en:'Non-Organic', cat:'추적', catColor:'orange', desc:'광고를 통해 유입·설치된 트래픽. 자연 유입된 오가닉(Organic)과 구분되며, MMP로 매체별 기여를 집계해 성과를 평가.', formula:null },
-  { term:'SKAN', en:'SKAdNetwork', cat:'추적', catColor:'orange', desc:'IDFA 없이도 iOS 앱 설치·전환을 집계하는 애플 공식 프라이버시 보존 어트리뷰션 프레임워크(2018년 도입, iOS 14.5 ATT 이후 앱 설치 측정의 사실상 표준). MMP가 이 포스트백을 받아 매체별 기여를 집계하며, iOS 17.4(2024.3)부터 후속 AdAttributionKit와 공존하며 이전이 진행 중.', formula:null }
+  { term:'SKAN', en:'SKAdNetwork', cat:'추적', catColor:'orange', desc:'IDFA 없이도 iOS 앱 설치·전환을 집계하는 애플 공식 프라이버시 보존 어트리뷰션 프레임워크(2018년 도입, iOS 14.5 ATT 이후 앱 설치 측정의 사실상 표준). MMP가 이 포스트백을 받아 매체별 기여를 집계하며, iOS 17.4(2024.3)부터 후속 AdAttributionKit와 공존하며 이전이 진행 중.', formula:null },
+  { term:'룩백 윈도우', en:'Lookback Window', cat:'추적', catColor:'orange', desc:'광고 접점(클릭·조회) 뒤 이 기간 안에 설치가 일어나야 그 접점의 성과로 인정하는 기간. AppsFlyer 기본값은 클릭 7일·조회 1일이며 계정 설정과 매체마다 다르므로 리포트에 기준을 함께 적음.', formula:null },
+  { term:'포스트백', en:'Postback', cat:'추적', catColor:'orange', desc:'MMP가 기여 판정 결과(설치·인앱 이벤트)를 광고 매체에 돌려보내는 신호. 방향은 MMP → 매체이며, 매체는 이 신호로 자동입찰을 학습하고 타겟을 만듦.', formula:null },
+  { term:'SRN(SAN)', en:'Self-Reporting Network', cat:'추적', catColor:'orange', desc:'메타·구글·애플 서치애즈처럼 MMP 측정 링크를 쓰지 않고 자체 기록으로 기여를 알려 주는 매체. 앱 첫 실행 때 MMP가 광고 ID로 매체에 접점을 조회함. 업계에서는 SAN(Self-Attributing Network)이라고도 부름.', formula:null },
+  { term:'리인게이지먼트', en:'Re-engagement', cat:'추적', catColor:'orange', desc:'앱이 설치돼 있는 사용자가 리타겟팅 광고를 눌러 앱을 다시 여는 전환. 리타겟팅 링크에는 is_retargeting=true 가 필요.', formula:null },
+  { term:'리어트리뷰션', en:'Re-attribution', cat:'추적', catColor:'orange', desc:'앱을 지운 사용자가 리타겟팅 광고를 거쳐 다시 설치하는 전환. 첫 설치 뒤 리어트리뷰션 기간(AppsFlyer 기본 90일) 안의 재설치는 신규 설치로 세지 않음.', formula:null }
 ];
 
 let activeFilter = 'ALL';
